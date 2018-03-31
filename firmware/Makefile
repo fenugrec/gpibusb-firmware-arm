@@ -26,5 +26,6 @@ LDSCRIPT = ../stm32f0-discovery.ld
 include ../libopencm3.target.mk
 
 all: $(BINARY).bin
-	st-flash write $(BINARY).bin 0x8000000
+
+#	st-flash write $(BINARY).bin 0x8000000
 
