@@ -83,7 +83,7 @@ static void usart_setup(void)
 
 	usart_set_baudrate(USART2, 115200);
 	usart_set_databits(USART2, 8);
-	usart_set_stopbits(USART2, USART_CR2_STOP_1_0BIT);
+	usart_set_stopbits(USART2, USART_STOPBITS_1);
 	usart_set_mode(USART2, USART_MODE_TX_RX);
 	usart_set_parity(USART2, USART_PARITY_NONE);
 	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
@@ -96,10 +96,10 @@ static void gpio_setup(void)
 {
 	/* Nucleo LED = A5 */
 	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
-	
+
 	// LED Setup
 	//gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_ERROR);
-	
+
 	// Flow port pins will always be outputs
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE);
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, PE);
@@ -114,7 +114,7 @@ static void gpio_setup(void)
 	    gpio_clear(FLOW_PORT, SC);
 	    gpio_set(FLOW_PORT, DC);
 	}
-	
+
 	// Float all DIO lines
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO1);
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO2);
@@ -124,7 +124,7 @@ static void gpio_setup(void)
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO6);
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO7);
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO8);
-	
+
 	// Set mode and pin state for all GPIB control lines
 	if (mode) {
 	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, ATN);
@@ -149,8 +149,8 @@ static void gpio_setup(void)
 	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, IFC);
 	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
 	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, REN);
-	} 
-	
+	}
+
 }
 
 int _write(int file, char *ptr, int len)
@@ -174,19 +174,19 @@ int _write(int file, char *ptr, int len)
 
 void usart2_isr(void)
 {
-	// Check if we were called because of RXNE. 
-	if (usart_get_interrupt_source(USART2, USART_ISR_RXNE)) {
+	// Check if we were called because of RXNE.
+	if (usart_get_flag(USART2, USART_ISR_RXNE)) {
 		ring_write_ch(&input_ring, usart_recv(USART2));
 		usart_enable_tx_interrupt(USART2);
 	}
 
-	// Check if we were called because of TXE. 
-	if (usart_get_interrupt_source(USART2, USART_ISR_TXE)) {
+	// Check if we were called because of TXE.
+	if (usart_get_flag(USART2, USART_ISR_TXE)) {
 	    int32_t data;
 		data = ring_read_ch(&output_ring, 0);
 		if (data == -1) {
             usart_disable_tx_interrupt(USART2);
-            
+
         } else {
             usart_send_blocking(USART2, data);
         }
@@ -199,19 +199,19 @@ int main(void)
 	clock_setup();
 	gpio_setup();
 	usart_setup();
-	
+
 	// Turn on the error LED
 	gpio_set(LED_PORT, LED_ERROR);
-	
+
 	// TODO: start WDT
 	// TODO: start 1ms timer
 	// TODO: Load settings from EEPROM
-	
+
 	// Initialize the GPIB bus
 	if (mode) {
 	    gpib_controller_assign(0x00);
 	}
-	
+
 	// TODO: enable timer interrupts
 	gpio_clear(LED_PORT, LED_ERROR);
 
