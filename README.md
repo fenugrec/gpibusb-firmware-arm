@@ -18,3 +18,7 @@ compile locm3 :
 
 * `cd libopencm3 && make TARGETS=stm32/f0`
 
+compile the firmware and flash :
+
+* `cd firmware && make `
+* `make flash`

@@ -209,7 +209,7 @@ int main(void)
 
 	// Initialize the GPIB bus
 	if (mode) {
-	    gpib_controller_assign(0x00);
+	    gpib_controller_assign();
 	}
 
 	// TODO: enable timer interrupts
