@@ -27,6 +27,7 @@
 #include "firmware.h"
 #include "gpib.h"
 #include "ring.h"
+#include "hw_conf.h"
 
 /* Some forward decls that don't need to be in the public gpib.h
 */

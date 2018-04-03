@@ -1,3 +1,6 @@
+#ifndef _FIRMWARE_H
+#define _FIRMWARE_H
+
 /*
 * GPIBUSB Adapter
 * firmware.h
@@ -24,5 +27,4 @@
 extern struct ring output_ring;
 extern struct ring input_ring;
 
-#define LED_PORT GPIOA
-#define LED_ERROR GPIO9
+#endif // _FIRMWARE_H

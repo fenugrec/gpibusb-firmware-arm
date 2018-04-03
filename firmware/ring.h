@@ -1,3 +1,6 @@
+#ifndef _RING_H
+#define _RING_H
+
 /******************************************************************************
  * Simple ringbuffer implementation from open-bldc's libgovernor that
  * you can find at:
@@ -25,3 +28,5 @@ int32_t ring_write(struct ring *ring, uint8_t *data, ring_size_t size);
 int32_t ring_read_ch(struct ring *ring, uint8_t *ch);
 int32_t ring_read(struct ring *ring, uint8_t *data, ring_size_t size);
 int32_t ring_full(struct ring *ring);
+
+#endif // _RING_H

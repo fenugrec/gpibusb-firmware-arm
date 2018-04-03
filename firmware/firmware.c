@@ -34,6 +34,7 @@
 #include "firmware.h"
 #include "ring.h"
 #include "gpib.h"
+#include "hw_conf.h"
 
 /** DEFINES *******************************************************************/
 

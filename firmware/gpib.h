@@ -1,5 +1,7 @@
-/*
-* GPIBUSB Adapter
+#ifndef _GPIB_H
+#define _GPIB_H
+
+/* GPIBUSB Adapter
 * gpib.h
 **
 * © 2014 Steven Casagrande (scasagrande@galvant.ca).
@@ -37,3 +39,5 @@ uint32_t gpib_controller_assign(void);
 #define CMD_GTL 0x1
 #define CMD_SPE 0x18
 #define CMD_SPD 0x19
+
+#endif // _GPIB_H/*

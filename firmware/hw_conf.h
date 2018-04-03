@@ -12,7 +12,12 @@
  *
  */
 
-//#define USE_SN75162
+#define USE_SN75162
+
+
+#define LED_PORT GPIOA
+#define LED_ERROR GPIO9
+
 
 /* GPIB data lines DIO1-DIO8 */
 #define DIO_PORT GPIOB
@@ -44,4 +49,4 @@
 #define DC GPIO8
 
 
-#endif _HW_CONF_H
+#endif //_HW_CONF_H
