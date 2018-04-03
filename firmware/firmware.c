@@ -103,15 +103,22 @@ static void gpio_setup(void)
 	// Flow port pins will always be outputs
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE);
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, PE);
+#ifdef USE_SN75162
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SC);
+#endif
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DC);
 	gpio_clear(FLOW_PORT, TE);
 	gpio_clear(FLOW_PORT, PE);
+
 	if (mode) {
+#ifdef USE_SN75162
 	    gpio_set(FLOW_PORT, SC); // TX on REN and IFC
+#endif
 	    gpio_clear(FLOW_PORT, DC); // TX on ATN and RX on SRQ
 	} else {
+#ifdef USE_SN75162
 	    gpio_clear(FLOW_PORT, SC);
+#endif
 	    gpio_set(FLOW_PORT, DC);
 	}
 

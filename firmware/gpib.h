@@ -28,24 +28,6 @@ uint32_t gpib_read(bool use_eoi, uint8_t eos_code, bool eot_enable, uint8_t eot_
 uint32_t address_target_listen(uint32_t address);
 uint32_t gpib_controller_assign(void);
 
-#define DIO_PORT GPIOB
-#define CONTROL_PORT GPIOC
-#define FLOW_PORT GPIOA
-
-#define REN GPIO1
-#define EOI GPIO2
-#define DAV GPIO3
-#define NRFD GPIO4
-#define NDAC GPIO5
-#define ATN GPIO6
-#define SRQ GPIO7
-#define IFC GPIO8
-
-#define SC GPIO5
-#define TE GPIO6
-#define PE GPIO7
-#define DC GPIO8
-
 #define CMD_DCL 0x14
 #define CMD_UNL 0x3f
 #define CMD_UNT 0x5f
