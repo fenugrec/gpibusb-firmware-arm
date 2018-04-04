@@ -19,7 +19,7 @@
 #define LED_ERROR GPIO9
 
 
-/* GPIB data lines DIO1-DIO8 */
+/* GPIB data lines DIO1-DIO8 on PB0-PB7*/
 #define DIO_PORT GPIOB
 
 

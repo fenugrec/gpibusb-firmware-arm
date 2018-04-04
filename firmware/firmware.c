@@ -101,16 +101,9 @@ static void gpio_setup(void)
 	// LED Setup
 	//gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_ERROR);
 
-	// Flow port pins will always be outputs
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE);
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, PE);
-#ifdef USE_SN75162
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SC);
-#endif
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DC);
-	gpio_clear(FLOW_PORT, TE);
-	gpio_clear(FLOW_PORT, PE);
 
+	/* Flow control pins */
+	gpio_clear(FLOW_PORT, TE | PE);
 	if (mode) {
 #ifdef USE_SN75162
 	    gpio_set(FLOW_PORT, SC); // TX on REN and IFC
@@ -123,40 +116,28 @@ static void gpio_setup(void)
 	    gpio_set(FLOW_PORT, DC);
 	}
 
+	// Flow port pins will always be outputs
+	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE | PE | DC);
+#ifdef USE_SN75162
+	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SC);
+#endif
+
+
 	// Float all DIO lines
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO1);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO2);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO3);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO4);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO5);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO6);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO7);
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO8);
+	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, 0xFF);
 
 	// Set mode and pin state for all GPIB control lines
 	if (mode) {
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, ATN);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NDAC);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, IFC);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, REN);
-	    gpio_set(CONTROL_PORT, ATN);
-	    gpio_clear(CONTROL_PORT, NRFD);
-	    gpio_clear(CONTROL_PORT, NDAC);
-	    gpio_set(CONTROL_PORT, IFC);
-	    gpio_clear(CONTROL_PORT, REN);
+		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
+						EOI | DAV | SRQ);
+		gpio_set(CONTROL_PORT, ATN | IFC);
+		gpio_clear(CONTROL_PORT, NRFD | NDAC | REN);
+		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+						ATN | NRFD | NDAC | IFC | REN);
 	} else {
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, ATN);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NDAC);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, IFC);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, REN);
+		/* XXX : if this is meant to be "device mode", some of these are wrong */
+	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
+						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
 	}
 
 }
