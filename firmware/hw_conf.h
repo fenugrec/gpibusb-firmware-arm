@@ -50,4 +50,10 @@
 #define DC GPIO8
 
 
+/** free-running timing source
+ * 32-bit microsecond counter
+ */
+
+#define TMR_FREERUN TIM2
+
 #endif //_HW_CONF_H
