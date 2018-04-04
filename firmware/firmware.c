@@ -71,10 +71,10 @@ static void clock_setup(void)
 
 static void usart_setup(void)
 {
-    ring_init(&output_ring, output_ring_buffer, UART_BUFFER_SIZE);
-    ring_init(&input_ring, input_ring_buffer, UART_BUFFER_SIZE);
+	ring_init(&output_ring, output_ring_buffer, UART_BUFFER_SIZE);
+	ring_init(&input_ring, input_ring_buffer, UART_BUFFER_SIZE);
 
-    /* A2 = TX, A3 = RX */
+	/* A2 = TX, A3 = RX */
 	nvic_enable_irq(NVIC_USART2_IRQ);
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
@@ -106,14 +106,14 @@ static void gpio_setup(void)
 	gpio_clear(FLOW_PORT, TE | PE);
 	if (mode) {
 #ifdef USE_SN75162
-	    gpio_set(FLOW_PORT, SC); // TX on REN and IFC
+		gpio_set(FLOW_PORT, SC); // TX on REN and IFC
 #endif
-	    gpio_clear(FLOW_PORT, DC); // TX on ATN and RX on SRQ
+		gpio_clear(FLOW_PORT, DC); // TX on ATN and RX on SRQ
 	} else {
 #ifdef USE_SN75162
-	    gpio_clear(FLOW_PORT, SC);
+		gpio_clear(FLOW_PORT, SC);
 #endif
-	    gpio_set(FLOW_PORT, DC);
+		gpio_set(FLOW_PORT, DC);
 	}
 
 	// Flow port pins will always be outputs
@@ -136,7 +136,7 @@ static void gpio_setup(void)
 						ATN | NRFD | NDAC | IFC | REN);
 	} else {
 		/* XXX : if this is meant to be "device mode", some of these are wrong */
-	    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
+		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
 						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
 	}
 
@@ -144,21 +144,21 @@ static void gpio_setup(void)
 
 int _write(int file, char *ptr, int len)
 {
-    int ret;
+	int ret;
 
-    if (file == 1) {
-        ret = ring_write(&output_ring, (uint8_t *)ptr, len);
+	if (file == 1) {
+		ret = ring_write(&output_ring, (uint8_t *)ptr, len);
 
-        if (ret < 0)
-            ret = -ret;
+		if (ret < 0)
+			ret = -ret;
 
-        usart_enable_tx_interrupt(USART2);
+		usart_enable_tx_interrupt(USART2);
 
-        return ret;
-    }
+		return ret;
+	}
 
-    errno = EIO;
-    return -1;
+	errno = EIO;
+	return -1;
 }
 
 void usart2_isr(void)
@@ -171,20 +171,20 @@ void usart2_isr(void)
 
 	// Check if we were called because of TXE.
 	if (usart_get_flag(USART2, USART_ISR_TXE)) {
-	    int32_t data;
+		int32_t data;
 		data = ring_read_ch(&output_ring, 0);
 		if (data == -1) {
-            usart_disable_tx_interrupt(USART2);
+			usart_disable_tx_interrupt(USART2);
 
-        } else {
-            usart_send_blocking(USART2, data);
-        }
+		} else {
+			usart_send_blocking(USART2, data);
+		}
 	}
 }
 
 int main(void)
 {
-    int i;
+	int i;
 	clock_setup();
 	gpio_setup();
 	usart_setup();
@@ -198,7 +198,7 @@ int main(void)
 
 	// Initialize the GPIB bus
 	if (mode) {
-	    gpib_controller_assign();
+		gpib_controller_assign();
 	}
 
 	// TODO: enable timer interrupts
