@@ -131,16 +131,14 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 }
 
 /** Receive a single byte from the GPIB bus
+* Assumes ports were setup properly
 *
 * byte: Pointer to where the received byte will be stored
 * eoi_status: Pointer for storage of EOI line status
 *
 * Returns 0 if everything went fine, or 1 if there was an error
 */
-uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
-    // TODO: Make sure modes are set correctly
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DAV);
-
+static uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
     // Raise NRFD, informing the talker we are ready for the byte
     gpio_set(CONTROL_PORT, NRFD);
 
@@ -233,6 +231,11 @@ uint32_t gpib_read(bool use_eoi,
 
     // Beginning of GPIB read loop
     // TODO: debug message printf("gpib_read loop start\n\r");
+	// TODO: Make sure modes are set correctly
+    gpio_clear(FLOW_PORT, TE);
+    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
+    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
+
     if(use_eoi) { // Read until EOI
         do {
             // First check for a read error

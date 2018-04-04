@@ -25,7 +25,6 @@
 
 uint32_t gpib_cmd(uint8_t *bytes);
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
-uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status);
 uint32_t gpib_read(bool use_eoi, uint8_t eos_code, bool eot_enable, uint8_t eot_char);
 uint32_t address_target_listen(uint32_t address);
 uint32_t gpib_controller_assign(void);
