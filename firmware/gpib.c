@@ -65,7 +65,7 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
-    char byte; // Storage variable for the current character
+    uint8_t byte; // Storage variable for the current character
     uint32_t i;
 
     // TODO: Set pin modes to output as required for writing
@@ -75,11 +75,10 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
     if(atn) { gpio_clear(CONTROL_PORT, ATN); }
     if(!length) { length = strlen((char*)bytes); }
 
+	gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
     gpio_set(FLOW_PORT, TE); // Enable talking
     gpio_set(CONTROL_PORT, EOI);
     gpio_set(CONTROL_PORT, DAV);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NDAC);
 
     // Before we start transfering, we have to make sure that NRFD is high
     // and NDAC is low
@@ -117,19 +116,15 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
         gpio_set(CONTROL_PORT, DAV);
     } // Finished outputting all bytes to the listeners
 
+    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF);
     gpio_clear(FLOW_PORT, TE); // Disable talking
-
-    // TODO: float DIO_PORT lines
 
     // If the byte was a GPIB command byte, release ATN line
     if(atn) { gpio_set(CONTROL_PORT, ATN); }
 
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NDAC);
-    gpio_set(CONTROL_PORT, NDAC);
-    gpio_set(CONTROL_PORT, NRFD);
+	gpio_set(CONTROL_PORT, NDAC | NRFD);
+    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV | EOI);
+    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
     gpio_clear(FLOW_PORT, PE);
 
     return 0;

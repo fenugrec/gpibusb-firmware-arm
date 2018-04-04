@@ -132,7 +132,6 @@ static void gpio_setup(void)
 		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
 						ATN | NRFD | NDAC | IFC | REN);
 	} else {
-		/* XXX : if this is meant to be "device mode", some of these are wrong */
 		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
 						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
 	}
