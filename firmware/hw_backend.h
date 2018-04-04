@@ -15,6 +15,9 @@ void delay_us(uint32_t us);
 #define delay_ms(x) delay_us((x) * 1000)
 
 
+/** Not implemented yet */
 #define restart_wdt(x)
+#define write_eeprom(addr, data)
+#define read_eeprom(addr) 0
 
 #endif _HW_BACKEND_H

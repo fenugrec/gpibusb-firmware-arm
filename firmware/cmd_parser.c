@@ -26,6 +26,7 @@
 **
 */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@
 
 const unsigned int version = 5;
 const unsigned int buf_size = 235;
-char cmd_buf[10], buf[buf_size+20];
+u8 cmd_buf[10], buf[buf_size+20];
 unsigned int buf_out = 0;
 unsigned int buf_in = 0;
 int partnerAddress = 1;
@@ -62,9 +63,11 @@ u8 status_byte = 0;	//XXX name ambiguity with status_byte in serial_poll()
 unsigned int32 timeout = 1000;
 unsigned int32 seconds = 0;
 // Variables for device mode
-boolean device_talk = false;
-boolean device_listen = false;
-boolean device_srq = false;
+bool device_talk = false;
+bool device_listen = false;
+bool device_srq = false;
+
+#define VALID_EEPROM_CODE 0xAA
 #define WITH_TIMEOUT
 #define WITH_WDT
 //#define VERBOSE_DEBUG
@@ -84,13 +87,13 @@ char buf_get(char *pnt)
     return pnt;
 }
 
-char gpib_read(boolean read_until_eoi)
+char gpib_read(bool read_until_eoi)
 {
     char readCharacter,eoiStatus;
     char readBuf[100];
     char i = 0, j=0;
     char errorFound = 0;
-    boolean reading_done = false;
+    bool reading_done = false;
     char *bufPnt;
     bufPnt = &readBuf[0];
 #ifdef VERBOSE_DEBUG
@@ -272,9 +275,9 @@ char gpib_read(boolean read_until_eoi)
     return errorFound;
 }
 
-boolean srq_state(void)
+bool srq_state(void)
 {
-    return !((boolean)gpio_get(CONTROL_PORT, SRQ));
+    return !((bool)gpio_get(CONTROL_PORT, SRQ));
 }
 void serial_poll(int address)
 {
@@ -299,7 +302,7 @@ void serial_poll(int address)
 void main(void)
 {
     char writeError = 0;
-    char *buf_pnt = &buf[0];
+    u8 *buf_pnt = &buf[0];
 // Original Command Set
     char addressBuf[4] = "+a:";
     char timeoutBuf[4] = "+t:";
@@ -334,6 +337,59 @@ void main(void)
     char verBuf[6] = "++ver";
     char helpBuf[7] = "++help"; //TODO
 
+// Handle the EEPROM stuff
+    if (read_eeprom(0x00) == VALID_EEPROM_CODE)
+    {
+        mode = read_eeprom(0x01);
+        partnerAddress = read_eeprom(0x02);
+        eot_char = read_eeprom(0x03);
+        eot_enable = read_eeprom(0x04);
+        eos_code = read_eeprom(0x05);
+        switch (eos_code)
+        {
+        case 0:
+            eos_code = 0;
+            eos_string[0] = 13;
+            eos_string[1] = 10;
+            eos_string[2] = 0x00;
+            eos = 10;
+            break;
+        case 1:
+            eos_code = 1;
+            eos_string[0] = 13;
+            eos_string[1] = 0x00;
+            eos = 13;
+            break;
+        case 2:
+            eos_code = 2;
+            eos_string[0] = 10;
+            eos_string[1] = 0x00;
+            eos = 10;
+            break;
+        default:
+            eos_code = 3;
+            eos_string[0] = 0x00;
+            eos = 0;
+            break;
+        }
+        eoiUse = read_eeprom(0x06);
+        autoread = read_eeprom(0x07);
+        listen_only = read_eeprom(0x08);
+        save_cfg = read_eeprom(0x09);
+    }
+    else
+    {
+        write_eeprom(0x00, VALID_EEPROM_CODE);
+        write_eeprom(0x01, 1); // mode
+        write_eeprom(0x02, 1); // partnerAddress
+        write_eeprom(0x03, 13); // eot_char
+        write_eeprom(0x04, 1); // eot_enable
+        write_eeprom(0x05, 3); // eos_code
+        write_eeprom(0x06, 1); // eoiUse
+        write_eeprom(0x07, 1); // autoread
+        write_eeprom(0x08, 0); // listen_only
+        write_eeprom(0x09, 1); // save_cfg
+    }
     if (mode)
     {
         gpib_controller_assign();
@@ -759,7 +815,7 @@ void main(void)
 // termination byte to inst
                         writeError = writeError || gpib_write(buf_pnt, 0, 0);
                         if (!writeError)
-                            writeError = gpib_write(eos_string, 0, eoiUse);
+                            writeError = gpib_write((u8 *) eos_string, 0, eoiUse);
 #ifdef VERBOSE_DEBUG
                         printf("eos_string: %s",eos_string);
 #endif
