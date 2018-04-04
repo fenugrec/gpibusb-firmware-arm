@@ -95,12 +95,9 @@ static void usart_setup(void)
 
 static void gpio_setup(void)
 {
-	/* Nucleo LED = A5 */
-	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
-
-	// LED Setup
-	//gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_ERROR);
-
+	/* LEDs, active high */
+	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
+	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS | LED_ERROR);
 
 	/* Flow control pins */
 	gpio_clear(FLOW_PORT, TE | PE);
@@ -208,7 +205,7 @@ int main(void)
 		for (i = 0; i < 1000000; i++) {
 			__asm__("NOP");
 		}
-		gpio_toggle(GPIOA, GPIO5);
+		gpio_toggle(LED_PORT, LED_STATUS);
 	}
 
 	return 0;

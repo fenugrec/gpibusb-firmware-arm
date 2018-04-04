@@ -17,6 +17,7 @@
 
 #define LED_PORT GPIOA
 #define LED_ERROR GPIO9
+#define LED_STATUS GPIO5
 
 
 /* GPIB data lines DIO1-DIO8 on PB0-PB7*/
