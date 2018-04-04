@@ -8,6 +8,7 @@
 #include <libopencm3/stm32/timer.h>
 
 #include "hw_conf.h"
+#include "hw_backend.h"
 #include "stypes.h"
 
 void delay_us(u32 us) {

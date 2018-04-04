@@ -26,8 +26,9 @@
 uint32_t gpib_cmd(uint8_t *bytes);
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
 uint32_t gpib_read(bool use_eoi, uint8_t eos_code, bool eot_enable, uint8_t eot_char);
-uint32_t address_target_listen(uint32_t address);
+uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);
+uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 
 #define CMD_DCL 0x14
 #define CMD_UNL 0x3f

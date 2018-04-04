@@ -28,6 +28,7 @@
 #include "gpib.h"
 #include "ring.h"
 #include "hw_conf.h"
+#include "stypes.h"
 
 /* Some forward decls that don't need to be in the public gpib.h
 */
@@ -299,7 +300,7 @@ uint32_t gpib_read(bool use_eoi,
 *
 * Returns 0 if everything went fine, or 1 if there was an error
 */
-uint32_t address_target_listen(uint32_t address) {
+uint32_t gpib_address_target(uint32_t address) {
     uint32_t write_error = 0;
     uint8_t cmd_buf[3];
     cmd_buf[0] = CMD_UNT;
@@ -336,3 +337,26 @@ uint32_t gpib_controller_assign(void) {
     return gpib_cmd(cmd_buf);
 }
 
+/** conduct serial poll
+ *
+ * @param status_byte poll result will be written there
+ *
+ * @return 0 if OK
+ */
+uint32_t gpib_serial_poll(int address, u8 *status_byte) {
+    char error = 0;
+	u8 cmd_buf[1];
+	bool eoistat = 0;
+
+    cmd_buf[0] = CMD_SPE; // enable serial poll
+    error = error || gpib_cmd(cmd_buf);
+    cmd_buf[0] = address + 0x40;
+    error = error || gpib_cmd(cmd_buf);
+    if (error) return -1;
+
+    error = gpib_read_byte(status_byte, &eoistat);
+    cmd_buf[0] = CMD_SPD; // disable serial poll
+    gpib_cmd(cmd_buf);
+    if (error) return -1;
+    return 0;
+}

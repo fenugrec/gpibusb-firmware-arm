@@ -27,4 +27,6 @@
 extern struct ring output_ring;
 extern struct ring input_ring;
 
+extern bool mode;		//1 if controller mode ?
+
 #endif // _FIRMWARE_H

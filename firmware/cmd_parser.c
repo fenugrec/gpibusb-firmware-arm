@@ -34,13 +34,14 @@
 #include <libopencm3/stm32/gpio.h>
 
 #include "hw_conf.h"
+#include "firmware.h"
 #include "gpib.h"
 #include "ring.h"
 #include "hw_backend.h"
 #include "stypes.h"
 
 const unsigned int version = 5;
-const unsigned int buf_size = 235;
+#define buf_size 235
 u8 cmd_buf[10], buf[buf_size+20];
 unsigned int buf_out = 0;
 unsigned int buf_in = 0;
@@ -48,20 +49,19 @@ int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
 char eos_string[3] = "";
-char eos_code = 3;
+char eos_code = 3;	//TODO : enum this
 char eoiUse = 1; // By default, we are using EOI to signal end of
 // msg from instrument
 char debug = 0; // enable or disable read&write error messages
-byte strip = 0;
+u8 strip = 0;
 char autoread = 1;
 char eot_enable = 1;
 char eot_char = 13; // default CR
 char listen_only = 0;
-char mode = 1;
 char save_cfg = 1;
 u8 status_byte = 0;	//XXX name ambiguity with status_byte in serial_poll()
-unsigned int32 timeout = 1000;
-unsigned int32 seconds = 0;
+u32 timeout = 1000;
+u32 seconds = 0;
 // Variables for device mode
 bool device_talk = false;
 bool device_listen = false;
@@ -87,7 +87,8 @@ char buf_get(char *pnt)
     return pnt;
 }
 
-char gpib_read(bool read_until_eoi)
+#if 0
+char cac(bool read_until_eoi)
 {
     char readCharacter,eoiStatus;
     char readBuf[100];
@@ -275,32 +276,13 @@ char gpib_read(bool read_until_eoi)
     return errorFound;
 }
 
-bool srq_state(void)
-{
+#endif
+static bool srq_state(void) {
     return !((bool)gpio_get(CONTROL_PORT, SRQ));
 }
-void serial_poll(int address)
-{
-    char error = 0;
-    u8 status_byte;
-    cmd_buf[0] = CMD_SPE; // enable serial poll
-    error = error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = address + 0x40;
-    error = error || gpib_cmd(cmd_buf);
-    if (error)
-        return;
-    error = gpib_receive(&status_byte);
-    if (error == 1)
-        error = 0; // gpib_receive returns EOI lvl and 0xFF on errors
-    if (error == 0xFF)
-        error = 1;
-    cmd_buf[0] = CMD_SPD; // disable serial poll
-    gpib_cmd(cmd_buf);
-    if (!error)
-        printf("%c%c", (char) status_byte, eot_char);
-}
-void main(void)
-{
+
+
+void cmd_parser(void) {
     char writeError = 0;
     u8 *buf_pnt = &buf[0];
 // Original Command Set
@@ -426,24 +408,24 @@ void main(void)
 // +t:N
                 else if(strncmp((char*)buf_pnt,(char*)timeoutBuf,3)==0)
                 {
-                    timeout = atoi32((char*)(buf_pnt+3)); // Parse out the timeout period
+                    timeout = (u32) atoi((char*)(buf_pnt+3)); // Parse out the timeout period
                 }
 // ++read_tmo_ms N
                 else if(strncmp((char*)buf_pnt,(char*)readTimeoutBuf,13)==0)
                 {
                     if (*(buf_pnt+13) == 0x00)
                     {
-                        printf("%Lu%c", timeout, eot_char);
+                        printf("%lu%c", (unsigned long) timeout, eot_char);
                     }
                     else if (*(buf_pnt+13) == 32)
                     {
-                        timeout = atoi32((char*)(buf_pnt+14));
+                        timeout = (u32) atoi((char*)(buf_pnt+14));
                     }
                 }
 // +read
                 else if((strncmp((char*)buf_pnt,(char*)readCmdBuf,5)==0) && (mode))
                 {
-                    if(gpib_read(eoiUse))
+                    if(gpib_read(eoiUse, eos_code, eot_enable, eot_char))
                     {
                         if (debug == 1)
                         {
@@ -458,11 +440,11 @@ void main(void)
                 {
                     if (*(buf_pnt+6) == 0x00)
                     {
-                        gpib_read(false); // read until EOS condition
+                        gpib_read(false, eos_code, eot_enable, eot_char); // read until EOS condition
                     }
                     else if (*(buf_pnt+7) == 101)
                     {
-                        gpib_read(true); // read until EOI flagged
+                        gpib_read(true, eos_code, eot_enable, eot_char); // read until EOI flagged
                     }
                     /*else if (*(buf_pnt+6) == 32) {
                     // read until specified character
@@ -557,7 +539,7 @@ void main(void)
                 {
                     if (*(buf_pnt+5) == 0x00)
                     {
-                        writeError = writeError || addressTarget(partnerAddress);
+                        writeError = writeError || gpib_address_target(partnerAddress);
                         cmd_buf[0] = CMD_GET;
                         gpib_cmd(cmd_buf);
                     }
@@ -570,7 +552,7 @@ void main(void)
                 {
                     if (*(buf_pnt+5) == 0x00)
                     {
-                        writeError = writeError || addressTarget(partnerAddress);
+                        writeError = writeError || gpib_address_target(partnerAddress);
                         cmd_buf[0] = CMD_GET;
                         gpib_cmd(cmd_buf);
                     }
@@ -588,7 +570,7 @@ void main(void)
                 {
                     if (*(buf_pnt+6) == 0x00)
                     {
-                        printf("%i%c", autoRead, eot_char);
+                        printf("%i%c", autoread, eot_char);
                     }
                     else if (*(buf_pnt+6) == 32)
                     {
@@ -637,7 +619,7 @@ void main(void)
                 {
 // This command is special in that we must
 // address a specific instrument.
-                    writeError = writeError || addressTarget(partnerAddress);
+                    writeError = writeError || gpib_address_target(partnerAddress);
                     cmd_buf[0] = CMD_SDC;
                     writeError = writeError || gpib_cmd(cmd_buf);
                 }
@@ -679,14 +661,14 @@ void main(void)
 // ++llo
                 else if((strncmp((char*)buf_pnt,(char*)lloBuf,5)==0) && (mode))
                 {
-                    writeError = writeError || addressTarget(partnerAddress);
+                    writeError = writeError || gpib_address_target(partnerAddress);
                     cmd_buf[0] = CMD_LLO;
                     writeError = writeError || gpib_cmd(cmd_buf);
                 }
 // ++loc
                 else if((strncmp((char*)buf_pnt,(char*)locBuf,5)==0) && (mode))
                 {
-                    writeError = writeError || addressTarget(partnerAddress);
+                    writeError = writeError || gpib_address_target(partnerAddress);
                     cmd_buf[0] = CMD_GTL;
                     writeError = writeError || gpib_cmd(cmd_buf);
                 }
@@ -765,11 +747,15 @@ void main(void)
                 {
                     if (*(buf_pnt+7) == 0x00)
                     {
-                        serial_poll(partnerAddress);
+                        if (!gpib_serial_poll(partnerAddress, &status_byte)) {
+							printf("%u%c", (unsigned) status_byte, eot_char);
+                        }
                     }
                     else if (*(buf_pnt+7) == 32)
                     {
-                        serial_poll(atoi((char*)(buf_pnt+8)));
+                        if (!gpib_serial_poll(atoi((char*)(buf_pnt+8)), &status_byte)) {
+                        	printf("%u%c", (unsigned) status_byte, eot_char);
+                        }
                     }
                 }
 // ++status
@@ -799,7 +785,7 @@ void main(void)
 // and tell target to listen.
                 if (mode)
                 {
-                    writeError = writeError || addressTarget(partnerAddress);
+                    writeError = writeError || gpib_address_target(partnerAddress);
 // Set the controller into talker mode
                     cmd_buf[0] = myAddress + 0x40;
                     writeError = writeError || gpib_cmd(cmd_buf);
@@ -830,7 +816,7 @@ void main(void)
                 {
                     if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
                     {
-                        gpib_read(eoiUse);
+                        gpib_read(eoiUse, eos_code, eot_enable, eot_char);
                     }
                     else if(writeError)
                     {
@@ -926,7 +912,7 @@ void main(void)
 #ifdef VERBOSE_DEBUG
                         printf("Starting device mode gpib_read%c", eot_char);
 #endif
-                        gpib_read(eoiUse);
+                        gpib_read(eoiUse, eos_code, eot_enable, eot_char);
                         device_listen = false;
                     }
                     else if (device_talk && device_srq)
