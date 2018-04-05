@@ -23,10 +23,20 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+enum eos_codes {
+	EOS_CRLF = 0,
+	EOS_LF = 1,
+	EOS_CR = 2,
+	EOS_NUL = 3,
+	EOS_CUSTOM = 4
+	};
+
+
 uint32_t gpib_cmd(uint8_t *bytes);
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status);
-uint32_t gpib_read(bool use_eoi, uint8_t eos_code, bool eot_enable, uint8_t eot_char);
+uint32_t gpib_read(bool use_eoi, enum eos_codes eos_code,
+					const char *eos_string, bool eot_enable, uint8_t eot_char);
 uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);

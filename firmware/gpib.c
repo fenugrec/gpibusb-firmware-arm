@@ -181,35 +181,15 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 uint32_t gpib_read(bool use_eoi,
-                   uint8_t eos_code,
-                   bool eot_enable,
-                   uint8_t eot_char) {
+					enum eos_codes eos_code,
+					const char *eos_string,
+					bool eot_enable,
+					uint8_t eot_char) {
     uint8_t byte;
     bool eoi_status = 1;
     uint8_t cmd_buf[3];
-    uint8_t eos_string[3];
     uint32_t error_found = 0;
     uint32_t char_counter = 0;
-
-    // Setup the eos_string
-    switch (eos_code) {
-        case 0:
-            eos_string[0] = 13;
-            eos_string[1] = 10;
-            eos_string[2] = 0x00;
-            break;
-        case 1:
-            eos_string[0] = 13;
-            eos_string[1] = 0x00;
-            break;
-        case 2:
-            eos_string[0] = 10;
-            eos_string[1] = 0x00;
-            break;
-        default:
-            eos_string[0] = 0x00;
-            break;
-    }
 
     if(1) { // FIXME: this should check what mode the adapter is in
         // Command all talkers and listeners to stop

@@ -23,8 +23,12 @@ void led_setup(void);
 void prep_gpib_pins(bool mode);
 
 
-/** Not implemented yet */
+/** Not implemented yet **/
+
+/** original firmware has WDT set for 4096 * 4ms = ~ 16 seconds timeout. */
 #define restart_wdt(x)
+
+/** These could be replaced by "EEPROM emulation", see ST AN2594 */
 #define write_eeprom(addr, data)
 #define read_eeprom(addr) 0
 

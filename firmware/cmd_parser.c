@@ -48,15 +48,6 @@
 volatile bool cmd_available = 0;
 volatile char *cmd_input;
 
-
-enum eos_codes {
-	EOS_CRLF = 0,
-	EOS_LF = 1,
-	EOS_CR = 2,
-	EOS_NUL = 3,
-	EOS_CUSTOM = 4
-	};
-
 #define VERSION 5
 #define BUFSIZE 235
 u8 cmd_buf[10], buf[BUFSIZE+20];
@@ -234,7 +225,7 @@ static void chunk_cmd(char *cmd) {
 // +read
 	else if((strncmp((char*)buf_pnt,(char*)readCmdBuf,5)==0) && (mode))
 	{
-		if(gpib_read(eoiUse, eos_code, eot_enable, eot_char))
+		if(gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char))
 		{
 			if (debug == 1)
 			{
@@ -249,11 +240,11 @@ static void chunk_cmd(char *cmd) {
 	{
 		if (*(buf_pnt+6) == 0x00)
 		{
-			gpib_read(false, eos_code, eot_enable, eot_char); // read until EOS condition
+			gpib_read(false, eos_code, eos_string, eot_enable, eot_char); // read until EOS condition
 		}
 		else if (*(buf_pnt+7) == 101)
 		{
-			gpib_read(true, eos_code, eot_enable, eot_char); // read until EOI flagged
+			gpib_read(true, eos_code, eos_string, eot_enable, eot_char); // read until EOI flagged
 		}
 		/*else if (*(buf_pnt+6) == 32) {
 		// read until specified character
@@ -605,7 +596,7 @@ static void chunk_data(char *cmd) {
 	{
 		if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
 		{
-			gpib_read(eoiUse, eos_code, eot_enable, eot_char);
+			gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char);
 		}
 		else if(writeError)
 		{
@@ -706,7 +697,7 @@ static void device_poll(void) {
 #ifdef VERBOSE_DEBUG
 				printf("Starting device mode gpib_read%c", eot_char);
 #endif
-				gpib_read(eoiUse, eos_code, eot_enable, eot_char);
+				gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char);
 				device_listen = false;
 			}
 			else if (device_talk && device_srq)
