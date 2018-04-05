@@ -7,6 +7,7 @@
  */
 
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <libopencm3/cm3/scb.h>
@@ -17,6 +18,11 @@ void delay_us(uint32_t us);
 #define delay_ms(x) delay_us((x) * 1000)
 
 #define reset_cpu scb_reset_system
+
+void led_setup(void);
+void prep_gpib_pins(bool mode);
+
+
 /** Not implemented yet */
 #define restart_wdt(x)
 #define write_eeprom(addr, data)

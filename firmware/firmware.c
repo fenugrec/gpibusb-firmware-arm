@@ -32,9 +32,11 @@
 #include <errno.h>
 
 #include "firmware.h"
+#include "hw_conf.h"
+#include "hw_backend.h"
 #include "ring.h"
 #include "gpib.h"
-#include "hw_conf.h"
+
 
 /** DEFINES *******************************************************************/
 
@@ -55,7 +57,6 @@ bool mode = 1;
 int _write(int file, char *ptr, int len);
 static void clock_setup(void);
 static void usart_setup(void);
-static void gpio_setup(void);
 int main(void);
 
 /** FUNCTIONS *****************************************************************/
@@ -91,51 +92,6 @@ static void usart_setup(void)
 
 	usart_enable_rx_interrupt(USART2);
 	usart_enable(USART2);
-}
-
-static void gpio_setup(void)
-{
-	/* LEDs, active high */
-	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
-	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS | LED_ERROR);
-
-	/* Flow control pins */
-	gpio_clear(FLOW_PORT, TE | PE);
-	if (mode) {
-#ifdef USE_SN75162
-		gpio_set(FLOW_PORT, SC); // TX on REN and IFC
-#endif
-		gpio_clear(FLOW_PORT, DC); // TX on ATN and RX on SRQ
-	} else {
-#ifdef USE_SN75162
-		gpio_clear(FLOW_PORT, SC);
-#endif
-		gpio_set(FLOW_PORT, DC);
-	}
-
-	// Flow port pins will always be outputs
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE | PE | DC);
-#ifdef USE_SN75162
-	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SC);
-#endif
-
-
-	// Float all DIO lines
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, 0xFF);
-
-	// Set mode and pin state for all GPIB control lines
-	if (mode) {
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						EOI | DAV | SRQ);
-		gpio_set(CONTROL_PORT, ATN | IFC);
-		gpio_clear(CONTROL_PORT, NRFD | NDAC | REN);
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
-						ATN | NRFD | NDAC | IFC | REN);
-	} else {
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
-	}
-
 }
 
 int _write(int file, char *ptr, int len)
@@ -182,7 +138,8 @@ int main(void)
 {
 	int i;
 	clock_setup();
-	gpio_setup();
+	led_setup();
+	prep_gpib_pins(mode);
 	usart_setup();
 
 	// Turn on the error LED

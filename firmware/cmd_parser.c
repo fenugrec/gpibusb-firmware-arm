@@ -34,6 +34,7 @@
 #include <libopencm3/stm32/gpio.h>
 
 #include "hw_conf.h"
+#include "cmd_parser.h"
 #include "firmware.h"
 #include "gpib.h"
 #include "ring.h"
@@ -285,6 +286,7 @@ static bool srq_state(void) {
 void cmd_parser(void) {
     char writeError = 0;
     u8 *buf_pnt = &buf[0];
+    //TODO : this is just *asking* to be hashtable'd !
 // Original Command Set
     char addressBuf[4] = "+a:";
     char timeoutBuf[4] = "+t:";
@@ -316,7 +318,7 @@ void cmd_parser(void) {
     char srqBuf[6] = "++srq";
     char statusBuf[9] = "++status";
     char trgBuf[6] = "++trg";
-    char verBuf[6] = "++ver";
+//    char verBuf[6] = "++ver";	//matched with "+ver" string
     char helpBuf[7] = "++help"; //TODO
 
 // Handle the EEPROM stuff
@@ -702,7 +704,7 @@ void cmd_parser(void) {
                         {
                             mode = 1; // If non-bool sent, set to control mode
                         }
-                        prep_gpib_pins();
+                        prep_gpib_pins(mode);
                         if (mode)
                         {
                             gpib_controller_assign();
