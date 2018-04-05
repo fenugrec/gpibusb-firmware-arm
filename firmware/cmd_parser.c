@@ -41,11 +41,16 @@
 #include "hw_backend.h"
 #include "stypes.h"
 
+
+/*** temp, data sharing
+ * TODO : atomic
+ */
+volatile bool cmd_available = 0;
+volatile char *cmd_input;
+
 const unsigned int version = 5;
 #define buf_size 235
 u8 cmd_buf[10], buf[buf_size+20];
-unsigned int buf_out = 0;
-unsigned int buf_in = 0;
 int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
@@ -60,7 +65,7 @@ char eot_enable = 1;
 char eot_char = 13; // default CR
 char listen_only = 0;
 char save_cfg = 1;
-u8 status_byte = 0;	//XXX name ambiguity with status_byte in serial_poll()
+u8 status_byte = 0;
 u32 timeout = 1000;
 u32 seconds = 0;
 // Variables for device mode
@@ -73,11 +78,6 @@ bool device_srq = false;
 #define WITH_WDT
 //#define VERBOSE_DEBUG
 
-
-
-/** protos **/
-void cmd_poll(void);
-void cmd_parser_init(void);
 
 #if 0
 char cac(bool read_until_eoi)
@@ -374,7 +374,9 @@ void cmd_parser_init(void) {
 
 /** parse command chunk
  *
- * @param cmd 0-terminated string that includes command word and arguments
+ * @param cmd 0-terminated string that is either
+ * 	command word plus arguments ("+<cmd_word>[ <args>...]")
+ * or data to be sent on bus. ("<data>")
  */
 static void cmd_parser(char *cmd) {
 	char *buf_pnt = cmd;
@@ -923,10 +925,22 @@ static void device_poll(void) {
 	}
 }
 
-/** wait for command inputs, or GPIB traffic if in device mode */
+/** wait for command inputs, or GPIB traffic if in device mode
+ *
+ * Assumes the caller is tokenizing raw input and
+ * setting a flag asynchronously
+ *
+ * TODO : atomic
+ */
 void cmd_poll(void) {
-	if (!mode) {
-		device_poll();
+	while (1) {
+		if (!mode) {
+			device_poll();
+		}
+		if (cmd_available) {
+			//discard volatile is ok since cmd_input won't change while cmd_available
+			cmd_parser((char *) cmd_input);
+			cmd_available = 0;
+		}
 	}
-
 }
