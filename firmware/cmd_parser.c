@@ -113,196 +113,6 @@ static void set_eos(enum eos_codes newcode) {
 	}
 }
 
-#if 0
-char cac(bool read_until_eoi)
-{
-    char readCharacter,eoiStatus;
-    char readBuf[100];
-    char i = 0, j=0;
-    char errorFound = 0;
-    bool reading_done = false;
-    char *bufPnt;
-    bufPnt = &readBuf[0];
-#ifdef VERBOSE_DEBUG
-    printf("gpib_read start\n\r");
-#endif
-    if (mode)
-    {
-// Command all talkers and listeners to stop
-        cmd_buf[0] = CMD_UNT;
-        errorFound = errorFound || gpib_cmd(cmd_buf);
-        cmd_buf[0] = CMD_UNL;
-        errorFound = errorFound || gpib_cmd(cmd_buf);
-        if(errorFound)
-        {
-            return 1;
-        }
-// Set the controller into listener mode
-        cmd_buf[0] = myAddress + 0x20;
-        errorFound = errorFound || gpib_cmd(cmd_buf);
-        if(errorFound)
-        {
-            return 1;
-        }
-// Set target device into talker mode
-        cmd_buf[0] = partnerAddress + 0x40;
-        errorFound = gpib_cmd(cmd_buf);
-        if(errorFound)
-        {
-            return 1;
-        }
-    }
-    i = 0;
-    bufPnt = &readBuf[0];
-    /*
-    * In this section you will notice that I buffer the received characters,
-    * then manually iterate the pointer through the buffer, writing them to
-    * UART. If I instead just tried to printf the entire 'string' it would
-    * fail. (even if I add a null char at the end). This is because when
-    * transfering binary data, some actual data points can be 0x00.
-    *
-    * The other option of going putc(readBuf[x]);x++; Is for some reason slower
-    * than getting a pointer on the first element, then iterating that pointer
-    * through the buffer (as I have done here).
-    */
-#ifdef VERBOSE_DEBUG
-    printf("gpib_read loop start\n\r");
-#endif
-    if(read_until_eoi == 1)
-    {
-        do
-        {
-            eoiStatus = gpib_receive(&readCharacter); // eoiStatus is line lvl
-            if(eoiStatus==0xff)
-            {
-                return 1;
-            }
-            if (eos_code != 0)
-            {
-                if((readCharacter != eos_string[0]) || (eoiStatus))  // Check for EOM char
-                {
-                    readBuf[i] = readCharacter; //Copy the read char into the buffer
-                    i++;
-                }
-            }
-            else
-            {
-                if((readCharacter == eos_string[1]) && (eoiStatus == 0))
-                {
-                    if (readBuf[i-1] == eos_string[0])
-                    {
-                        i--;
-                    }
-                }
-                else
-                {
-                    readBuf[i] = readCharacter;
-                    i++;
-                }
-            }
-            if(i == 100)
-            {
-                for(j=0; j<100; ++j)
-                {
-                    putc(*bufPnt);
-                    ++bufPnt;
-                }
-                i = 0;
-                bufPnt = &readBuf[0];
-#ifdef WITH_WDT
-                restart_wdt();
-#endif
-            }
-        }
-        while (eoiStatus);
-        for(j=0; j<i-strip; ++j)
-        {
-            putc(*bufPnt);
-            ++bufPnt;
-        }
-    }
-    else
-    {
-        do
-        {
-            eoiStatus = gpib_receive(&readCharacter);
-            if(eoiStatus==0xff)
-            {
-                return 1;
-            }
-            if (eos_code != 0)
-            {
-                if(readCharacter != eos_string[0])  // Check for EOM char
-                {
-                    readBuf[i] = readCharacter; //Copy the read char into the buffer
-                    i++;
-                }
-                else
-                {
-                    reading_done = true;
-                }
-            }
-            else
-            {
-                if(readCharacter == eos_string[1])
-                {
-                    if (readBuf[i-1] == eos_string[0])
-                    {
-                        i--;
-                        reading_done = true;
-                    }
-                }
-                else
-                {
-                    readBuf[i] = readCharacter;
-                    i++;
-                }
-            }
-            if(i == 100)
-            {
-                for(j=0; j<100; ++j)
-                {
-                    putc(*bufPnt);
-                    ++bufPnt;
-                }
-                i = 0;
-                bufPnt = &readBuf[0];
-#ifdef WITH_WDT
-                restart_wdt();
-#endif
-            }
-        }
-        while (reading_done == false);
-        reading_done = false;
-        for(j=0; j<i-strip; ++j)
-        {
-            putc(*bufPnt);
-            ++bufPnt;
-        }
-    }
-    if (eot_enable == 1)
-    {
-        printf("%c", eot_char);
-    }
-#ifdef VERBOSE_DEBUG
-    printf("gpib_read loop end\n\r");
-#endif
-    if (mode)
-    {
-        errorFound = 0;
-// Command all talkers and listeners to stop
-        cmd_buf[0] = CMD_UNT;
-        errorFound = errorFound || gpib_cmd(cmd_buf);
-        cmd_buf[0] = CMD_UNL;
-        errorFound = errorFound || gpib_cmd(cmd_buf);
-    }
-#ifdef VERBOSE_DEBUG
-    printf("gpib_read end\n\r");
-#endif
-    return errorFound;
-}
-
-#endif
 static bool srq_state(void) {
     return !((bool)gpio_get(CONTROL_PORT, SRQ));
 }
@@ -809,6 +619,7 @@ static void cmd_parser(char *cmd) {
 
 /** device mode poll */
 static void device_poll(void) {
+	bool eoi_status;
 	// When in device mode we should be checking the status of the
 	// ATN line to see what we should be doing
 	if (!gpio_get(CONTROL_PORT, ATN))
@@ -816,7 +627,11 @@ static void device_poll(void) {
 		if (!gpio_get(CONTROL_PORT, ATN))
 		{
 			gpio_clear(CONTROL_PORT, NDAC);
-			gpib_receive(cmd_buf); // Get the CMD byte sent by the controller
+			// Get the CMD byte sent by the controller
+			if (gpib_read_byte(cmd_buf, &eoi_status)) {
+				//error (timeout ?)
+				return;
+			}
 			gpio_set(CONTROL_PORT, NRFD);
 			if (cmd_buf[0] == partnerAddress + 0x40)
 			{

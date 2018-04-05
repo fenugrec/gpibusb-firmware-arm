@@ -137,9 +137,9 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 * byte: Pointer to where the received byte will be stored
 * eoi_status: Pointer for storage of EOI line status
 *
-* Returns 0 if everything went fine, or 1 if there was an error
+* Returns 0 if everything went fine
 */
-static uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
+uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
     // Raise NRFD, informing the talker we are ready for the byte
     gpio_set(CONTROL_PORT, NRFD);
 
