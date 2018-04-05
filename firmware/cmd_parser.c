@@ -57,9 +57,9 @@ enum eos_codes {
 	EOS_CUSTOM = 4
 	};
 
-const unsigned int version = 5;
-#define buf_size 235
-u8 cmd_buf[10], buf[buf_size+20];
+#define VERSION 5
+#define BUFSIZE 235
+u8 cmd_buf[10], buf[BUFSIZE+20];
 int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
@@ -508,12 +508,12 @@ static void cmd_parser(char *cmd) {
 // +ver
 		else if(strncmp((char*)buf_pnt,(char*)versionBuf,4)==0)
 		{
-			printf("%i%c", version, eot_char);
+			printf("%i%c", VERSION, eot_char);
 		}
 // ++ver
 		else if(strncmp((char*)buf_pnt+1,(char*)versionBuf,4)==0)
 		{
-			printf("Version %i.0%c", version, eot_char);
+			printf("Version %i.0%c", VERSION, eot_char);
 		}
 // +get
 		else if((strncmp((char*)buf_pnt,(char*)getCmdBuf,4)==0) && (mode))
