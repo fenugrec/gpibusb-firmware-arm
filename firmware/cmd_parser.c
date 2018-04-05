@@ -48,6 +48,15 @@
 volatile bool cmd_available = 0;
 volatile char *cmd_input;
 
+
+enum eos_codes {
+	EOS_CRLF = 0,
+	EOS_LF = 1,
+	EOS_CR = 2,
+	EOS_NUL = 3,
+	EOS_CUSTOM = 4
+	};
+
 const unsigned int version = 5;
 #define buf_size 235
 u8 cmd_buf[10], buf[buf_size+20];
@@ -55,7 +64,7 @@ int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
 char eos_string[3] = "";
-char eos_code = 3;	//TODO : enum this
+char eos_code = EOS_NUL;
 char eoiUse = 1; // By default, we are using EOI to signal end of
 // msg from instrument
 char debug = 0; // enable or disable read&write error messages
@@ -78,6 +87,31 @@ bool device_srq = false;
 #define WITH_WDT
 //#define VERBOSE_DEBUG
 
+static void set_eos(enum eos_codes newcode) {
+	eos_code = newcode;
+	switch (newcode) {
+	case EOS_CRLF:
+		eos_string[0] = 13;
+		eos_string[1] = 10;
+		eos_string[2] = 0x00;
+		eos = 10;
+		break;
+	case EOS_LF:
+		eos_string[0] = 13;
+		eos_string[1] = 0x00;
+		eos = 13;
+		break;
+	case EOS_CR:
+		eos_string[0] = 10;
+		eos_string[1] = 0x00;
+		eos = 10;
+		break;
+	default:
+		eos_string[0] = 0x00;
+		eos = 0;
+		break;
+	}
+}
 
 #if 0
 char cac(bool read_until_eoi)
@@ -320,33 +354,7 @@ void cmd_parser_init(void) {
         eot_char = read_eeprom(0x03);
         eot_enable = read_eeprom(0x04);
         eos_code = read_eeprom(0x05);
-        switch (eos_code)
-        {
-        case 0:
-            eos_code = 0;
-            eos_string[0] = 13;
-            eos_string[1] = 10;
-            eos_string[2] = 0x00;
-            eos = 10;
-            break;
-        case 1:
-            eos_code = 1;
-            eos_string[0] = 13;
-            eos_string[1] = 0x00;
-            eos = 13;
-            break;
-        case 2:
-            eos_code = 2;
-            eos_string[0] = 10;
-            eos_string[1] = 0x00;
-            eos = 10;
-            break;
-        default:
-            eos_code = 3;
-            eos_string[0] = 0x00;
-            eos = 0;
-            break;
-        }
+        set_eos(eos_code);
         eoiUse = read_eeprom(0x06);
         autoread = read_eeprom(0x07);
         listen_only = read_eeprom(0x08);
@@ -359,7 +367,7 @@ void cmd_parser_init(void) {
         write_eeprom(0x02, 1); // partnerAddress
         write_eeprom(0x03, 13); // eot_char
         write_eeprom(0x04, 1); // eot_enable
-        write_eeprom(0x05, 3); // eos_code
+        write_eeprom(0x05, EOS_NUL); // eos_code
         write_eeprom(0x06, 1); // eoiUse
         write_eeprom(0x07, 1); // autoread
         write_eeprom(0x08, 0); // listen_only
@@ -460,7 +468,7 @@ static void cmd_parser(char *cmd) {
 			eos = atoi((char*)(buf_pnt+5)); // Parse out the end of string byte
 			eos_string[0] = eos;
 			eos_string[1] = 0x00;
-			eos_code = 4;
+			eos_code = EOS_CUSTOM;
 		}
 // ++eos {0|1|2|3}
 		else if(strncmp((char*)buf_pnt+1,(char*)eosBuf,4)==0)
@@ -472,33 +480,7 @@ static void cmd_parser(char *cmd) {
 			else if (*(buf_pnt+5) == 32)
 			{
 				eos_code = atoi((char*)(buf_pnt+6));
-				switch (eos_code)
-				{
-				case 0:
-					eos_code = 0;
-					eos_string[0] = 13;
-					eos_string[1] = 10;
-					eos_string[2] = 0x00;
-					eos = 10;
-					break;
-				case 1:
-					eos_code = 1;
-					eos_string[0] = 13;
-					eos_string[1] = 0x00;
-					eos = 13;
-					break;
-				case 2:
-					eos_code = 2;
-					eos_string[0] = 10;
-					eos_string[1] = 0x00;
-					eos = 10;
-					break;
-				default:
-					eos_code = 3;
-					eos_string[0] = 0x00;
-					eos = 0;
-					break;
-				}
+				set_eos(eos_code);
 			}
 		}
 // +eoi:{0|1}
@@ -795,7 +777,7 @@ static void cmd_parser(char *cmd) {
 #endif
 		if (mode || device_talk)
 		{
-			if(eos_code != 3)   // If have an EOS char, need to output
+			if(eos_code != EOS_NUL)   // If have an EOS char, need to output
 			{
 // termination byte to inst
 				writeError = writeError || gpib_write((u8 *)buf_pnt, 0, 0);
