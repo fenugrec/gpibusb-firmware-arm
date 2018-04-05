@@ -282,44 +282,44 @@ static bool srq_state(void) {
     return !((bool)gpio_get(CONTROL_PORT, SRQ));
 }
 
+    //TODO : this is just *asking* to be hashtable'd !
+// Original Command Set
+static const char addressBuf[4] = "+a:";
+static const char timeoutBuf[4] = "+t:";
+static const char eosBuf[6] = "+eos:";
+static const char eoiBuf[6] = "+eoi:";
+static const char testBuf[6] = "+test";
+static const char readCmdBuf[6] = "+read";
+static const char getCmdBuf[5] = "+get";
+static const char stripBuf[8] = "+strip:";
+static const char versionBuf[5] = "+ver";
+static const char autoReadBuf[11] = "+autoread:";
+static const char resetBuf[7] = "+reset";
+static const char debugBuf[8] = "+debug:";
+// Prologix Compatible Command Set
+static const char addrBuf[7] = "++addr";
+static const char autoBuf[7] = "++auto";
+static const char clrBuf[6] = "++clr";
+static const char eotEnableBuf[13] = "++eot_enable";
+static const char eotCharBuf[11] = "++eot_char";
+static const char ifcBuf[6] = "++ifc";
+static const char lloBuf[6] = "++llo";
+static const char locBuf[6] = "++loc";
+static const char lonBuf[6] = "++lon"; //TODO: Listen mode
+static const char modeBuf[7] = "++mode";
+static const char readTimeoutBuf[14] = "++read_tmo_ms";
+static const char rstBuf[6] = "++rst";
+static const char savecfgBuf[10] = "++savecfg";
+static const char spollBuf[8] = "++spoll";
+static const char srqBuf[6] = "++srq";
+static const char statusBuf[9] = "++status";
+static const char trgBuf[6] = "++trg";
+//    static const char verBuf[6] = "++ver";	//matched with "+ver" string
+static const char helpBuf[7] = "++help"; //TODO
 
 void cmd_parser(void) {
     char writeError = 0;
     u8 *buf_pnt = &buf[0];
-    //TODO : this is just *asking* to be hashtable'd !
-// Original Command Set
-    char addressBuf[4] = "+a:";
-    char timeoutBuf[4] = "+t:";
-    char eosBuf[6] = "+eos:";
-    char eoiBuf[6] = "+eoi:";
-    char testBuf[6] = "+test";
-    char readCmdBuf[6] = "+read";
-    char getCmdBuf[5] = "+get";
-    char stripBuf[8] = "+strip:";
-    char versionBuf[5] = "+ver";
-    char autoReadBuf[11] = "+autoread:";
-    char resetBuf[7] = "+reset";
-    char debugBuf[8] = "+debug:";
-// Prologix Compatible Command Set
-    char addrBuf[7] = "++addr";
-    char autoBuf[7] = "++auto";
-    char clrBuf[6] = "++clr";
-    char eotEnableBuf[13] = "++eot_enable";
-    char eotCharBuf[11] = "++eot_char";
-    char ifcBuf[6] = "++ifc";
-    char lloBuf[6] = "++llo";
-    char locBuf[6] = "++loc";
-    char lonBuf[6] = "++lon"; //TODO: Listen mode
-    char modeBuf[7] = "++mode";
-    char readTimeoutBuf[14] = "++read_tmo_ms";
-    char rstBuf[6] = "++rst";
-    char savecfgBuf[10] = "++savecfg";
-    char spollBuf[8] = "++spoll";
-    char srqBuf[6] = "++srq";
-    char statusBuf[9] = "++status";
-    char trgBuf[6] = "++trg";
-//    char verBuf[6] = "++ver";	//matched with "+ver" string
-    char helpBuf[7] = "++help"; //TODO
 
 // Handle the EEPROM stuff
     if (read_eeprom(0x00) == VALID_EEPROM_CODE)
