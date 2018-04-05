@@ -7,16 +7,12 @@
 #include <stdint.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/iwdg.h>
+#include <libopencm3/stm32/rcc.h>
 
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "stypes.h"
-
-void delay_us(u32 us) {
-	u32 t0 = TIM_CNT(TMR_FREERUN);
-	while ((TIM_CNT(TMR_FREERUN) - t0) < us);
-	return;
-}
 
 void led_setup(void) {
 	/* LEDs, active high */
@@ -65,4 +61,45 @@ void prep_gpib_pins(bool mode) {
 						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
 	}
 
+}
+
+/********* TIMERS
+ *
+ *
+ */
+
+#if (TMR_FREERUN != TIM2)
+#error timer RCC must be changed !
+#endif
+
+void init_timers(void) {
+	rcc_periph_clock_enable(RCC_TIM2);
+
+	timer_reset(TMR_FREERUN);
+	TIM_CR1(TMR_FREERUN) = 0;	//defaults : upcount, no reload, etc
+	TIM_PSC(TMR_FREERUN) = APB_FREQ_MHZ - 1;
+	timer_enable_counter(TMR_FREERUN);
+}
+
+void delay_us(u32 us) {
+	u32 t0 = TIM_CNT(TMR_FREERUN);
+	while ((TIM_CNT(TMR_FREERUN) - t0) < us);
+	return;
+}
+
+
+
+/********* WDT
+*
+* we'll use the IWDG module
+*/
+
+void wdt_setup(void) {
+	iwdg_reset();
+	iwdg_set_period_ms(5000);
+	iwdg_start();
+}
+
+void restart_wdt(void) {
+	iwdg_reset();
 }

@@ -37,6 +37,8 @@
 #include "ring.h"
 #include "gpib.h"
 
+#include "stypes.h"
+
 
 /** DEFINES *******************************************************************/
 
@@ -47,14 +49,14 @@
 struct ring output_ring;
 struct ring input_ring;
 
-uint8_t output_ring_buffer[UART_BUFFER_SIZE];
-uint8_t input_ring_buffer[UART_BUFFER_SIZE];
-
 bool mode = 1;
+
+/** These don't need external linkage */
+static uint8_t output_ring_buffer[UART_BUFFER_SIZE];
+static uint8_t input_ring_buffer[UART_BUFFER_SIZE];
 
 /** PROTOTYPES ****************************************************************/
 
-int _write(int file, char *ptr, int len);
 static void clock_setup(void);
 static void usart_setup(void);
 int main(void);
@@ -94,59 +96,43 @@ static void usart_setup(void)
 	usart_enable(USART2);
 }
 
-int _write(int file, char *ptr, int len)
-{
-	int ret;
-
-	if (file == 1) {
-		ret = ring_write(&output_ring, (uint8_t *)ptr, len);
-
-		if (ret < 0)
-			ret = -ret;
-
-		usart_enable_tx_interrupt(USART2);
-
-		return ret;
-	}
-
-	errno = EIO;
-	return -1;
-}
-
 void usart2_isr(void)
 {
+	u8 rxbyte;
+	u8 txbyte;
+
+	// TODO : check for framing / overrun errors too
+
 	// Check if we were called because of RXNE.
 	if (usart_get_flag(USART2, USART_ISR_RXNE)) {
-		ring_write_ch(&input_ring, usart_recv(USART2));
-		usart_enable_tx_interrupt(USART2);
+		rxbyte = usart_recv(USART2);
+		ring_write_ch(&input_ring, rxbyte);
 	}
 
 	// Check if we were called because of TXE.
 	if (usart_get_flag(USART2, USART_ISR_TXE)) {
-		int32_t data;
-		data = ring_read_ch(&output_ring, 0);
-		if (data == -1) {
+		if (ring_read_ch(&output_ring, &txbyte) == -1) {
+			//no more data in buffer. TODO : add provisions
+			//to re-enable the interrupt, or manually call the ISR,
+			//when a new byte is queued.
 			usart_disable_tx_interrupt(USART2);
-
 		} else {
-			usart_send_blocking(USART2, data);
+			//non-blocking : we'll end up back here anyway
+			usart_send(USART2, txbyte);
 		}
 	}
 }
 
 int main(void)
 {
-	int i;
 	clock_setup();
 	led_setup();
 	prep_gpib_pins(mode);
 	usart_setup();
 
-	// Turn on the error LED
-	gpio_set(LED_PORT, LED_ERROR);
+	wdt_setup();
+	init_timers();
 
-	// TODO: start WDT
-	// TODO: start 1ms timer
 	// TODO: Load settings from EEPROM
 
 	// Initialize the GPIB bus
@@ -154,13 +140,10 @@ int main(void)
 		gpib_controller_assign();
 	}
 
-	// TODO: enable timer interrupts
 	gpio_clear(LED_PORT, LED_ERROR);
 
 	while (1) {
-		for (i = 0; i < 1000000; i++) {
-			__asm__("NOP");
-		}
+		delay_ms(300);
 		gpio_toggle(LED_PORT, LED_STATUS);
 	}
 

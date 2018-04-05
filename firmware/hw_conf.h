@@ -49,6 +49,9 @@
 #define PE GPIO7
 #define DC GPIO8
 
+/********** TIMING */
+#define APB_FREQ_MHZ	(48)	//we're going to be running off USB
+#define APB_FREQ_HZ	(APB_FREQ_MHZ*1000*1000UL)
 
 /** free-running timing source
  * 32-bit microsecond counter

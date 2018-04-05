@@ -28,6 +28,7 @@
 #include "gpib.h"
 #include "ring.h"
 #include "hw_conf.h"
+#include "hw_backend.h"
 #include "stypes.h"
 
 /* Some forward decls that don't need to be in the public gpib.h
@@ -305,7 +306,7 @@ uint32_t gpib_controller_assign(void) {
     // Assert interface clear. Resets bus and makes it controller in charge
     gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, IFC);
     gpio_clear(CONTROL_PORT, IFC);
-    // TODO: delay 200ms
+    delay_ms(200);
     gpio_set(CONTROL_PORT, IFC);
 
     // Put all connected devices into "remote" mode
