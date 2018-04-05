@@ -1,0 +1,65 @@
+%readonly-tables
+%compare-strncmp
+%define lookup-function-name cmd_lookup
+%define hash-function-name cmd_hash
+%define initializer-suffix ,do_nothing
+
+%{
+#include <string.h>
+
+#include "cmd_hashtable.h"
+#include "cmd_handlers.h"
+
+// silly warning for missing prototype
+const struct cmd_entry *cmd_lookup (register const char *str, register size_t len);
+%}
+
+%struct-type
+struct cmd_entry { char *name; void (*handler)(const char *args); };
+
+ 
+%%
+# gperf control file to generate cmd_hashtable.c
+# the list below must correspond to the function decls in "cmd_handlers.h "
+####
+"+a:", do_address
+"+t:", do_timeout
+"+eos:", do_eos
+"+eoi:", do_eoi
+"+test", do_test
+"+read", do_readCmd
+"+get", do_getCmd
+"+strip:", do_strip
+"+ver", do_version
+"+autoread:", do_autoRead
+"+reset", do_reset
+"+debug:", do_debug
+"++addr", do_addr
+"++auto", do_auto
+"++clr", do_clr
+"++eot_enable", do_eotEnable
+"++eot_char", do_eotChar
+"++ifc", do_ifc
+"++llo", do_llo
+"++loc", do_loc
+"++lon", do_lon
+"++mode", do_mode
+"++read_tmo_ms", do_readTimeout
+"++rst", do_rst
+"++savecfg", do_savecfg
+"++spoll", do_spoll
+"++srq", do_srq
+"++status", do_status
+"++trg", do_trg
+"++ver", do_version
+"++help", do_help
+%%
+void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
+	const struct cmd_entry *cmd;
+
+	cmd = cmd_lookup(cmdstr, cmdlen);
+	if (cmd == NULL) {
+		return;
+	}
+	cmd->handler(args);
+}
