@@ -27,12 +27,12 @@
 */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <libopencm3/stm32/gpio.h>
 
+#include "libc_stubs.h"
 #include "hw_conf.h"
 #include "cmd_parser.h"
 #include "firmware.h"
