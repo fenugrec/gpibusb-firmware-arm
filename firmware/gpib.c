@@ -191,7 +191,7 @@ uint32_t gpib_read(bool use_eoi,
     uint32_t error_found = 0;
     uint32_t char_counter = 0;
 
-    if(1) { // FIXME: this should check what mode the adapter is in
+    if(mode) {
         // Command all talkers and listeners to stop
         cmd_buf[0] = CMD_UNT;
         error_found = error_found || gpib_cmd(cmd_buf);
@@ -242,6 +242,7 @@ uint32_t gpib_read(bool use_eoi,
             }
         } while (eoi_status);
     // TODO: Flesh the rest of this reading method out
+    // TODO : "strip" for last byte
     /*} else if(read_until == 2) { // Read until specified character
 
     } else { // Read until EOS char found
@@ -253,7 +254,7 @@ uint32_t gpib_read(bool use_eoi,
 
     // TODO: debug message printf("gpib_read loop end\n\r");
 
-    if (1) { // FIXME: this should check what mode the adapter is in
+    if (mode) {
         // Command all talkers and listeners to stop
         error_found = 0;
         cmd_buf[0] = CMD_UNT;
