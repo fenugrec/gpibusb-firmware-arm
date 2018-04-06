@@ -45,21 +45,21 @@
 
 #define VERSION 5
 
-u8 cmd_buf[10];
+u8 cmd_buf[1];
 int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
 char eos_string[3] = "";
 char eos_code = EOS_NUL;
-char eoiUse = 1; // By default, we are using EOI to signal end of
+bool eoiUse = 1; // By default, we are using EOI to signal end of
 // msg from instrument
-char debug = 0; // enable or disable read&write error messages
-u8 strip = 0;
-char autoread = 1;
-char eot_enable = 1;
+bool debug = 0; // enable or disable read&write error messages
+bool strip = 0;
+bool autoread = 1;
+bool eot_enable = 1;
 char eot_char = 13; // default CR
-char listen_only = 0;
-char save_cfg = 1;
+bool listen_only = 0;
+bool save_cfg = 1;
 u8 status_byte = 0;
 u32 timeout = 1000;
 u32 seconds = 0;
@@ -274,7 +274,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 // +eoi:{0|1}
 	else if(strncmp((char*)buf_pnt,(char*)eoiBuf,5)==0)
 	{
-		eoiUse = atoi((char*)(buf_pnt+5)); // Parse out the end of string byte
+		eoiUse = (bool) atoi((char*)(buf_pnt+5)); // Parse out the end of string byte
 	}
 // ++eoi {0|1}
 	else if(strncmp((char*)buf_pnt+1,(char*)eoiBuf,4)==0)
@@ -285,13 +285,13 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+5) == 32)
 		{
-			eoiUse = atoi((char*)(buf_pnt+6));
+			eoiUse = (bool) atoi((char*)(buf_pnt+6));
 		}
 	}
 // +strip:{0|1}
 	else if(strncmp((char*)buf_pnt,(char*)stripBuf,7)==0)
 	{
-		strip = atoi((char*)(buf_pnt+7)); // Parse out the end of string byte
+		strip = (bool) atoi((char*)(buf_pnt+7)); // Parse out the end of string byte
 	}
 // +ver
 	else if(strncmp((char*)buf_pnt,(char*)versionBuf,4)==0)
@@ -332,7 +332,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 // +autoread:{0|1}
 	else if(strncmp((char*)buf_pnt,(char*)autoReadBuf,10)==0)
 	{
-		autoread = atoi((char*)(buf_pnt+10));
+		autoread = (bool) atoi((char*)(buf_pnt+10));
 	}
 // ++auto {0|1}
 	else if(strncmp((char*)buf_pnt,(char*)autoBuf,6)==0)
@@ -343,11 +343,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+6) == 32)
 		{
-			autoread = atoi((char*)(buf_pnt+7));
-			if ((autoread != 0) && (autoread != 1))
-			{
-				autoread = 1; // If non-bool sent, set to enable
-			}
+			autoread = (bool) atoi((char*)(buf_pnt+7));
 		}
 	}
 // +reset
@@ -365,7 +361,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 // +debug:{0|1}
 	else if(strncmp((char*)buf_pnt,(char*)debugBuf,7)==0)
 	{
-		debug = atoi((char*)(buf_pnt+7));
+		debug = (bool) atoi((char*)(buf_pnt+7));
 	}
 // ++debug {0|1}
 	else if(strncmp((char*)buf_pnt+1,(char*)debugBuf,6)==0)
@@ -376,11 +372,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+7) == 32)
 		{
-			debug = atoi((char*)(buf_pnt+8));
-			if ((debug != 0) && (debug != 1))
-			{
-				debug = 0; // If non-bool sent, set to disabled
-			}
+			debug = (bool) atoi((char*)(buf_pnt+8));
 		}
 	}
 // ++clr
@@ -401,11 +393,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+12) == 32)
 		{
-			eot_enable = atoi((char*)(buf_pnt+13));
-			if ((eot_enable != 0) && (eot_enable != 1))
-			{
-				eot_enable = 1; // If non-bool sent, set to enable
-			}
+			eot_enable = (bool) atoi((char*)(buf_pnt+13));
 		}
 	}
 // ++eot_char N
@@ -450,11 +438,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+5) == 32)
 		{
-			listen_only = atoi((char*)(buf_pnt+6));
-			if ((listen_only != 0) && (listen_only != 1))
-			{
-				listen_only = 0; // If non-bool sent, set to disable
-			}
+			listen_only = (bool) atoi((char*)(buf_pnt+6));
 		}
 	}
 // ++mode {0|1}
@@ -466,11 +450,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+6) == 32)
 		{
-			mode = atoi((char*)(buf_pnt+7));
-			if ((mode != 0) && (mode != 1))
-			{
-				mode = 1; // If non-bool sent, set to control mode
-			}
+			mode = (bool) atoi((char*)(buf_pnt+7));
 			prep_gpib_pins(mode);
 			if (mode)
 			{
@@ -487,12 +467,8 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		}
 		else if (*(buf_pnt+9) == 32)
 		{
-			save_cfg = atoi((char*)(buf_pnt+10));
-			if ((save_cfg != 0) && (save_cfg != 1))
-			{
-				save_cfg = 1; // If non-bool sent, set to enable
-			}
-			if (save_cfg == 1)
+			save_cfg = (bool) atoi((char*)(buf_pnt+10));
+			if (save_cfg)
 			{
 				write_eeprom(0x01, mode);
 				write_eeprom(0x02, partnerAddress);
