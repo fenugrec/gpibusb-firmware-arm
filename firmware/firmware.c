@@ -32,6 +32,7 @@
 #include "firmware.h"
 #include "hw_conf.h"
 #include "hw_backend.h"
+#include "cmd_parser.h"
 #include "host_comms.h"
 
 #include "gpib.h"
@@ -77,12 +78,10 @@ int main(void)
 
 	gpio_clear(LED_PORT, LED_ERROR);
 
+	cmd_parser_init();
 	host_comms_init();
 
-	while (1) {
-		delay_ms(300);
-		gpio_toggle(LED_PORT, LED_STATUS);
-	}
+	cmd_poll();
 
 	return 0;
 }

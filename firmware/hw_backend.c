@@ -1,6 +1,8 @@
 /*
  * hardware back-end and helper functions
  *
+ * Arguably the USART code would belong here, but it's a bit
+ * too tightly integrated in host_comms.c
  *
  */
 
@@ -9,6 +11,8 @@
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/systick.h>
 
 #include "hw_conf.h"
 #include "hw_backend.h"
@@ -72,13 +76,35 @@ void prep_gpib_pins(bool mode) {
 #error timer RCC must be changed !
 #endif
 
+/* Called when systick fires */
+void sys_tick_handler(void)
+{
+	static unsigned ms = 0;
+	ms++;
+	if (ms > 300) {
+		gpio_toggle(LED_PORT, LED_STATUS);
+		ms = 0;
+	}
+}
+
+
 void init_timers(void) {
 	rcc_periph_clock_enable(RCC_TIM2);
 
+	/* free-running microsecond counter */
 	timer_reset(TMR_FREERUN);
 	TIM_CR1(TMR_FREERUN) = 0;	//defaults : upcount, no reload, etc
 	TIM_PSC(TMR_FREERUN) = APB_FREQ_MHZ - 1;
 	timer_enable_counter(TMR_FREERUN);
+
+	/* utility 1ms periodic systick interrupt. clk source=AHB/8 */
+	systick_set_clocksource(STK_CSR_CLKSOURCE_EXT);
+	/* clear counter so it starts right away */
+	STK_CVR = 0;
+
+	systick_set_reload(rcc_ahb_frequency / 8 / 1000);
+	systick_counter_enable();
+	systick_interrupt_enable();
 }
 
 void delay_us(u32 us) {
