@@ -141,6 +141,15 @@ void host_tx(uint8_t txb) {
 	return;
 }
 
+void host_tx_m(uint8_t *data, unsigned len) {
+	if (ring_write(&output_ring, data, len) == len) {
+		//TODO : overflow
+		return;
+	}
+	usart_enable_tx_interrupt(USART2);	//should trigger TXE instantly ?
+	return;
+}
+
 
 void usart2_isr(void) {
 	u8 rxbyte;

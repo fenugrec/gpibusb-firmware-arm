@@ -14,6 +14,21 @@
 
 #define atoi(x) htoi(x)
 
+/** Decimal/Hex to integer routine
+ *
+ * formats:
+ * [-]0x[0-9,A-F,a-f] : hex
+ * [-]$[0-9,A-F,a-f] : hex
+ * [-][0-9] : dec
+ * Returns 0 if unable to decode.
+ */
 int htoi(const char *buf);
+
+
+/** _write implementation to override newlib dummy stub.
+ *
+ * printf needs this. Currently no error checking
+ */
+int _write(int file, char *ptr, int len);
 
 #endif // _LIBC_STUBS_H

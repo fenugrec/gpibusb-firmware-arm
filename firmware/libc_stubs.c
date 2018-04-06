@@ -2,21 +2,14 @@
 
 
 #include <ctype.h>	//toupper
+#include <errno.h>	//for _write()
 
+#include "host_comms.h"
 #include "libc_stubs.h"
 
 /* htoi : copied from freediag but without octal
  * atoi pulls in strtol() which is very generic
  * and also very big
- */
-
-/*
- * Decimal/Octal/Hex to integer routine
- * formats:
- * [-]0x[0-9,A-F,a-f] : hex
- * [-]$[0-9,A-F,a-f] : hex
- * [-][0-9] : dec
- * Returns 0 if unable to decode.
  */
 int htoi(const char *buf) {
 	/* Hex text to int */
@@ -64,3 +57,13 @@ int htoi(const char *buf) {
 	return sign? rv:-rv ;
 }
 
+
+int _write(int file, char *ptr, int len) {
+	if (file == 1) {
+		host_tx_m((uint8_t *)ptr, len);
+		return len;
+	}
+
+	errno = EIO;
+	return -1;
+}

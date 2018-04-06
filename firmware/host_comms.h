@@ -46,4 +46,10 @@ extern struct ring input_ring;
  */
 void host_tx(uint8_t txb);
 
+/** TX to host: queue multiple bytes
+ *
+ * if overflow : TODO
+ */
+void host_tx_m(uint8_t *data, unsigned len);
+
 #endif // _HOST_COMMS_H
