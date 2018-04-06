@@ -24,9 +24,6 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-extern struct ring output_ring;
-extern struct ring input_ring;
-
 extern bool mode;		//1 if controller mode
 
 #endif // _FIRMWARE_H

@@ -23,11 +23,10 @@
 
 #include <string.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/usart.h>
 #include "firmware.h"
 #include "gpib.h"
-#include "ring.h"
 #include "hw_conf.h"
+#include "host_comms.h"
 #include "hw_backend.h"
 #include "stypes.h"
 
@@ -223,30 +222,23 @@ uint32_t gpib_read(bool use_eoi,
             // First check for a read error
             if(gpib_read_byte(&byte, &eoi_status)){
                 if(eot_enable) {
-                    ring_write_ch(&output_ring, eot_char);
+                    host_tx(eot_char);
                 }
-                usart_enable_tx_interrupt(USART2);
                 return 1;
             }
             // Check to see if the byte we just read is the specified EOS byte
             if(eos_code != 0) { // is not CR+LF terminated
                 if((byte != eos_string[0]) || (eoi_status)) {
-                    ring_write_ch(&output_ring, byte);
+					host_tx(byte);
                     char_counter++;
                 }
             } /* else { // Dual CR+LF terminated
                 // TODO: we need to remove last added byte on ring for this
             }*/
-            // Check if ring is full, if so turn on TX interrupt
-            if (ring_full(&output_ring)) {
-                usart_enable_tx_interrupt(USART2);
-            }
 
             // If this is the last character, turn on TX interrupt
-            if(!eoi_status){
-                if(eot_enable)
-                    ring_write_ch(&output_ring, eot_char);
-                usart_enable_tx_interrupt(USART2);
+            if(!eoi_status && eot_enable) {
+				host_tx(eot_char);
             }
         } while (eoi_status);
     // TODO: Flesh the rest of this reading method out
@@ -255,9 +247,9 @@ uint32_t gpib_read(bool use_eoi,
     } else { // Read until EOS char found
     */
     }
-    if(eot_enable)
-        ring_write_ch(&output_ring, eot_char);
-    usart_enable_tx_interrupt(USART2);
+    if(eot_enable) {
+		host_tx(eot_char);
+    }
 
     // TODO: debug message printf("gpib_read loop end\n\r");
 

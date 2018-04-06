@@ -37,20 +37,15 @@
 #include "cmd_parser.h"
 #include "firmware.h"
 #include "gpib.h"
+#include "host_comms.h"
 #include "ring.h"
 #include "hw_backend.h"
 #include "stypes.h"
 
 
-/*** temp, data sharing
- * TODO : atomic
- */
-volatile bool cmd_available = 0;
-volatile char *cmd_input;
-
 #define VERSION 5
-#define BUFSIZE 235
-u8 cmd_buf[10], buf[BUFSIZE+20];
+
+u8 cmd_buf[10];
 int partnerAddress = 1;
 int myAddress;
 char eos = 10; // Default end of string character.
@@ -185,7 +180,7 @@ void cmd_parser_init(void) {
  *
  * @param cmd 0-terminated command (starts with '+' or "++")
  */
-static void chunk_cmd(char *cmd) {
+static void chunk_cmd(char *cmd, unsigned len) {
 	char *buf_pnt = cmd;
     char writeError = 0;
 // +a:N
@@ -554,10 +549,10 @@ static void chunk_cmd(char *cmd) {
 }
 
 /** parse data
- * @param cmd 0-terminated chunk of data to send on GPIB bus
+ * @param rawdata chunk of (unescaped) data to send on GPIB bus
  */
-static void chunk_data(char *cmd) {
-	char *buf_pnt = cmd;
+static void chunk_data(char *rawdata, unsigned len) {
+	char *buf_pnt = rawdata;
     char writeError = 0;
 
 	// Not an internal command, send to bus
@@ -579,7 +574,7 @@ static void chunk_data(char *cmd) {
 		if(eos_code != EOS_NUL)   // If have an EOS char, need to output
 		{
 	// termination byte to inst
-			writeError = writeError || gpib_write((u8 *)buf_pnt, 0, 0);
+			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
 			if (!writeError)
 				writeError = gpib_write((u8 *) eos_string, 0, eoiUse);
 #ifdef VERBOSE_DEBUG
@@ -588,7 +583,7 @@ static void chunk_data(char *cmd) {
 		}
 		else
 		{
-			writeError = writeError || gpib_write((u8 *)buf_pnt, 0, 1);
+			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 1);
 		}
 	}
 	// If cmd contains a question mark -> is a query
@@ -712,12 +707,17 @@ static void device_poll(void) {
 
 /** wait for command inputs, or GPIB traffic if in device mode
  *
- * Assumes the caller is splitting raw input into lines
- * (e.g. "+<cmd_word>[ <args>...]" and setting a flag asynchronously
- *
- * TODO : atomic
+ * Assumes an interrupt-based process is feeding the input FIFO.
+ * This func does not return
  */
 void cmd_poll(void) {
+	u8 rxb;
+	u8 input_buf[HOST_IN_BUFSIZE];
+	unsigned in_len = 0;
+	bool in_cmd = 0;
+	bool escape_next = 0;
+	bool wait_guardbyte = 0;
+
 	while (1) {
 #ifdef WITH_WDT
 		restart_wdt();
@@ -725,14 +725,55 @@ void cmd_poll(void) {
 		if (!mode) {
 			device_poll();
 		}
-		if (cmd_available) {
-			//discarding volatile is ok since cmd_input won't change while cmd_available
-			if ((char) cmd_input[0] == '+') {
-				chunk_cmd((char *) cmd_input);
-			} else {
-				chunk_data((char *) cmd_input);
-			}
-			cmd_available = 0;
+
+		//build chunk from FIFO
+		if (ring_read_ch(&input_ring, &rxb) == -1) {
+			//no data
+			continue;
 		}
-	}
+		if ((in_len == 0) && (rxb == '+')) {
+			in_cmd = 1;
+		}
+
+		if (wait_guardbyte) {
+			//just finished a chunk; make sure it was valid
+			wait_guardbyte = 0;
+			if (rxb == CHUNK_INVALID) {
+				//discard
+				in_len = 0;
+				continue;
+			}
+			if (in_cmd) {
+				chunk_cmd((char *) input_buf, in_len);
+			} else {
+				chunk_data((char *) input_buf, in_len);
+			}
+			in_len = 0;
+			continue;
+		}
+
+		if (in_cmd) {
+			// For now, assume escaping is illegal within a command
+			if ((rxb == '\r') || (rxb == '\n')) {
+				//0-terminate.
+				wait_guardbyte = 1;
+				input_buf[in_len] = 0;
+				continue;
+			}
+			input_buf[in_len++] = rxb;
+			continue;
+		}
+		// if we made it here, we're dealing with data.
+		if (!escape_next && (rxb == 27)) {
+			escape_next = 1;
+			continue;
+		}
+		escape_next = 0;
+		if ((rxb == '\r') || (rxb == '\n')) {
+			//terminate.
+			wait_guardbyte = 1;
+			continue;
+		}
+		input_buf[in_len++] = rxb;
+	}	//while 1
 }
