@@ -39,7 +39,7 @@ static struct ring output_ring;
  */
 #define UART_BUFFER_SIZE (HOST_IN_BUFSIZE * 3)
 
-static uint8_t output_ring_buffer[UART_BUFFER_SIZE];
+static uint8_t output_ring_buffer[HOST_IN_BUFSIZE];
 static uint8_t input_ring_buffer[UART_BUFFER_SIZE];
 
 static unsigned in_len;	//length of chunk being received from host
@@ -82,8 +82,8 @@ static void usart_setup(void) {
 }
 
 void host_comms_init(void) {
-	ring_init(&output_ring, output_ring_buffer, UART_BUFFER_SIZE);
-	ring_init(&input_ring, input_ring_buffer, UART_BUFFER_SIZE);
+	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));
+	ring_init(&input_ring, input_ring_buffer, sizeof(input_ring_buffer));
 	hrx_state = HRX_RX;
 	in_len = 0;
 	usart_setup();
