@@ -24,5 +24,8 @@ include ../libopencm3.target.mk
 
 all: $(BINARY).bin
 
+cmd_hashtable.c: cmd_hashtable.gen
+	gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
+
 #	st-flash write $(BINARY).bin 0x8000000
 

@@ -3,6 +3,7 @@
  * you can find at:
  * https://github.com/open-bldc/open-bldc/tree/master/source/libgovernor
  *****************************************************************************/
+/** TODO : make this interrupt-safe */
 
 #include "ring.h"
 
