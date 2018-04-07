@@ -190,7 +190,6 @@ uint32_t gpib_read(bool use_eoi,
     bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
     uint8_t cmd_buf[3];
     uint32_t error_found = 0;
-    uint32_t char_counter = 0;
 
     if(mode) {
         // Command all talkers and listeners to stop

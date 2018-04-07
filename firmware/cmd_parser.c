@@ -237,7 +237,7 @@ static void chunk_cmd(char *cmd, unsigned len) {
 		{
 			gpib_read(false, eos_code, eos_string, eot_enable, eot_char); // read until EOS condition
 		}
-		else if (*(buf_pnt+7) == 101)
+		else if (*(buf_pnt+7) == 'e')
 		{
 			gpib_read(true, eos_code, eos_string, eot_enable, eot_char); // read until EOI flagged
 		}
