@@ -187,6 +187,7 @@ uint32_t gpib_read(bool use_eoi,
 					uint8_t eot_char) {
     uint8_t byte;
     bool eoi_status = 1;
+    bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
     uint8_t cmd_buf[3];
     uint32_t error_found = 0;
     uint32_t char_counter = 0;
@@ -219,35 +220,57 @@ uint32_t gpib_read(bool use_eoi,
 
     if(use_eoi) { // Read until EOI
         do {
-            // First check for a read error
             if(gpib_read_byte(&byte, &eoi_status)){
+				// Read error
+                if(eot_enable) {
+                    host_tx(eot_char);
+                }
+                return 1;
+            }
+            if (eoi_status) {
+				//all done
+				host_tx(byte);
+				break;
+            }
+        } while (eoi_status);
+    // TODO : "strip" for last byte
+	} else { // Read until EOS char found
+		do {
+            if(gpib_read_byte(&byte, &eoi_status)){
+				// Read error
                 if(eot_enable) {
                     host_tx(eot_char);
                 }
                 return 1;
             }
             // Check to see if the byte we just read is the specified EOS byte
-            if(eos_code != EOS_CRLF) { // is not CR+LF terminated
-                if((byte != eos_string[0]) || (eoi_status)) {
+            if (eos_code == EOS_CRLF) {
+            	if (eos_checknext) {
+					if (byte == '\n') {
+						//correct CR+LF termination : all done.
+						break;
+					}
+					//not CRLF, so we'll send the previous CR too
+					eos_checknext = 0;
+					host_tx('\r');
 					host_tx(byte);
-                    char_counter++;
+					continue;
+				}
+				if((byte == '\r')) {
+					//got a CR; we won't push to host now
+					eos_checknext = 1;
+					continue;
+				}
+            } else { // not CR+LF terminated
+                if((byte == eos_string[0])) {
+					//all done
+					break;
                 }
-            } /* else { // Dual CR+LF terminated
-                // TODO: we need to remove last added byte on ring for this
-            }*/
-
-            // If this is the last character, turn on TX interrupt
-            if(!eoi_status && eot_enable) {
-				host_tx(eot_char);
+				host_tx(byte);
             }
-        } while (eoi_status);
-    // TODO: Flesh the rest of this reading method out
-    // TODO : "strip" for last byte
-    /*} else if(read_until == 2) { // Read until specified character
+        } while (1);
+    }	//if !use_eoi
 
-    } else { // Read until EOS char found
-    */
-    }
     if(eot_enable) {
 		host_tx(eot_char);
     }
