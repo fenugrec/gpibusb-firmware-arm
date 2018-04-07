@@ -2,7 +2,7 @@
 * GPIBUSB Adapter
 * gpib.c
 **
-* Â© 2014 Steven Casagrande (scasagrande@galvant.ca).
+* © 2014 Steven Casagrande (scasagrande@galvant.ca).
 *
 * This file is a part of the GPIBUSB Adapter project.
 * Licensed under the AGPL version 3.
@@ -97,7 +97,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
         while(gpio_get(CONTROL_PORT, NDAC)){}
 
         // Put the byte on the data lines
-        gpio_port_write(DIO_PORT, ~byte);
+        WRITE_DIO(byte);
 
         // Assert EOI if on last byte and using EOI
         if((i==length-1) && (use_eoi)) {gpio_clear(CONTROL_PORT, EOI);}
@@ -154,7 +154,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
     gpio_clear(CONTROL_PORT, NRFD);
 
     // Read the data on the port, flip the bits, and read in the EOI line
-    *byte = ~(uint8_t)gpio_port_read(DIO_PORT);
+    *byte = READ_DIO();
     *eoi_status = gpio_get(CONTROL_PORT, EOI);
 
     // TODO: debug message printf("Got byte: %c %x ", a, a);
@@ -227,7 +227,7 @@ uint32_t gpib_read(bool use_eoi,
                 return 1;
             }
             // Check to see if the byte we just read is the specified EOS byte
-            if(eos_code != 0) { // is not CR+LF terminated
+            if(eos_code != EOS_CRLF) { // is not CR+LF terminated
                 if((byte != eos_string[0]) || (eoi_status)) {
 					host_tx(byte);
                     char_counter++;
