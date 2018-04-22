@@ -45,9 +45,10 @@ static uint8_t input_ring_buffer[UART_BUFFER_SIZE];
 static unsigned in_len;	//length of chunk being received from host
 
 /** Host RX state machine */
-enum e_hrx_state {HRX_RX, HRX_RESYNC};
+enum e_hrx_state {HRX_RX, HRX_ESCAPE, HRX_RESYNC};
 static enum e_hrx_state hrx_state = HRX_RX;
 	//HRX_RX while building a chunk
+	//HRX_ESCAPE will not end the chunk if the next byte is \r or \n
 	//HRX_RESYNC after a buffer overflow
 
 
@@ -90,23 +91,11 @@ void host_comms_init(void) {
 	return;
 }
 
-/** filter and save data
+/** filter and save data.
  *
- * Caller checked for overflow and escapes
+ * Checks for overflow, skips over escaped characters, and
+ * appends a CHUNK_VALID / _INVALID guard byte after each chunk
  */
-static void _rx_filter(u8 rxb) {
-	if ((rxb == '\r') || (rxb == '\n')) {
-		//terminate chunk normally
-		ring_write_ch(&input_ring, '\n');
-		ring_write_ch(&input_ring, CHUNK_VALID);
-		return;
-	}
-	ring_write_ch(&input_ring, rxb);
-	in_len += 1;
-
-	return;
-}
-
 static void host_comms_rx(uint8_t rxb) {
 
 	if (in_len == HOST_IN_BUFSIZE) {
@@ -119,7 +108,22 @@ static void host_comms_rx(uint8_t rxb) {
 
 	switch (hrx_state) {
 	case HRX_RX:
-		_rx_filter(rxb);
+		if (rxb == 27) {
+			hrx_state = HRX_ESCAPE;
+		} else 	if ((rxb == '\r') || (rxb == '\n')) {
+			//terminate chunk normally
+			ring_write_ch(&input_ring, '\n');
+			ring_write_ch(&input_ring, CHUNK_VALID);
+			break;
+		}
+		ring_write_ch(&input_ring, rxb);
+		in_len += 1;
+		break;
+	case HRX_ESCAPE:
+		//previous byte was Escape: do not check for \r or \n termination
+		hrx_state = HRX_RX;
+		ring_write_ch(&input_ring, rxb);
+		in_len += 1;
 		break;
 	case HRX_RESYNC:
 		if ((rxb == '\r') || (rxb == '\n')) {
