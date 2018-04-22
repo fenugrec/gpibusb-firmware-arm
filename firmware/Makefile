@@ -27,5 +27,7 @@ all: $(BINARY).bin
 cmd_hashtable.c: cmd_hashtable.gen
 	gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
 
+qemu: $(BINARY).elf
+	qemu-system-arm -machine none -cpu cortex-m3 -nographic -monitor null -serial null -s -S -device loader,file=$(BINARY).elf
 #	st-flash write $(BINARY).bin 0x8000000
 
