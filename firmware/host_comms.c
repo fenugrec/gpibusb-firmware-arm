@@ -94,7 +94,10 @@ void host_comms_init(void) {
 /** filter and save data.
  *
  * Checks for overflow, skips over escaped characters, and
- * appends a CHUNK_VALID / _INVALID guard byte after each chunk
+ * appends a CHUNK_VALID / _INVALID guard byte after each chunk.
+ *
+ * Does not distinguish between data or commands.
+ * Converts unescaped \r (CR) to \n
  */
 static void host_comms_rx(uint8_t rxb) {
 

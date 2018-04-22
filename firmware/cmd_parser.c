@@ -708,6 +708,7 @@ void cmd_poll(void) {
 			continue;
 		}
 		if ((in_len == 0) && (rxb == '+')) {
+			//start of new command chunk
 			in_cmd = 1;
 		}
 
@@ -728,28 +729,32 @@ void cmd_poll(void) {
 			continue;
 		}
 
+		if (!escape_next && (rxb == 27)) {
+			//regardless of chunk type (command or data),
+			//strip escape char
+			escape_next = 1;
+			continue;
+		}
+
 		if (in_cmd) {
-			// For now, assume escaping is illegal within a command
-			if ((rxb == '\r') || (rxb == '\n')) {
+			if (!escape_next && (rxb == '\n')) {
 				//0-terminate.
 				wait_guardbyte = 1;
 				input_buf[in_len] = 0;
 				continue;
 			}
 			input_buf[in_len++] = rxb;
+			escape_next = 0;
 			continue;
 		}
+
 		// if we made it here, we're dealing with data.
-		if (!escape_next && (rxb == 27)) {
-			escape_next = 1;
-			continue;
-		}
-		escape_next = 0;
-		if ((rxb == '\r') || (rxb == '\n')) {
+		if (!escape_next && (rxb == '\n')) {
 			//terminate.
 			wait_guardbyte = 1;
 			continue;
 		}
 		input_buf[in_len++] = rxb;
+		escape_next = 0;
 	}	//while 1
 }
