@@ -41,12 +41,12 @@ const struct cmd_entry *cmd_lookup (register const char *str, register size_t le
 #line 18 "cmd_hashtable.gen"
 struct cmd_entry { char *name; void (*handler)(const char *args); };
 
-#define TOTAL_KEYWORDS 31
+#define TOTAL_KEYWORDS 32
 #define MIN_WORD_LENGTH 3
 #define MAX_WORD_LENGTH 13
 #define MIN_HASH_VALUE 3
-#define MAX_HASH_VALUE 34
-/* maximum key range = 32, duplicates = 0 */
+#define MAX_HASH_VALUE 35
+/* maximum key range = 33, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -60,32 +60,32 @@ cmd_hash (register const char *str, register size_t len)
 {
   static const unsigned char asso_values[] =
     {
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35,  1, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 15, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35,  0, 21, 25,
-       1,  3,  1, 20, 35,  6, 35, 35, 15, 35,
-       0,  0, 22,  9,  1, 10,  2,  5, 18, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35, 35, 35, 35, 35,
-      35, 35, 35, 35, 35, 35
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36,  1, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 18, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36,  0, 19, 26,
+       9,  0,  1, 18, 36,  8, 36, 36, 16, 36,
+       0,  0,  0,  7,  4, 11,  2,  0, 19, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
+      36, 36, 36, 36, 36, 36
     };
   register unsigned int hval = len;
 
@@ -118,29 +118,31 @@ cmd_lookup (register const char *str, register size_t len)
       {"+t:", do_timeout},
 #line 45 "cmd_hashtable.gen"
       {"++lon", do_lon},
-#line 30 "cmd_hashtable.gen"
-      {"+read", do_readCmd},
-#line 46 "cmd_hashtable.gen"
-      {"++mode", do_mode},
-#line 37 "cmd_hashtable.gen"
-      {"++addr", do_addr},
-#line 54 "cmd_hashtable.gen"
+#line 47 "cmd_hashtable.gen"
+      {"++read", do_readCmd},
+#line 51 "cmd_hashtable.gen"
+      {"++spoll", do_spoll},
+#line 38 "cmd_hashtable.gen"
+      {"++auto", do_auto},
+#line 55 "cmd_hashtable.gen"
       {"++ver", do_version},
-#line 52 "cmd_hashtable.gen"
+#line 53 "cmd_hashtable.gen"
       {"++status", do_status},
 #line 34 "cmd_hashtable.gen"
       {"+autoread:", do_autoRead},
 #line 41 "cmd_hashtable.gen"
       {"++eot_char", do_eotChar},
-#line 38 "cmd_hashtable.gen"
-      {"++auto", do_auto},
+#line 48 "cmd_hashtable.gen"
+      {"++read_tmo_ms", do_readTimeout},
 #line 40 "cmd_hashtable.gen"
       {"++eot_enable", do_eotEnable},
-#line 51 "cmd_hashtable.gen"
+#line 46 "cmd_hashtable.gen"
+      {"++mode", do_mode},
+#line 52 "cmd_hashtable.gen"
       {"++srq", do_srq},
-#line 47 "cmd_hashtable.gen"
-      {"++read_tmo_ms", do_readTimeout},
-#line 48 "cmd_hashtable.gen"
+#line 30 "cmd_hashtable.gen"
+      {"+read", do_readCmd},
+#line 49 "cmd_hashtable.gen"
       {"++rst", do_rst},
 #line 29 "cmd_hashtable.gen"
       {"+test", do_test},
@@ -148,24 +150,24 @@ cmd_lookup (register const char *str, register size_t len)
       {"+reset", do_reset},
 #line 43 "cmd_hashtable.gen"
       {"++llo", do_llo},
+#line 56 "cmd_hashtable.gen"
+      {"++help", do_help},
+#line 31 "cmd_hashtable.gen"
+      {"+get", do_getCmd},
+#line 37 "cmd_hashtable.gen"
+      {"++addr", do_addr},
 #line 39 "cmd_hashtable.gen"
       {"++clr", do_clr},
 #line 33 "cmd_hashtable.gen"
       {"+ver", do_version},
+#line 54 "cmd_hashtable.gen"
+      {"++trg", do_trg},
+#line 50 "cmd_hashtable.gen"
+      {"++savecfg", do_savecfg},
 #line 32 "cmd_hashtable.gen"
       {"+strip:", do_strip},
-#line 55 "cmd_hashtable.gen"
-      {"++help", do_help},
-#line 31 "cmd_hashtable.gen"
-      {"+get", do_getCmd},
-#line 53 "cmd_hashtable.gen"
-      {"++trg", do_trg},
-#line 49 "cmd_hashtable.gen"
-      {"++savecfg", do_savecfg},
 #line 28 "cmd_hashtable.gen"
       {"+eoi:", do_eoi},
-#line 50 "cmd_hashtable.gen"
-      {"++spoll", do_spoll},
 #line 44 "cmd_hashtable.gen"
       {"++loc", do_loc},
 #line 42 "cmd_hashtable.gen"
@@ -190,7 +192,7 @@ cmd_lookup (register const char *str, register size_t len)
     }
   return 0;
 }
-#line 56 "cmd_hashtable.gen"
+#line 57 "cmd_hashtable.gen"
 
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 	const struct cmd_entry *cmd;

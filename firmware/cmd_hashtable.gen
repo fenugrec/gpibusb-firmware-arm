@@ -17,7 +17,7 @@ const struct cmd_entry *cmd_lookup (register const char *str, register size_t le
 %struct-type
 struct cmd_entry { char *name; void (*handler)(const char *args); };
 
- 
+
 %%
 # gperf control file to generate cmd_hashtable.c
 # the list below must correspond to the function decls in "cmd_handlers.h "
@@ -44,6 +44,7 @@ struct cmd_entry { char *name; void (*handler)(const char *args); };
 "++loc", do_loc
 "++lon", do_lon
 "++mode", do_mode
+"++read", do_readCmd
 "++read_tmo_ms", do_readTimeout
 "++rst", do_rst
 "++savecfg", do_savecfg

@@ -40,6 +40,9 @@
 #include "host_comms.h"
 #include "ring.h"
 #include "hw_backend.h"
+#include "cmd_hashtable.h"
+#include "cmd_handlers.h"
+
 #include "stypes.h"
 
 
@@ -105,12 +108,12 @@ static bool srq_state(void) {
 
     //TODO : this is just *asking* to be hashtable'd !
 // Original Command Set
-static const char addressBuf[4] = "+a:";
-static const char timeoutBuf[4] = "+t:";
+//static const char addressBuf[4] = "+a:";
+//static const char timeoutBuf[4] = "+t:";
 static const char eosBuf[6] = "+eos:";
 static const char eoiBuf[6] = "+eoi:";
 static const char testBuf[6] = "+test";
-static const char readCmdBuf[6] = "+read";
+//static const char readCmdBuf[6] = "+read";
 static const char getCmdBuf[5] = "+get";
 static const char stripBuf[8] = "+strip:";
 static const char versionBuf[5] = "+ver";
@@ -118,7 +121,7 @@ static const char autoReadBuf[11] = "+autoread:";
 static const char resetBuf[7] = "+reset";
 static const char debugBuf[8] = "+debug:";
 // Prologix Compatible Command Set
-static const char addrBuf[7] = "++addr";
+//static const char addrBuf[7] = "++addr";
 static const char autoBuf[7] = "++auto";
 static const char clrBuf[6] = "++clr";
 static const char eotEnableBuf[13] = "++eot_enable";
@@ -128,7 +131,7 @@ static const char lloBuf[6] = "++llo";
 static const char locBuf[6] = "++loc";
 static const char lonBuf[6] = "++lon"; //TODO: Listen mode
 static const char modeBuf[7] = "++mode";
-static const char readTimeoutBuf[14] = "++read_tmo_ms";
+//static const char readTimeoutBuf[14] = "++read_tmo_ms";
 static const char rstBuf[6] = "++rst";
 static const char savecfgBuf[10] = "++savecfg";
 static const char spollBuf[8] = "++spoll";
@@ -176,62 +179,53 @@ void cmd_parser_init(void) {
 
 }
 
-/** Parse command
- *
- * @param cmd 0-terminated command (starts with '+' or "++")
- */
-static void chunk_cmd(char *cmd, unsigned len) {
-	char *buf_pnt = cmd;
-    char writeError = 0;
-// +a:N
-	if(strncmp((char*)buf_pnt,(char*)addressBuf,3)==0)
-	{
-		partnerAddress = atoi((char*)(buf_pnt+3)); // Parse out the GPIB address
+/**** command handlers ****/
+void do_address(const char *args) {partnerAddress = atoi(args);}	// +a:N	Parse out the GPIB address
+void do_addr(const char *args) {
+	// ++addr N
+	if (*args == '\n') {
+		printf("%i%c", partnerAddress, eot_char);
+	} else {
+		partnerAddress = atoi(args);
 	}
-// ++addr N
-	else if(strncmp((char*)buf_pnt,(char*)addrBuf,6)==0)
-	{
-		if (*(buf_pnt+6) == 0x00)
-		{
-			printf("%i%c", partnerAddress, eot_char);
-		}
-		else if (*(buf_pnt+6) == 32)
-		{
-			partnerAddress = atoi((char*)(buf_pnt+7));
-		}
+}
+void do_timeout(const char *args) {timeout = (u32) atoi(args);} // +t:N	Parse out the timeout period
+void do_readTimeout(const char *args) {
+	// ++read_tmo_ms N
+	if (*args == '\n') {
+		printf("%lu%c", (unsigned long) timeout, eot_char);
+	} else {
+		timeout = (u32) atoi(args);
 	}
-// +t:N
-	else if(strncmp((char*)buf_pnt,(char*)timeoutBuf,3)==0)
-	{
-		timeout = (u32) atoi((char*)(buf_pnt+3)); // Parse out the timeout period
-	}
-// ++read_tmo_ms N
-	else if(strncmp((char*)buf_pnt,(char*)readTimeoutBuf,13)==0)
-	{
-		if (*(buf_pnt+13) == 0x00)
-		{
-			printf("%lu%c", (unsigned long) timeout, eot_char);
+}
+void do_readCmd(const char *args) {
+	// +read
+	if (!mode) return;	//XXX why are we checking this here ?
+	if (gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char)) {
+		if (debug == 1) {
+			printf("Read error occured.%c", eot_char);
 		}
-		else if (*(buf_pnt+13) == 32)
-		{
-			timeout = (u32) atoi((char*)(buf_pnt+14));
-		}
-	}
-// +read
-	else if((strncmp((char*)buf_pnt,(char*)readCmdBuf,5)==0) && (mode))
-	{
-		if(gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char))
-		{
-			if (debug == 1)
-			{
-				printf("Read error occured.%c", eot_char);
-			}
 //delay_ms(1);
 //reset_cpu();
-		}
 	}
+}
+
+/** Parse command
+ *
+ * @param cmd 0-split command plus args (starts with '+' or "++"), e.g. {"+a:","31"}
+ * @param cmd_len : len (excluding 0) of command token, e.g. strlen("+a:")
+ *
+ */
+static void chunk_cmd(char *cmd, unsigned cmd_len) {
+	char *buf_pnt = cmd;
+    char writeError = 0;
+
+    cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 2]);
+	if (0) {
+	}
+
 // ++read
-	else if((strncmp((char*)buf_pnt+1,(char*)readCmdBuf,5)==0) && (mode))
+	else if((strncmp((char*)buf_pnt+1,"++read",5)==0) && (mode))
 	{
 		if (*(buf_pnt+6) == 0x00)
 		{
@@ -690,6 +684,7 @@ void cmd_poll(void) {
 	u8 rxb;
 	u8 input_buf[HOST_IN_BUFSIZE];
 	unsigned in_len = 0;
+	unsigned cmd_len = 0;	//length of command token, excluding 0 termination. Args start at cmd_len+2
 	bool in_cmd = 0;
 	bool escape_next = 0;
 	bool wait_guardbyte = 0;
@@ -710,6 +705,7 @@ void cmd_poll(void) {
 		if ((in_len == 0) && (rxb == '+')) {
 			//start of new command chunk
 			in_cmd = 1;
+			cmd_len = 0;
 		}
 
 		if (wait_guardbyte) {
@@ -721,7 +717,7 @@ void cmd_poll(void) {
 				continue;
 			}
 			if (in_cmd) {
-				chunk_cmd((char *) input_buf, in_len);
+				chunk_cmd((char *) input_buf, cmd_len);
 			} else {
 				chunk_data((char *) input_buf, in_len);
 			}
@@ -743,7 +739,19 @@ void cmd_poll(void) {
 				input_buf[in_len] = 0;
 				continue;
 			}
-			input_buf[in_len++] = rxb;
+			//also, tokenize now instead of calling strtok later.
+			if (rxb == ':') {
+				//commands of form "+<cmd>:<args>" : split args after ':'
+				input_buf[in_len++] = rxb;
+				cmd_len = in_len;
+				input_buf[in_len++] = 0;
+			} else if (rxb == ' ') {
+				cmd_len = in_len;
+				//commands of form "++<cmd> <args>": split args on ' '
+				input_buf[in_len++] = 0;
+			} else {
+				input_buf[in_len++] = rxb;
+			}
 			escape_next = 0;
 			continue;
 		}

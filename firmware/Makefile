@@ -15,7 +15,8 @@
 ##
 
 BINARY = firmware
-OBJS = ring.o gpib.o cmd_parser.o hw_backend.o host_comms.o libc_stubs.o
+OBJS = ring.o gpib.o cmd_parser.o hw_backend.o host_comms.o libc_stubs.o \
+	cmd_handlers.o cmd_hashtable.o
 
 OPENCM3_DIR=../libopencm3
 LDSCRIPT = ../stm32f0-discovery.ld
