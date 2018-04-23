@@ -37,6 +37,8 @@ struct cmd_entry { char *name; void (*handler)(const char *args); };
 "++addr", do_addr
 "++auto", do_auto
 "++clr", do_clr
+"++eoi:", do_eoi2
+"++eos", do_eos2
 "++eot_enable", do_eotEnable
 "++eot_char", do_eotChar
 "++ifc", do_ifc
@@ -44,15 +46,15 @@ struct cmd_entry { char *name; void (*handler)(const char *args); };
 "++loc", do_loc
 "++lon", do_lon
 "++mode", do_mode
-"++read", do_readCmd
+"++read", do_readCmd2
 "++read_tmo_ms", do_readTimeout
-"++rst", do_rst
+"++rst", do_reset
 "++savecfg", do_savecfg
 "++spoll", do_spoll
 "++srq", do_srq
 "++status", do_status
 "++trg", do_trg
-"++ver", do_version
+"++ver", do_version2
 "++help", do_help
 %%
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
