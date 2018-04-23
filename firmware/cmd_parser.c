@@ -106,40 +106,6 @@ static bool srq_state(void) {
     return !((bool)gpio_get(CONTROL_PORT, SRQ));
 }
 
-    //TODO : this is just *asking* to be hashtable'd !
-// Original Command Set
-//static const char addressBuf[4] = "+a:";
-//static const char timeoutBuf[4] = "+t:";
-//static const char eosBuf[6] = "+eos:";
-//static const char eoiBuf[6] = "+eoi:";
-//static const char testBuf[6] = "+test";
-//static const char readCmdBuf[6] = "+read";
-//static const char getCmdBuf[5] = "+get";
-//static const char stripBuf[8] = "+strip:";
-//static const char versionBuf[5] = "+ver";
-//static const char autoReadBuf[11] = "+autoread:";
-//static const char resetBuf[7] = "+reset";
-//static const char debugBuf[8] = "+debug:";
-// Prologix Compatible Command Set
-//static const char addrBuf[7] = "++addr";
-//static const char autoBuf[7] = "++auto";
-//static const char clrBuf[6] = "++clr";
-//static const char eotEnableBuf[13] = "++eot_enable";
-//static const char eotCharBuf[11] = "++eot_char";
-//static const char ifcBuf[6] = "++ifc";
-//static const char lloBuf[6] = "++llo";
-//static const char locBuf[6] = "++loc";
-//static const char lonBuf[6] = "++lon"; //TODO: Listen mode
-//static const char modeBuf[7] = "++mode";
-//static const char readTimeoutBuf[14] = "++read_tmo_ms";
-//static const char rstBuf[6] = "++rst";
-//static const char savecfgBuf[10] = "++savecfg";
-//static const char spollBuf[8] = "++spoll";
-//static const char srqBuf[6] = "++srq";
-//static const char statusBuf[9] = "++status";
-//static const char trgBuf[6] = "++trg";
-//static const char verBuf[6] = "++ver";	//matched with "+ver" string
-//static const char helpBuf[7] = "++help"; //TODO
 
 /** initialize command parser
  *
@@ -179,8 +145,15 @@ void cmd_parser_init(void) {
 
 }
 
-/**** command handlers ****/
-void do_address(const char *args) {partnerAddress = atoi(args);}	// +a:N	Parse out the GPIB address
+/*** command handlers
+ ***
+ *** To add / remove commands, cmd_handlers.h and cmd_hashtable.gen
+ *** must be updated
+ */
+void do_address(const char *args) {
+	// +a:N
+	partnerAddress = atoi(args);
+}
 void do_addr(const char *args) {
 	// ++addr N
 	if (*args == '\n') {
@@ -189,7 +162,10 @@ void do_addr(const char *args) {
 		partnerAddress = atoi(args);
 	}
 }
-void do_timeout(const char *args) {timeout = (u32) atoi(args);} // +t:N	Parse out the timeout period
+void do_timeout(const char *args) {
+	// +t:N
+	timeout = (u32) atoi(args);
+}
 void do_readTimeout(const char *args) {
 	// ++read_tmo_ms N
 	if (*args == '\n') {
@@ -246,12 +222,8 @@ void do_eos2(const char *args) {
 	}
 }
 void do_eoi(const char *args) {
-	// +eoi:{0|1}
-	eoiUse = (bool) atoi(args); // Parse out the end of string byte
-}
-void do_eoi2(const char *args) {
-	//XXX TODO : merge with +eoi
 	// ++eoi {0|1}
+	// +eoi:{0|1}
 	if (*args == '\n') {
 		printf("%i%c", eoiUse, eot_char);
 	} else {
@@ -260,10 +232,10 @@ void do_eoi2(const char *args) {
 }
 void do_strip(const char *args) {
 	// +strip:{0|1}
-	strip = (bool) atoi(args); // Parse out the end of string byte
+	strip = (bool) atoi(args);
 }
 void do_version(const char *args) {
-	// +ver
+	// +ver	XXX TODO : merge with ++ver ?
 	(void) args;
 	printf("%i%c", VERSION, eot_char);
 }
@@ -305,10 +277,7 @@ void do_trg(const char *args) {
 }
 void do_autoRead(const char *args) {
 	// +autoread:{0|1}
-	autoread = (bool) atoi(args);
-}
-void do_auto(const char *args) {
-	// ++auto {0|1} XXX TODO merge with +autoread?
+	// ++auto {0|1}
 	if (*args == '\n') {
 		printf("%i%c", autoread, eot_char);
 	} else {
@@ -389,6 +358,7 @@ void do_loc(const char *args) {
 }
 void do_lon(const char *args) {
 	// ++lon {0|1}
+	//TODO : listen mode
 	if (mode) return;
 	if (*args == '\n') {
 		printf("%i%c", listen_only, eot_char);
