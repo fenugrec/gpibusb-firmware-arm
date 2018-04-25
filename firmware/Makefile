@@ -28,7 +28,8 @@ all: $(BINARY).bin
 cmd_hashtable.c: cmd_hashtable.gen
 	gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
 
+#qemu target doesn't work unless we compile for  lm3s811evb, or create a new qemu machine.
 qemu: $(BINARY).elf
-	qemu-system-arm -machine none -cpu cortex-m3 -nographic -monitor null -serial null -s -S -device loader,file=$(BINARY).elf
+	qemu-system-arm -machine lm3s811evb -cpu cortex-m3 -nographic -monitor null -serial null -s -S -kernel $(BINARY).elf
 #	st-flash write $(BINARY).bin 0x8000000
 
