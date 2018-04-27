@@ -144,6 +144,9 @@ void restart_wdt(void) {
 
 /* **** global hw setup */
 void hw_setup(void) {
+	/* need this to be able to halt the wdt while debugging */
+	rcc_periph_clock_enable(RCC_DBGMCU);
+
 	wdt_setup();
 	init_timers();
 
