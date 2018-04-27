@@ -73,18 +73,18 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 
     gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
-    if(atn) { gpio_clear(CONTROL_PORT, ATN); }
+    if(atn) { gpio_clear(ATN_CP, ATN); }
     if(!length) { length = strlen((char*)bytes); }
 
-	gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
+	gpio_mode_setup(NRFD_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
     gpio_set(FLOW_PORT, TE); // Enable talking
-    gpio_set(CONTROL_PORT, EOI);
-    gpio_set(CONTROL_PORT, DAV);
+    gpio_set(EOI_CP, EOI);
+    gpio_set(DAV_CP, DAV);
 
     // Before we start transfering, we have to make sure that NRFD is high
     // and NDAC is low
     // TODO: timeouts here
-    while(gpio_get(CONTROL_PORT, NDAC) || !gpio_get(CONTROL_PORT, NRFD)){}
+    while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)){}
 
     // Loop through each byte and write it to the GPIB bus
     for(i=0;i<length;i++) {
@@ -94,38 +94,38 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 
         // Wait for NDAC to go low, indicating previous bit is now done with
         // TODO: timeouts here
-        while(gpio_get(CONTROL_PORT, NDAC)){}
+        while(gpio_get(NDAC_CP, NDAC)){}
 
         // Put the byte on the data lines
         WRITE_DIO(byte);
 
         // Assert EOI if on last byte and using EOI
-        if((i==length-1) && (use_eoi)) {gpio_clear(CONTROL_PORT, EOI);}
+        if((i==length-1) && (use_eoi)) {gpio_clear(EOI_CP, EOI);}
 
         // Wait for NRFD to go high, indicating listeners are ready for data
         // TODO: timeouts here
-        while(!gpio_get(CONTROL_PORT, NRFD)){}
+        while(!gpio_get(NRFD_CP, NRFD)){}
 
         // Assert DAV, informing listeners that the data is ready to be read
-        gpio_clear(CONTROL_PORT, DAV);
+        gpio_clear(DAV_CP, DAV);
 
         // Wait for NDAC to go high, all listeners have accepted the byte
         // TODO: timeouts here
-        while(!gpio_get(CONTROL_PORT, NDAC)){}
+        while(!gpio_get(NDAC_CP, NDAC)){}
 
         // Release DAV, indicating byte is no longer valid
-        gpio_set(CONTROL_PORT, DAV);
+        gpio_set(DAV_CP, DAV);
     } // Finished outputting all bytes to the listeners
 
     gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF);
     gpio_clear(FLOW_PORT, TE); // Disable talking
 
     // If the byte was a GPIB command byte, release ATN line
-    if(atn) { gpio_set(CONTROL_PORT, ATN); }
+    if(atn) { gpio_set(ATN_CP, ATN); }
 
-	gpio_set(CONTROL_PORT, NDAC | NRFD);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV | EOI);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
+	gpio_set(NDAC_CP, NDAC | NRFD);
+    gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV | EOI);
+    gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
     gpio_clear(FLOW_PORT, PE);
 
     return 0;
@@ -141,33 +141,33 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 */
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
     // Raise NRFD, informing the talker we are ready for the byte
-    gpio_set(CONTROL_PORT, NRFD);
+    gpio_set(NRFD_CP, NRFD);
 
     // Assert NDAC, informing the talker we have not yet accepted the byte
-    gpio_clear(CONTROL_PORT, NDAC);
+    gpio_clear(NDAC_CP, NDAC);
 
     // Wait for DAV to go low, informing us the byte is read to be read
     // TODO: timeouts here
-    while(gpio_get(CONTROL_PORT, DAV)){}
+    while(gpio_get(DAV_CP, DAV)){}
 
     // Assert NRFD, informing the talker to not change the data lines
-    gpio_clear(CONTROL_PORT, NRFD);
+    gpio_clear(NRFD_CP, NRFD);
 
     // Read the data on the port, flip the bits, and read in the EOI line
     *byte = READ_DIO();
-    *eoi_status = gpio_get(CONTROL_PORT, EOI);
+    *eoi_status = gpio_get(EOI_CP, EOI);
 
     // TODO: debug message printf("Got byte: %c %x ", a, a);
 
     // Un-assert NDAC, informing talker that we have accepted the byte
-    gpio_set(CONTROL_PORT, NDAC);
+    gpio_set(NDAC_CP, NDAC);
 
     // Wait for DAV to go high; the talkers knows that we have read the byte
     // TODO: timeouts here
-    while(!gpio_get(CONTROL_PORT, DAV)){}
+    while(!gpio_get(DAV_CP, DAV)){}
 
     // Get ready for the next byte by asserting NDAC
-    gpio_clear(CONTROL_PORT, NDAC);
+    gpio_clear(NDAC_CP, NDAC);
 
     // TODO: Add in our variable delay here
 
@@ -214,8 +214,8 @@ uint32_t gpib_read(bool use_eoi,
     // TODO: debug message printf("gpib_read loop start\n\r");
 	// TODO: Make sure modes are set correctly
     gpio_clear(FLOW_PORT, TE);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
+    gpio_mode_setup(DAV_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
+    gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
 
     if(use_eoi) { // Read until EOI
         do {
@@ -319,14 +319,14 @@ uint32_t gpib_controller_assign(void) {
 
     uint8_t cmd_buf[3];
     // Assert interface clear. Resets bus and makes it controller in charge
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, IFC);
-    gpio_clear(CONTROL_PORT, IFC);
+    gpio_mode_setup(IFC_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, IFC);
+    gpio_clear(IFC_CP, IFC);
     delay_ms(200);
-    gpio_set(CONTROL_PORT, IFC);
+    gpio_set(IFC_CP, IFC);
 
     // Put all connected devices into "remote" mode
-    gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, REN);
-    gpio_clear(CONTROL_PORT, REN);
+    gpio_mode_setup(REN_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, REN);
+    gpio_clear(REN_CP, REN);
 
     // Send GPIB DCL command, which clears all devices on the bus
     cmd_buf[0] = CMD_DCL;

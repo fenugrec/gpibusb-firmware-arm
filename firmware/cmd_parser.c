@@ -103,7 +103,7 @@ static void set_eos(enum eos_codes newcode) {
 }
 
 static bool srq_state(void) {
-    return !((bool)gpio_get(CONTROL_PORT, SRQ));
+    return !((bool)gpio_get(SRQ_CP, SRQ));
 }
 
 
@@ -331,9 +331,9 @@ void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
 	if (!mode) return;
-	gpio_clear(CONTROL_PORT, IFC);
+	gpio_clear(IFC_CP, IFC);
 	delay_ms(200);
-	gpio_set(CONTROL_PORT, IFC);
+	gpio_set(IFC_CP, IFC);
 }
 void do_llo(const char *args) {
 	// ++llo
@@ -503,17 +503,17 @@ static void device_poll(void) {
 	bool eoi_status;
 	// When in device mode we should be checking the status of the
 	// ATN line to see what we should be doing
-	if (!gpio_get(CONTROL_PORT, ATN))
+	if (!gpio_get(ATN_CP, ATN))
 	{
-		if (!gpio_get(CONTROL_PORT, ATN))
+		if (!gpio_get(ATN_CP, ATN))
 		{
-			gpio_clear(CONTROL_PORT, NDAC);
+			gpio_clear(NDAC_CP, NDAC);
 			// Get the CMD byte sent by the controller
 			if (gpib_read_byte(cmd_buf, &eoi_status)) {
 				//error (timeout ?)
 				return;
 			}
-			gpio_set(CONTROL_PORT, NRFD);
+			gpio_set(NRFD_CP, NRFD);
 			if (cmd_buf[0] == partnerAddress + 0x40)
 			{
 				device_talk = true;
@@ -576,17 +576,17 @@ static void device_poll(void) {
 			{
 				printf("%c%c", CMD_GET, eot_char);
 			}
-			gpio_set(CONTROL_PORT, NDAC);
+			gpio_set(NDAC_CP, NDAC);
 		}
 	}
 	else
 	{
 		delay_us(10);
-		if(gpio_get(CONTROL_PORT, ATN))
+		if(gpio_get(ATN_CP, ATN))
 		{
 			if ((device_listen))
 			{
-				gpio_clear(CONTROL_PORT, NDAC);
+				gpio_clear(NDAC_CP, NDAC);
 #ifdef VERBOSE_DEBUG
 				printf("Starting device mode gpib_read%c", eot_char);
 #endif

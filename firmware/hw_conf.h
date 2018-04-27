@@ -14,7 +14,27 @@
  * FLOW_PORT can be regular 3.3V IO since it's output-only.
  *
  * These settings are for a STM32F072 Discovery board,
- * USART comms
+ * USART comms.
+ *
+ *
+ * Mapping:
+ *
+ * GPIOA
+ * 1 : FLOW_PORT.SC (3V3)
+ * 2,3 : UART (3V3)
+ * 4,5,6 : FLOW_PORT.{DC,TE,PE} (3V3)
+ * 8,9,10 : CONTROL_PORT_1 (5V)
+ * 11,12 : will conflict with USB
+ * 13,14 : SWD/SWCLK for debugging
+ * 15 : CONTROL_PORT_1 (5V)
+ *
+ * GPIOB
+ * 0-7 : 5V, but unusable because we write DIO to GPIO_ODR directly, clobbering bits 0-7
+ * 8-15 : DIO to GPIB (5V)
+ *
+ * GPIOC
+ * 6,7 : LEDs
+ * 8,10,11,12 : CONTROL_PORT_2 (5V)
  */
 
 #define USE_SN75162
@@ -33,17 +53,28 @@
 #define READ_DIO(x) (~gpio_port_read(DIO_PORT) >> 8)
 
 /* GPIB control lines
- * Note, PA11-12 will conflict with USB */
-#define CONTROL_PORT GPIOA
+ * super messy, in order to work on the f072 disco board..
+ *
+ */
+#define DAV_CP GPIOA
+#define NRFD_CP GPIOA
+#define NDAC_CP GPIOA	//NRFD and NDAC must be on the same port
+#define EOI_CP GPIOA	//EOI and DAV must be on the same port
 
-#define REN GPIO8
-#define EOI GPIO9
-#define DAV GPIO10
-#define NRFD GPIO11
-#define NDAC GPIO12
-#define ATN GPIO13
-#define SRQ GPIO14
-#define IFC GPIO15
+#define DAV GPIO8
+#define NRFD GPIO9
+#define NDAC GPIO10
+#define EOI GPIO15
+
+#define REN_CP GPIOC
+#define IFC_CP GPIOC
+#define ATN_CP GPIOC
+#define SRQ_CP GPIOC
+
+#define REN GPIO8	//will also drive an LED, incidentally...
+#define IFC GPIO10
+#define ATN GPIO11
+#define SRQ GPIO12
 
 
 /* Direction and output mode controls
@@ -52,11 +83,11 @@
 #define FLOW_PORT GPIOA
 
 #ifdef USE_SN75162
-	#define SC GPIO9
+	#define SC GPIO1
 #endif
-#define TE GPIO10
-#define PE GPIO11
-#define DC GPIO12
+#define TE GPIO4
+#define PE GPIO5
+#define DC GPIO6
 
 /********** TIMING */
 #define APB_FREQ_MHZ	(48)	//we're going to be running off USB

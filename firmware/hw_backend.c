@@ -56,15 +56,20 @@ void prep_gpib_pins(bool mode) {
 
 	// Set mode and pin state for all GPIB control lines
 	if (mode) {
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						EOI | DAV | SRQ);
-		gpio_set(CONTROL_PORT, ATN | IFC);
-		gpio_clear(CONTROL_PORT, NRFD | NDAC | REN);
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
-						ATN | NRFD | NDAC | IFC | REN);
+		gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI | DAV);
+		gpio_mode_setup(SRQ_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
+		gpio_set(ATN_CP, ATN | IFC);
+		gpio_clear(NRFD_CP, NRFD | NDAC);
+		gpio_clear(REN_CP, REN);
+		gpio_mode_setup(REN_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+						ATN | IFC | REN);
+		gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+						NRFD | NDAC);
 	} else {
-		gpio_mode_setup(CONTROL_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						ATN | EOI | DAV | NRFD | NDAC | IFC | SRQ | REN);
+		gpio_mode_setup(REN_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
+						ATN | IFC | SRQ | REN);
+		gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
+						EOI | DAV | NRFD | NDAC);
 	}
 
 }
