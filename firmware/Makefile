@@ -24,6 +24,7 @@ LDSCRIPT = ../stm32f0-discovery.ld
 include ../libopencm3.target.mk
 
 all: $(BINARY).bin
+	@$(SIZE) $(BINARY).elf
 
 cmd_hashtable.c: cmd_hashtable.gen
 	gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
