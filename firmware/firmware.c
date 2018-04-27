@@ -56,11 +56,6 @@ int main(void)
 
 	// TODO: Load settings from EEPROM
 
-	// Initialize the GPIB bus
-	if (mode) {
-		gpib_controller_assign();
-	}
-
 	gpio_clear(LED_PORT, LED_ERROR);
 
 	cmd_parser_init();
