@@ -33,3 +33,5 @@ qemu: $(BINARY).elf
 	qemu-system-arm -machine lm3s811evb -cpu cortex-m3 -nographic -monitor null -serial null -s -S -kernel $(BINARY).elf
 #	st-flash write $(BINARY).bin 0x8000000
 
+debug:
+	@$(GDB) $(BINARY).elf -x gdb_oocd.cmds
