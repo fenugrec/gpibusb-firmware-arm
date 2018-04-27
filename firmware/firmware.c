@@ -23,11 +23,7 @@
 
 /** INCLUDES ******************************************************************/
 
-#include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
-
-#include <stdio.h>
-#include <errno.h>
 
 #include "firmware.h"
 #include "hw_conf.h"
@@ -48,26 +44,15 @@ bool mode = 1;
 
 /** PROTOTYPES ****************************************************************/
 
-static void clock_setup(void);
 int main(void);
 
 /** FUNCTIONS *****************************************************************/
 
-static void clock_setup(void)
-{
-	rcc_periph_clock_enable(RCC_GPIOA);
-	rcc_periph_clock_enable(RCC_GPIOB);
-	rcc_periph_clock_enable(RCC_GPIOC);
-}
-
 int main(void)
 {
-	clock_setup();
-	led_setup();
-	prep_gpib_pins(mode);
+	hw_setup();
 
-	wdt_setup();
-	init_timers();
+	prep_gpib_pins(mode);
 
 	// TODO: Load settings from EEPROM
 

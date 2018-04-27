@@ -18,7 +18,9 @@
 #include "hw_backend.h"
 #include "stypes.h"
 
-void led_setup(void) {
+/****** IO, GPIO */
+
+static void led_setup(void) {
 	/* LEDs, active high */
 	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
 	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS | LED_ERROR);
@@ -88,7 +90,7 @@ void sys_tick_handler(void)
 }
 
 
-void init_timers(void) {
+static void init_timers(void) {
 	rcc_periph_clock_enable(RCC_TIM2);
 
 	/* free-running microsecond counter */
@@ -120,7 +122,11 @@ void delay_us(u32 us) {
 * we'll use the IWDG module
 */
 
-void wdt_setup(void) {
+/** Start WDT
+ *
+ * original firmware has WDT set for 4096 * 4ms = ~ 16 seconds timeout.
+ */
+static void wdt_setup(void) {
 	iwdg_reset();
 	iwdg_set_period_ms(5000);
 	iwdg_start();
@@ -128,4 +134,18 @@ void wdt_setup(void) {
 
 void restart_wdt(void) {
 	iwdg_reset();
+}
+
+
+/* **** global hw setup */
+void hw_setup(void) {
+	wdt_setup();
+	init_timers();
+
+	/* we have stuff on GPIO A,B,C anyway */
+	rcc_periph_clock_enable(RCC_GPIOA);
+	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_GPIOC);
+
+	led_setup();
 }

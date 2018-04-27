@@ -12,10 +12,11 @@
 
 #include <libopencm3/cm3/scb.h>
 
-
-/** Initialize timers
+/** Initialize hardware back-end
+ *
+ * includes peripheral clocks, timers, and IO.
  */
-void init_timers(void);
+void hw_setup(void);
 
 void delay_us(uint32_t us);
 
@@ -26,14 +27,8 @@ void delay_us(uint32_t us);
 
 #define reset_cpu scb_reset_system
 
-void led_setup(void);
 void prep_gpib_pins(bool mode);
 
-/** Start WDT
- *
- * original firmware has WDT set for 4096 * 4ms = ~ 16 seconds timeout.
- */
-void wdt_setup(void);
 void restart_wdt(void);
 
 
