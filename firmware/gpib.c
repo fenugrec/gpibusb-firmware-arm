@@ -22,8 +22,12 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+
 #include <libopencm3/stm32/gpio.h>
+
 #include "firmware.h"
 #include "gpib.h"
 #include "hw_conf.h"
@@ -62,7 +66,7 @@ uint32_t gpib_cmd(uint8_t *bytes) {
 * See _gpib_write for parameter information
 */
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
-    return _gpib_write(bytes, length, 0, use_eoi);
+	return _gpib_write(bytes, length, 0, use_eoi);
 }
 
 /** Write a string of bytes to the GPIB bus
@@ -78,35 +82,65 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
-    uint8_t byte; // Storage variable for the current character
-    uint32_t i;
+	uint8_t byte; // Storage variable for the current character
+	uint32_t i;
+	u32 t0, tdelta = timeout * 1000;
 
-    // TODO: Set pin modes to output as required for writing
+	// TODO: Set pin modes to output as required for writing
 
-    gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
+	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
-    if(atn) { gpio_clear(ATN_CP, ATN); }
-    if(!length) { length = strlen((char*)bytes); }
+	if(atn) { gpio_clear(ATN_CP, ATN); }
+	if(!length) { length = strlen((char*)bytes); }
 
 	gpio_mode_setup(NRFD_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
-    gpio_set(FLOW_PORT, TE); // Enable talking
-    gpio_set(EOI_CP, EOI);
-    gpio_set(DAV_CP, DAV);
+	gpio_set(FLOW_PORT, TE); // Enable talking
+	gpio_set(EOI_CP, EOI);
+	gpio_set(DAV_CP, DAV);
 
-    // Before we start transfering, we have to make sure that NRFD is high
-    // and NDAC is low
-    // TODO: timeouts here
-    while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)){}
+	// Before we start transfering, we have to make sure that NRFD is high
+	// and NDAC is low
 
-    // Loop through each byte and write it to the GPIB bus
-    for(i=0;i<length;i++) {
-        byte = bytes[i];
+	t0 = get_us();
+	while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)) {
+#ifdef WITH_TIMEOUT
+		restart_wdt();
+		if ((get_us() - t0) >= tdelta) {
+			if (debug == 1) {
+				printf("write: timeout: waiting for NRFD+ && NDAC-%c", eot_char);
+			}
+			device_talk = false;
+			device_srq = false;
+			prep_gpib_pins(mode);
+			return 1;
+		}
+#endif // WITH_TIMEOUT
+	}
 
-        // TODO: debug message printf("Writing byte: %c %x %c", a, a, eot_char);
+	// Loop through each byte and write it to the GPIB bus
+	for(i=0;i<length;i++) {
+		byte = bytes[i];
 
-        // Wait for NDAC to go low, indicating previous bit is now done with
-        // TODO: timeouts here
-        while(gpio_get(NDAC_CP, NDAC)){}
+		#ifdef VERBOSE_DEBUG
+		printf("Writing byte: %c (%02X)%c", a, a, eot_char);
+		#endif
+
+		// Wait for NDAC to go low, indicating previous bit is now done with
+		t0 = get_us();
+		while(gpio_get(NDAC_CP, NDAC)) {
+#ifdef WITH_TIMEOUT
+			restart_wdt();
+			if ((get_us() - t0) >= tdelta) {
+				if (debug == 1) {
+					printf("write timeout: waiting for NDAC-%c", eot_char);
+				}
+				device_talk = false;
+				device_srq = false;
+				prep_gpib_pins(mode);
+				return 1;
+			}
+#endif // WITH_TIMEOUT
+		}
 
         // Put the byte on the data lines
         WRITE_DIO(byte);
@@ -115,18 +149,44 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
         if((i==length-1) && (use_eoi)) {gpio_clear(EOI_CP, EOI);}
 
         // Wait for NRFD to go high, indicating listeners are ready for data
-        // TODO: timeouts here
-        while(!gpio_get(NRFD_CP, NRFD)){}
+		t0 = get_us();
+		while(!gpio_get(NRFD_CP, NRFD)) {
+#ifdef WITH_TIMEOUT
+			restart_wdt();
+			if ((get_us() - t0) >= tdelta) {
+				if (debug == 1) {
+					 printf("write timeout: Waiting for NRFD+%c", eot_char);
+				}
+				device_talk = false;
+				device_srq = false;
+				prep_gpib_pins(mode);
+				return 1;
+			}
+#endif // WITH_TIMEOUT
+		}
 
-        // Assert DAV, informing listeners that the data is ready to be read
-        gpio_clear(DAV_CP, DAV);
+		// Assert DAV, informing listeners that the data is ready to be read
+		gpio_clear(DAV_CP, DAV);
 
-        // Wait for NDAC to go high, all listeners have accepted the byte
-        // TODO: timeouts here
-        while(!gpio_get(NDAC_CP, NDAC)){}
+		// Wait for NDAC to go high, all listeners have accepted the byte
+		t0 = get_us();
+		while(!gpio_get(NDAC_CP, NDAC)) {
+#ifdef WITH_TIMEOUT
+			restart_wdt();
+			if ((get_us() - t0) >= tdelta) {
+				if (debug == 1) {
+					 printf("write timeout: Waiting for NDAC+%c", eot_char);
+				}
+				device_talk = false;
+				device_srq = false;
+				prep_gpib_pins(mode);
+				return 1;
+			}
+#endif // WITH_TIMEOUT
+		}
 
-        // Release DAV, indicating byte is no longer valid
-        gpio_set(DAV_CP, DAV);
+		// Release DAV, indicating byte is no longer valid
+		gpio_set(DAV_CP, DAV);
     } // Finished outputting all bytes to the listeners
 
     gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF);
