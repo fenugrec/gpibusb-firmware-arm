@@ -1,5 +1,8 @@
 USB-GPIB interface
 
+This is a fork of gpib-usb-firmware-arm, initially published by Galvant (/ S. Casagrande).
+Most of the code was restructured and modified.
+
 ## status : haha
 
 ## hardware
@@ -12,13 +15,13 @@ This should run on pretty much any ARM mcu that is supported by libopencm3. I'm 
 
 * retrieve libopencm3 submodule :
 
-`git submodule init && git submodule update`
+`git submodule update --init`
 
 compile locm3 :
 
 * `cd libopencm3 && make TARGETS=stm32/f0`
 
-compile the firmware and flash :
+compile the firmware and debug/flash :
 
 * `cd firmware && make `
-* `make flash`
+* `make debug`
