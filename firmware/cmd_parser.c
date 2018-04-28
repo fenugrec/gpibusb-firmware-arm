@@ -172,7 +172,7 @@ void do_readCmd(const char *args) {
 	// +read
 	(void) args;
 	if (!mode) return;
-	if (gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char)) {
+	if (gpib_read(eoiUse, eos_code, eos_string, eot_enable)) {
 		if (debug == 1) {
 			printf("Read error occured.%c", eot_char);
 		}
@@ -185,9 +185,9 @@ void do_readCmd2(const char *args) {
 	//XXX TODO : merge with do_readCmd ?
 	if (!mode) return;
 	if (*args == '\n') {
-		gpib_read(false, eos_code, eos_string, eot_enable, eot_char); // read until EOS condition
+		gpib_read(false, eos_code, eos_string, eot_enable); // read until EOS condition
 	} else if (*args == 'e') {
-		gpib_read(true, eos_code, eos_string, eot_enable, eot_char); // read until EOI flagged
+		gpib_read(true, eos_code, eos_string, eot_enable); // read until EOI flagged
 	}
 	/*else if (*(buf_pnt+6) == 32) {
 		// read until specified character
@@ -483,7 +483,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	{
 		if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
 		{
-			gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char);
+			gpib_read(eoiUse, eos_code, eos_string, eot_enable);
 		}
 		else if(writeError)
 		{
@@ -584,7 +584,7 @@ static void device_poll(void) {
 #ifdef VERBOSE_DEBUG
 				printf("Starting device mode gpib_read%c", eot_char);
 #endif
-				gpib_read(eoiUse, eos_code, eos_string, eot_enable, eot_char);
+				gpib_read(eoiUse, eos_code, eos_string, eot_enable);
 				device_listen = false;
 			}
 			else if (device_talk && device_srq)

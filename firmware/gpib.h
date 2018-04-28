@@ -36,7 +36,7 @@ uint32_t gpib_cmd(uint8_t *bytes);
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status);
 uint32_t gpib_read(bool use_eoi, enum eos_codes eos_code,
-					const char *eos_string, bool eot_enable, uint8_t eot_char);
+					const char *eos_string, bool eot_enable);
 uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);

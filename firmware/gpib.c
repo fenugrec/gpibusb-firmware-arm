@@ -195,8 +195,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 uint32_t gpib_read(bool use_eoi,
 					enum eos_codes eos_code,
 					const char *eos_string,
-					bool eot_enable,
-					uint8_t eot_char) {
+					bool eot_enable) {
     uint8_t byte;
     bool eoi_status = 1;
     bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
