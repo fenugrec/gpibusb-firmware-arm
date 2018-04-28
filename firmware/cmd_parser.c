@@ -46,6 +46,9 @@
 #include "stypes.h"
 
 
+#define VALID_EEPROM_CODE 0xAA
+#define MAX_TIMEOUT 10*1000	//10 seconds, is there any reason to allow more than this
+
 #define VERSION 5
 
 u8 cmd_buf[1];
@@ -56,25 +59,12 @@ char eos_string[3] = "";
 char eos_code = EOS_NUL;
 bool eoiUse = 1; // By default, we are using EOI to signal end of
 // msg from instrument
-bool debug = 0; // enable or disable read&write error messages
 bool strip = 0;
 bool autoread = 1;
 bool eot_enable = 1;
-char eot_char = 13; // default CR
 bool listen_only = 0;
 bool save_cfg = 1;
 u8 status_byte = 0;
-u32 timeout = 1000;
-u32 seconds = 0;
-// Variables for device mode
-bool device_talk = false;
-bool device_listen = false;
-bool device_srq = false;
-
-#define VALID_EEPROM_CODE 0xAA
-#define WITH_TIMEOUT
-#define WITH_WDT
-//#define VERBOSE_DEBUG
 
 static void set_eos(enum eos_codes newcode) {
 	eos_code = newcode;
@@ -164,14 +154,18 @@ void do_addr(const char *args) {
 }
 void do_timeout(const char *args) {
 	// +t:N
-	timeout = (u32) atoi(args);
+	u32 temp = (u32) atoi(args);
+
+	/* bounds-check timeout value before saving */
+	if (temp > MAX_TIMEOUT) temp=MAX_TIMEOUT;
+	timeout = temp;
 }
 void do_readTimeout(const char *args) {
 	// ++read_tmo_ms N
 	if (*args == '\n') {
 		printf("%lu%c", (unsigned long) timeout, eot_char);
 	} else {
-		timeout = (u32) atoi(args);
+		do_timeout(args);
 	}
 }
 void do_readCmd(const char *args) {

@@ -23,7 +23,8 @@ void delay_us(uint32_t us);
 /** delay up to 4294967 ms */
 #define delay_ms(x) delay_us((x) * 1000)
 
-
+/** Get current timestamp in us */
+uint32_t get_us(void);
 
 #define reset_cpu scb_reset_system
 

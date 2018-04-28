@@ -3,6 +3,7 @@
 * gpib.c
 **
 * © 2014 Steven Casagrande (scasagrande@galvant.ca).
+* (c) 2018 fenugrec
 *
 * This file is a part of the GPIBUSB Adapter project.
 * Licensed under the AGPL version 3.
@@ -29,6 +30,17 @@
 #include "host_comms.h"
 #include "hw_backend.h"
 #include "stypes.h"
+
+/* global vars */
+bool mode = 1;
+bool debug = 0; // enable or disable read&write error messages
+char eot_char = '\r'; // default CR
+uint32_t timeout = 1000;
+// Variables for device mode
+bool device_talk = false;
+bool device_listen = false;
+bool device_srq = false;
+
 
 /* Some forward decls that don't need to be in the public gpib.h
 */

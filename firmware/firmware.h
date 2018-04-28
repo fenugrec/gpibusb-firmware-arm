@@ -24,6 +24,8 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-extern bool mode;		//1 if controller mode
+#define WITH_TIMEOUT
+#define WITH_WDT
+//#define VERBOSE_DEBUG
 
 #endif // _FIRMWARE_H

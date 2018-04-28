@@ -120,6 +120,9 @@ void delay_us(u32 us) {
 	return;
 }
 
+uint32_t get_us(void) {
+	return TIM_CNT(TMR_FREERUN);
+}
 
 
 /********* WDT
