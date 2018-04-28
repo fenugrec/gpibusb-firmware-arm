@@ -470,7 +470,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 			if (!writeError)
 				writeError = gpib_write((u8 *) eos_string, 0, eoiUse);
 #ifdef VERBOSE_DEBUG
-			printf("eos_string: %s",eos_string);
+			printf("eos_string: %s%c",eos_string, eot_char);
 #endif
 		}
 		else
