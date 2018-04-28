@@ -122,7 +122,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		byte = bytes[i];
 
 		#ifdef VERBOSE_DEBUG
-		printf("Writing byte: %c (%02X)%c", a, a, eot_char);
+		printf("Writing byte: %c (%02X)%c", byte, byte, eot_char);
 		#endif
 
 		// Wait for NDAC to go low, indicating previous bit is now done with
@@ -212,31 +212,59 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 * Returns 0 if everything went fine
 */
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
-    // Raise NRFD, informing the talker we are ready for the byte
-    gpio_set(NRFD_CP, NRFD);
+	u32 t0, tdelta = timeout * 1000;
 
-    // Assert NDAC, informing the talker we have not yet accepted the byte
-    gpio_clear(NDAC_CP, NDAC);
+	// Raise NRFD, informing the talker we are ready for the byte
+	gpio_set(NRFD_CP, NRFD);
 
-    // Wait for DAV to go low, informing us the byte is read to be read
-    // TODO: timeouts here
-    while(gpio_get(DAV_CP, DAV)){}
+	// Assert NDAC, informing the talker we have not yet accepted the byte
+	gpio_clear(NDAC_CP, NDAC);
 
-    // Assert NRFD, informing the talker to not change the data lines
-    gpio_clear(NRFD_CP, NRFD);
+	// Wait for DAV to go low, informing us the byte is read to be read
+	t0 = get_us();
+	while(gpio_get(DAV_CP, DAV)) {
+#ifdef WITH_TIMEOUT
+		restart_wdt();
+		if ((get_us() - t0) >= tdelta) {
+			if (debug == 1) {
+				 printf("readbyte timeout: Waiting for DAV-%c", eot_char);
+			}
+			device_listen = false;
+			prep_gpib_pins(mode);
+			return 1;
+		}
+#endif // WITH_TIMEOUT
+	}
 
-    // Read the data on the port, flip the bits, and read in the EOI line
-    *byte = READ_DIO();
-    *eoi_status = gpio_get(EOI_CP, EOI);
+	// Assert NRFD, informing the talker to not change the data lines
+	gpio_clear(NRFD_CP, NRFD);
 
-    // TODO: debug message printf("Got byte: %c %x ", a, a);
+	// Read the data on the port, flip the bits, and read in the EOI line
+	*byte = READ_DIO();
+	*eoi_status = gpio_get(EOI_CP, EOI);
 
-    // Un-assert NDAC, informing talker that we have accepted the byte
-    gpio_set(NDAC_CP, NDAC);
+	#ifdef VERBOSE_DEBUG
+	printf("Got byte: %c (%02X)%c", *byte, *byte, eot_char);
+	#endif
 
-    // Wait for DAV to go high; the talkers knows that we have read the byte
-    // TODO: timeouts here
-    while(!gpio_get(DAV_CP, DAV)){}
+	// Un-assert NDAC, informing talker that we have accepted the byte
+	gpio_set(NDAC_CP, NDAC);
+
+	// Wait for DAV to go high; the talkers knows that we have read the byte
+	t0 = get_us();
+	while(!gpio_get(DAV_CP, DAV)) {
+#ifdef WITH_TIMEOUT
+		restart_wdt();
+		if ((get_us() - t0) >= tdelta) {
+			if (debug == 1) {
+				 printf("readbyte timeout: Waiting for DAV+%c", eot_char);
+			}
+			device_listen = false;
+			prep_gpib_pins(mode);
+			return 1;
+		}
+#endif // WITH_TIMEOUT
+    }
 
     // Get ready for the next byte by asserting NDAC
     gpio_clear(NDAC_CP, NDAC);
@@ -282,7 +310,10 @@ uint32_t gpib_read(bool use_eoi,
     }
 
     // Beginning of GPIB read loop
-    // TODO: debug message printf("gpib_read loop start\n\r");
+    #ifdef VERBOSE_DEBUG
+    printf("gpib_read loop start%c", eot_char);
+    #endif
+
 	// TODO: Make sure modes are set correctly
     gpio_clear(FLOW_PORT, TE);
     gpio_mode_setup(DAV_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
@@ -345,7 +376,9 @@ uint32_t gpib_read(bool use_eoi,
 		host_tx(eot_char);
     }
 
-    // TODO: debug message printf("gpib_read loop end\n\r");
+    #ifdef VERBOSE_DEBUG
+    printf("gpib_read loop end%c", eot_char);
+    #endif
 
     if (mode) {
         // Command all talkers and listeners to stop
@@ -356,7 +389,9 @@ uint32_t gpib_read(bool use_eoi,
         error_found = error_found || gpib_cmd(cmd_buf);
     }
 
-    // TODO: debug message printf("gpib_read end\n\r");
+    #ifdef VERBOSE_DEBUG
+    printf("gpib_read end%c", eot_char);
+    #endif
 
     return error_found;
 }
