@@ -665,20 +665,25 @@ void cmd_poll(void) {
 				input_buf[in_len] = 0;
 				continue;
 			}
+			escape_next = 0;
 			//also, tokenize now instead of calling strtok later.
-			if (rxb == ':') {
-				//commands of form "+<cmd>:<args>" : split args after ':'
-				input_buf[in_len++] = rxb;
-				cmd_len = in_len;
-				input_buf[in_len++] = 0;
-			} else if (rxb == ' ') {
-				cmd_len = in_len;
-				//commands of form "++<cmd> <args>": split args on ' '
-				input_buf[in_len++] = 0;
+			//Only split args once:
+			if (!cmd_len) {
+				if (rxb == ':') {
+					//commands of form "+<cmd>:<args>" : split args after ':'
+					input_buf[in_len++] = rxb;
+					cmd_len = in_len;
+					input_buf[in_len++] = 0;
+				} else if (rxb == ' ') {
+					cmd_len = in_len;
+					//commands of form "++<cmd> <args>": split args on ' '
+					input_buf[in_len++] = 0;
+				} else {
+					input_buf[in_len++] = rxb;
+				}
 			} else {
 				input_buf[in_len++] = rxb;
 			}
-			escape_next = 0;
 			continue;
 		}
 

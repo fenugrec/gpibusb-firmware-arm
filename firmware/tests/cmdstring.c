@@ -39,6 +39,8 @@ const struct tvect vectors[] = {
 	{"123\x1b""\n\n", 6, "123\n", 4, 0},	//escaped \n
 	{"123\x1b""4\n", 6, "1234", 4, 0},	//escaped 4
 	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, 0},	//escaped 0x00
+	/* misc pathological cases */
+	{"++a 3 4\n", 8, "++a", 3, 1},	//multiple args
 	{NULL, 0, NULL, 0, 0}
 };
 
@@ -105,20 +107,25 @@ bool test_cmd_poll(u8 rxb) {
 				input_buf[in_len] = 0;
 				continue;
 			}
+			escape_next = 0;
 			//also, tokenize now instead of calling strtok later.
-			if (rxb == ':') {
-				//commands of form "+<cmd>:<args>" : split args after ':'
-				input_buf[in_len++] = rxb;
-				cmd_len = in_len;
-				input_buf[in_len++] = 0;
-			} else if (rxb == ' ') {
-				cmd_len = in_len;
-				//commands of form "++<cmd> <args>": split args on ' '
-				input_buf[in_len++] = 0;
+			//Only split args once:
+			if (!cmd_len) {
+				if (rxb == ':') {
+					//commands of form "+<cmd>:<args>" : split args after ':'
+					input_buf[in_len++] = rxb;
+					cmd_len = in_len;
+					input_buf[in_len++] = 0;
+				} else if (rxb == ' ') {
+					cmd_len = in_len;
+					//commands of form "++<cmd> <args>": split args on ' '
+					input_buf[in_len++] = 0;
+				} else {
+					input_buf[in_len++] = rxb;
+				}
 			} else {
 				input_buf[in_len++] = rxb;
 			}
-			escape_next = 0;
 			continue;
 		}
 
