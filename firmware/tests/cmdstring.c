@@ -31,14 +31,14 @@ const struct tvect vectors[] = {
 	{"+a:\n", 4, "+a:", 3, 1},	//correct command tok, but no args
 	{"++a \n", 5, "++a", 3, 1},	//space-separated tok, but no args
 	/* more commands, with esacpes */
-	{"+a\x1b""\nb\n", 5, "+a\nb", 3, 1},	//escaped \n
+	{"+a\x1b""\nb\n", 6, "+a\nb", 3, 1},	//escaped \n
 	{"+a\x1b""a\n", 5, "+aa", 3, 1},	//escaped 'a' for no reason
 	/* data, with and without escapes */
 	{"\n", 1, "", 0, 0},	//stray \n : empty chunk
 	{"1234\n", 5, "1234", 4, 0},	//normal chunk
 	{"123\x1b""\n\n", 6, "123\n", 4, 0},	//escaped \n
 	{"123\x1b""4\n", 6, "1234", 4, 0},	//escaped 4
-	{"12\x1b\x00""34\n", 7, "12\x0034", 5, 0},	//escaped 0x00
+	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, 0},	//escaped 0x00
 	{NULL, 0, NULL, 0, 0}
 };
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 	const struct tvect *tv;
 	unsigned icur;
 
-	printf("RESULT\tdetail\tpattern\n");
+	printf("RESULT\tdetail\t\t(pattern)\n");
 
 	for (icur = 0; vectors[icur].input; icur++) {
 		tv = &vectors[icur];
