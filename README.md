@@ -31,3 +31,7 @@ Uses python, cmsis-svd (available on pip), and cmdebug ( https://github.com/bnah
 
 It allows one to do things like 
 "svd USART2" to view register contents.
+
+## tests
+there are is a separate Makefile in tests/ , meant to be compiled and run on the host system, that targets certain areas of code
+(hash table for command matching, string processing, etc)
