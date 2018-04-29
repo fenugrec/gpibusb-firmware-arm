@@ -611,6 +611,8 @@ void cmd_poll(void) {
 	bool escape_next = 0;
 	bool wait_guardbyte = 0;
 
+	printf("Command parser ready.%c", eot_char);
+
 	while (1) {
 #ifdef WITH_WDT
 		restart_wdt();

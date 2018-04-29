@@ -64,12 +64,9 @@ static void usart_setup(void) {
 	rcc_periph_clock_enable(RCC_USART2);
 
 	/* A2 = TX, A3 = RX */
-	nvic_enable_irq(NVIC_USART2_IRQ);
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
-	gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO3);
-	gpio_set_af(GPIOA, GPIO_AF1, GPIO2);
-	gpio_set_af(GPIOA, GPIO_AF1, GPIO3);
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO2 | GPIO3);
+	gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, GPIO2);
+	gpio_set_af(GPIOA, GPIO_AF1, GPIO2 | GPIO3);
 
 	usart_set_baudrate(USART2, 115200);
 	usart_set_databits(USART2, 8);
@@ -78,8 +75,13 @@ static void usart_setup(void) {
 	usart_set_parity(USART2, USART_PARITY_NONE);
 	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
 
-	usart_enable_rx_interrupt(USART2);
 	usart_enable(USART2);
+	//purge possibly garbage byte and error flags
+	usart_recv(USART2);
+	USART2_ICR = USART_ICR_ORECF | USART_ICR_NCF | USART_ICR_FECF | USART_ICR_PECF;
+
+	usart_enable_rx_interrupt(USART2);
+	nvic_enable_irq(NVIC_USART2_IRQ);
 }
 
 void host_comms_init(void) {
@@ -149,7 +151,7 @@ void host_tx(uint8_t txb) {
 }
 
 void host_tx_m(uint8_t *data, unsigned len) {
-	if (ring_write(&output_ring, data, len) == len) {
+	if (ring_write(&output_ring, data, len) != len) {
 		//TODO : overflow
 		return;
 	}
