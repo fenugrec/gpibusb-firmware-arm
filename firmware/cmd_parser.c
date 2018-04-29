@@ -606,7 +606,7 @@ void cmd_poll(void) {
 	u8 rxb;
 	u8 input_buf[HOST_IN_BUFSIZE];
 	unsigned in_len = 0;
-	unsigned cmd_len = 0;	//length of command token, excluding 0 termination. Args start at cmd_len+2
+	unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
 	bool in_cmd = 0;
 	bool escape_next = 0;
 	bool wait_guardbyte = 0;
@@ -641,6 +641,8 @@ void cmd_poll(void) {
 				continue;
 			}
 			if (in_cmd) {
+				//if no args : command length == overall length
+				if (!cmd_len) cmd_len = in_len;
 				chunk_cmd((char *) input_buf, cmd_len);
 			} else {
 				chunk_data((char *) input_buf, in_len);

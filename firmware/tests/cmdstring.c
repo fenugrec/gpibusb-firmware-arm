@@ -31,7 +31,7 @@ const struct tvect vectors[] = {
 	{"+a:\n", 4, "+a:", 3, 1},	//correct command tok, but no args
 	{"++a \n", 5, "++a", 3, 1},	//space-separated tok, but no args
 	/* more commands, with esacpes */
-	{"+a\x1b""\nb\n", 6, "+a\nb", 3, 1},	//escaped \n
+	{"+a\x1b""\nb\n", 6, "+a\nb", 4, 1},	//escaped \n
 	{"+a\x1b""a\n", 5, "+aa", 3, 1},	//escaped 'a' for no reason
 	/* data, with and without escapes */
 	{"\n", 1, "", 0, 0},	//stray \n : empty chunk
@@ -77,6 +77,10 @@ bool test_cmd_poll(u8 rxb) {
 				continue;
 			}
 			if (in_cmd) {
+				// edge case : no args detected, but cmd_len can't be 0
+				if (!cmd_len) {
+					cmd_len = in_len;
+				}
 				//chunk_cmd((char *) input_buf, cmd_len);
 				return 1;
 			} else {
