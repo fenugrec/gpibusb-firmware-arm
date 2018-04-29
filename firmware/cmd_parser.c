@@ -635,7 +635,7 @@ void cmd_poll(void) {
 		if (wait_guardbyte) {
 			//just finished a chunk; make sure it was valid
 			wait_guardbyte = 0;
-			if (rxb == CHUNK_INVALID) {
+			if (rxb != CHUNK_VALID) {
 				//discard
 				in_len = 0;
 				continue;
