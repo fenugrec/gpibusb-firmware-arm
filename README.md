@@ -25,3 +25,9 @@ compile the firmware and debug/flash :
 
 * `cd firmware && make `
 * `make debug`
+
+There is also a rudimentary .gdbinit file included to help with debugging, particular to view peripheral register contents "easily".
+Uses python, cmsis-svd (available on pip), and cmdebug ( https://github.com/bnahill/PyCortexMDebug )
+
+It allows one to do things like 
+"svd USART2" to view register contents.
