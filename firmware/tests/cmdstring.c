@@ -21,34 +21,60 @@ struct tvect {
 	const char *expected_out;	//unescaped command token or data chunk
 	unsigned expected_len;	//either length of command tok, or length of unescaped data
 	bool is_cmd;
+	bool has_args;
+	unsigned arg_pos;	//pos within input_buf; if no args, inputbuf[arg_pos] == 0
 };
+
+#define NOARGS 0
+#define WITHARGS 1
 
 /* test vectors; it's assumed they're all marked as CHUNK_VALID */
 const struct tvect vectors[] = {
 	/* some commands, no escapes */
-	{"+\n", 2, "+", 1, 1},
-	{"+a\n", 3, "+a", 2, 1},
-	{"+a:\n", 4, "+a:", 3, 1},	//correct command tok, but no args
-	{"++a \n", 5, "++a", 3, 1},	//space-separated tok, but no args
+	{"+\n", 2, "+", 1, 1, NOARGS, 1},
+	{"+a\n", 3, "+a", 2, 1, NOARGS, 2},
+	{"+a:\n", 4, "+a:", 3, 1, NOARGS, 4},	//correct command tok, but no args
+	{"++a \n", 5, "++a", 3, 1, NOARGS, 4},	//space-separated tok, but no args
 	/* more commands, with esacpes */
-	{"+a\x1b""\nb\n", 6, "+a\nb", 4, 1},	//escaped \n
-	{"+a\x1b""a\n", 5, "+aa", 3, 1},	//escaped 'a' for no reason
+	{"+a\x1b""\nb\n", 6, "+a\nb", 4, 1, NOARGS,  4},	//escaped \n
+	{"+a\x1b""a\n", 5, "+aa", 3, 1, NOARGS, 3},	//escaped 'a' for no reason
 	/* data, with and without escapes */
-	{"\n", 1, "", 0, 0},	//stray \n : empty chunk
-	{"1234\n", 5, "1234", 4, 0},	//normal chunk
-	{"123\x1b""\n\n", 6, "123\n", 4, 0},	//escaped \n
-	{"123\x1b""4\n", 6, "1234", 4, 0},	//escaped 4
-	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, 0},	//escaped 0x00
-	/* misc pathological cases */
-	{"++a 3 4\n", 8, "++a", 3, 1},	//multiple args
-	{NULL, 0, NULL, 0, 0}
+	{"\n", 1, "", 0, 0, NOARGS, 0},	//stray \n : empty chunk
+	{"1234\n", 5, "1234", 4, 0, NOARGS, 5},	//normal chunk
+	{"123\x1b""\n\n", 6, "123\n", 4, 0, NOARGS, 5},	//escaped \n
+	{"123\x1b""4\n", 6, "1234", 4, 0, NOARGS, 4},	//escaped 4
+	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, 0, NOARGS, 6},	//escaped 0x00
+	/* args */
+	{"++a 3\n", 6, "++a", 3, 1, WITHARGS, 4},	//single arg
+	{"+a:3\n", 5, "+a:", 3, 1, WITHARGS, 4},	//single arg
+	{"++a 3 4\n", 8, "++a", 3, 1, WITHARGS, 4},	//multiple args
+	{NULL, 0, NULL, 0, 0, NOARGS, 0}
 };
 
 
 u8 input_buf[HOST_IN_BUFSIZE];	//cmd_poll writes parsed chunk into this
 unsigned in_len = 0;
-unsigned cmd_len = 0;	//length of command token, excluding 0 termination. Args start at cmd_len+2
+unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
+unsigned arg_pos = 0;	//
 bool in_cmd = 0;
+
+
+/** bogus cmd chunk handler */
+static void chunk_cmd(char * ibuf, unsigned dummy, bool has_args) {
+	(void) ibuf;
+	(void) has_args;
+	cmd_len = dummy;
+	if (has_args) {
+		arg_pos = cmd_len + 1;
+	} else {
+		arg_pos = cmd_len;
+	}
+}
+/** bogus data chunk handler */
+static void chunk_data(char * ibuf, unsigned datalen) {
+	(void) ibuf;
+	(void) datalen;
+}
 
 /** hacked cmd_poll to be fed one byte at a time;
  * @return 1 when a chunk is
@@ -60,6 +86,7 @@ bool test_cmd_poll(u8 rxb) {
 
 	static bool escape_next = 0;
 	static bool wait_guardbyte = 0;
+	static bool has_args = 0;
 
 	bool bogus = 1;
 	while (bogus) {
@@ -68,6 +95,8 @@ bool test_cmd_poll(u8 rxb) {
 			//start of new command chunk
 			in_cmd = 1;
 			cmd_len = 0;
+			has_args = 0;
+			arg_pos = 0;
 		}
 
 		if (wait_guardbyte) {
@@ -79,16 +108,16 @@ bool test_cmd_poll(u8 rxb) {
 				continue;
 			}
 			if (in_cmd) {
-				// edge case : no args detected, but cmd_len can't be 0
-				if (!cmd_len) {
-					cmd_len = in_len;
+				if (arg_pos) {
+					//non-empty args
+					chunk_cmd((char *) input_buf, cmd_len, 1);
+				} else {
+					chunk_cmd((char *) input_buf, cmd_len, 0);
 				}
-				//chunk_cmd((char *) input_buf, cmd_len);
-				return 1;
 			} else {
-				//chunk_data((char *) input_buf, in_len);
-				return 1;
+				chunk_data((char *) input_buf, in_len);
 			}
+			return 1;
 			in_len = 0;
 			continue;
 		}
@@ -109,23 +138,29 @@ bool test_cmd_poll(u8 rxb) {
 			}
 			escape_next = 0;
 			//also, tokenize now instead of calling strtok later.
-			//Only split args once:
-			if (!cmd_len) {
-				if (rxb == ':') {
-					//commands of form "+<cmd>:<args>" : split args after ':'
-					input_buf[in_len++] = rxb;
-					cmd_len = in_len;
-					input_buf[in_len++] = 0;
-				} else if (rxb == ' ') {
-					cmd_len = in_len;
-					//commands of form "++<cmd> <args>": split args on ' '
-					input_buf[in_len++] = 0;
-				} else {
-					input_buf[in_len++] = rxb;
-				}
+			//Only split args once.
+			if (has_args) {
+				input_buf[in_len++] = rxb;
+				continue;
+			}
+			if (rxb == ':') {
+				//commands of form "+<cmd>:<args>" : split args after ':'
+				input_buf[in_len++] = rxb;
+				cmd_len = in_len;
+				input_buf[in_len++] = 0;
+				has_args = 1;
+				arg_pos = in_len;
+			} else if (rxb == ' ') {
+				cmd_len = in_len;
+				//commands of form "++<cmd> <args>": split args on ' '
+				input_buf[in_len++] = 0;
+				has_args = 1;
+				arg_pos = in_len;
 			} else {
 				input_buf[in_len++] = rxb;
+				cmd_len++;
 			}
+
 			continue;
 		}
 
@@ -151,6 +186,7 @@ bool run_test(const struct tvect *tv) {
 	in_len = 0;
 	cmd_len = 0;
 	in_cmd = 0;
+	memset(input_buf, 0xFF, sizeof(input_buf));
 
 	// 2) feed input string
 	for (icur=0; icur < tv->input_len; icur++) {
@@ -191,6 +227,25 @@ bool run_test(const struct tvect *tv) {
 	if (memcmp(input_buf, tv->expected_out, tv->expected_len)) {
 		printf("FAIL\texpected contents mismatch\t");
 		return 0;
+	}
+	// arg stuff
+	if (in_cmd) {
+		if (tv->has_args) {
+			if (arg_pos != tv->arg_pos) {
+				printf("FAIL\twrong arg offset, got %u, want %u\t",
+					arg_pos, tv->arg_pos);
+				return 0;
+			}
+			if (input_buf[arg_pos] == 0) {
+				printf("FAIL\tempty args!\t");
+				return 0;
+			}
+		} else {
+			if (input_buf[arg_pos] != 0) {
+				printf("FAIL\tnon-empty args!\t");
+				return 0;
+			}
+		}
 	}
 	printf("PASS\t");
 	return 1;

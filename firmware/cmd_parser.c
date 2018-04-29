@@ -434,10 +434,15 @@ void do_nothing(const char *args) {
  *
  * @param cmd 0-split command plus args (starts with '+' or "++"), e.g. {"+a:","31"}
  * @param cmd_len : len (excluding 0) of command token, e.g. strlen("+a:")
+ * @param has_args : if 0, *args will point to a 0x00
  *
  */
-static void chunk_cmd(char *cmd, unsigned cmd_len) {
-    cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 2]);
+static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
+	if (has_args) {
+		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 1]);
+	} else {
+		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 0]);	//trailing 0 of command
+	}
 }
 
 /** parse data
@@ -607,9 +612,12 @@ void cmd_poll(void) {
 	u8 input_buf[HOST_IN_BUFSIZE];
 	unsigned in_len = 0;
 	unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
+	unsigned arg_pos = 0;
 	bool in_cmd = 0;
 	bool escape_next = 0;
 	bool wait_guardbyte = 0;
+	bool has_args = 0;
+
 
 	printf("Command parser ready.%c", eot_char);
 
@@ -630,6 +638,8 @@ void cmd_poll(void) {
 			//start of new command chunk
 			in_cmd = 1;
 			cmd_len = 0;
+			has_args = 0;
+			arg_pos = 0;
 		}
 
 		if (wait_guardbyte) {
@@ -641,9 +651,12 @@ void cmd_poll(void) {
 				continue;
 			}
 			if (in_cmd) {
-				//if no args : command length == overall length
-				if (!cmd_len) cmd_len = in_len;
-				chunk_cmd((char *) input_buf, cmd_len);
+				if (arg_pos) {
+					//non-empty args
+					chunk_cmd((char *) input_buf, cmd_len, 1);
+				} else {
+					chunk_cmd((char *) input_buf, cmd_len, 0);
+				}
 			} else {
 				chunk_data((char *) input_buf, in_len);
 			}
@@ -667,23 +680,29 @@ void cmd_poll(void) {
 			}
 			escape_next = 0;
 			//also, tokenize now instead of calling strtok later.
-			//Only split args once:
-			if (!cmd_len) {
-				if (rxb == ':') {
-					//commands of form "+<cmd>:<args>" : split args after ':'
-					input_buf[in_len++] = rxb;
-					cmd_len = in_len;
-					input_buf[in_len++] = 0;
-				} else if (rxb == ' ') {
-					cmd_len = in_len;
-					//commands of form "++<cmd> <args>": split args on ' '
-					input_buf[in_len++] = 0;
-				} else {
-					input_buf[in_len++] = rxb;
-				}
+			//Only split args once.
+			if (has_args) {
+				input_buf[in_len++] = rxb;
+				continue;
+			}
+			if (rxb == ':') {
+				//commands of form "+<cmd>:<args>" : split args after ':'
+				input_buf[in_len++] = rxb;
+				cmd_len = in_len;
+				input_buf[in_len++] = 0;
+				has_args = 1;
+				arg_pos = in_len;
+			} else if (rxb == ' ') {
+				cmd_len = in_len;
+				//commands of form "++<cmd> <args>": split args on ' '
+				input_buf[in_len++] = 0;
+				has_args = 1;
+				arg_pos = in_len;
 			} else {
 				input_buf[in_len++] = rxb;
+				cmd_len++;
 			}
+
 			continue;
 		}
 
