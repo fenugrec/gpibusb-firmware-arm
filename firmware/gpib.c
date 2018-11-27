@@ -86,7 +86,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	uint32_t i;
 	u32 t0, tdelta = timeout * 1000;
 
-	// TODO: Set pin modes to output as required for writing
+	// TODO: Set pin modes to output as required for writing, and revert to input on exit/abort
 
 	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
@@ -189,7 +189,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		gpio_set(DAV_CP, DAV);
     } // Finished outputting all bytes to the listeners
 
-    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF);
+    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF << DIO_PORTSHIFT);
     gpio_clear(FLOW_PORT, TE); // Disable talking
 
     // If the byte was a GPIB command byte, release ATN line

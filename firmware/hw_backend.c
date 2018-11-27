@@ -54,7 +54,7 @@ void prep_gpib_pins(bool mode) {
 
 
 	// Float all DIO lines
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, 0xFF);
+	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, 0xFF << DIO_PORTSHIFT);
 
 	// Set mode and pin state for all GPIB control lines
 	if (mode) {

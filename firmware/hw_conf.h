@@ -29,9 +29,9 @@
  * 15 : CONTROL_PORT_1 (5V)
  *
  * GPIOB
- * 0-7 : DIO to GPIB (5V)
- * 8-15 : 5V, but unusable because the disco board has a 3V-only part hardwired to PB10-12;
- *			also we write DIO to GPIO_ODR directly, clobbering the other 8 bits.
+ * 2-9 : DIO to GPIB (5V). Can't use PB0:1 because not 5Vtol !!
+ * 8-15 : 5Vtol, but unusable because the disco board has a 3V-only part hardwired to PB10-12;
+ *			also we write DIO to GPIO_ODR directly, clobbering the unused bits.
  *
  * GPIOC
  * 6,7 : LEDs
@@ -46,12 +46,13 @@
 #define LED_STATUS GPIO7
 
 
-/* GPIB data lines DIO1-DIO8 on PB8-PB15*/
+/* GPIB data lines DIO1-DIO8 on PB2-PB9 */
 #define DIO_PORT GPIOB
+#define DIO_PORTSHIFT 2
 /** write DIO, takes care of inversion */
-#define WRITE_DIO(x) gpio_port_write(DIO_PORT, ~(x))
+#define WRITE_DIO(x) gpio_port_write(DIO_PORT, ~(x) << DIO_PORTSHIFT)
 /** read DIO lines, takes care of inversion */
-#define READ_DIO(x) (~gpio_port_read(DIO_PORT) & 0xFF)
+#define READ_DIO(x) ((~gpio_port_read(DIO_PORT) >> DIO_PORTSHIFT) & 0xFF)
 
 /* GPIB control lines
  * super messy, in order to work on the f072 disco board..
