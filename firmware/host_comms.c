@@ -66,7 +66,6 @@ void host_comms_init(void) {
 	ring_init(&input_ring, input_ring_buffer, sizeof(input_ring_buffer));
 	hrx_state = HRX_RX;
 	in_len = 0;
-	usart_setup();
 	return;
 }
 

@@ -30,7 +30,9 @@ void prep_gpib_pins(bool mode);
 
 void restart_wdt(void);
 
-void usart_setup(void);
+/** enable comms with host (interrupts etc). Command parser etc must be init'd first
+*/
+void hw_startcomms(void);
 
 /** TODO ? these could be replaced by "EEPROM emulation", see ST AN2594 */
 #define write_eeprom(addr, data)

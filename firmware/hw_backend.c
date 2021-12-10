@@ -153,7 +153,7 @@ void restart_wdt(void) {
 /********* USART
 */
 
-void usart_setup(void) {
+static void usart_setup(void) {
 	rcc_periph_clock_enable(RCC_USART2);
 
 	/* A2 = TX, A3 = RX */
@@ -167,7 +167,10 @@ void usart_setup(void) {
 	usart_set_mode(USART2, USART_MODE_TX_RX);
 	usart_set_parity(USART2, USART_PARITY_NONE);
 	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
+}
 
+
+void hw_startcomms(void) {
 	usart_enable(USART2);
 	//purge possibly garbage byte and error flags
 	usart_recv(USART2);
@@ -204,5 +207,6 @@ void hw_setup(void) {
 	 * XXX This will need to be tuned when changing from UART to USB */
 	setvbuf(stdout, NULL, _IONBF, 0);
 
+	usart_setup();
 	led_setup();
 }

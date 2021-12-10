@@ -54,6 +54,7 @@ int main(void)
 
 	cmd_parser_init();
 	host_comms_init();
+	hw_startcomms();
 
 	cmd_poll();
 
