@@ -4,7 +4,7 @@
 #include <ctype.h>	//toupper
 #include <errno.h>	//for _write()
 
-#include "host_comms.h"
+#include "hw_backend.h"
 #include "libc_stubs.h"
 
 /* htoi : copied from freediag but without octal
@@ -60,7 +60,7 @@ int htoi(const char *buf) {
 
 int _write(int file, char *ptr, int len) {
 	if (file == 1) {
-		host_tx_m((uint8_t *)ptr, len);
+		hw_host_tx_m((uint8_t *)ptr, len);
 		return len;
 	}
 

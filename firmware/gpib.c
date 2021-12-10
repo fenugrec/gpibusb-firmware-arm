@@ -324,13 +324,13 @@ uint32_t gpib_read(bool use_eoi,
             if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
                 if(eot_enable) {
-                    host_tx(eot_char);
+                    hw_host_tx(eot_char);
                 }
                 return 1;
             }
             if (eoi_status) {
 				//all done
-				host_tx(byte);
+				hw_host_tx(byte);
 				break;
             }
         } while (eoi_status);
@@ -340,7 +340,7 @@ uint32_t gpib_read(bool use_eoi,
             if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
                 if(eot_enable) {
-                    host_tx(eot_char);
+                    hw_host_tx(eot_char);
                 }
                 return 1;
             }
@@ -353,8 +353,8 @@ uint32_t gpib_read(bool use_eoi,
 					}
 					//not CRLF, so we'll send the previous CR too
 					eos_checknext = 0;
-					host_tx('\r');
-					host_tx(byte);
+					hw_host_tx('\r');
+					hw_host_tx(byte);
 					continue;
 				}
 				if((byte == '\r')) {
@@ -367,13 +367,13 @@ uint32_t gpib_read(bool use_eoi,
 					//all done
 					break;
                 }
-				host_tx(byte);
+				hw_host_tx(byte);
             }
         } while (1);
     }	//if !use_eoi
 
     if(eot_enable) {
-		host_tx(eot_char);
+		hw_host_tx(eot_char);
     }
 
     #ifdef VERBOSE_DEBUG

@@ -105,12 +105,3 @@ void host_comms_rx(uint8_t rxb) {
 		break;
 	}
 }
-
-void host_tx(uint8_t txb) {
-	hw_host_tx(txb);
-}
-
-void host_tx_m(uint8_t *data, unsigned len) {
-	hw_host_tx_m(data, len);
-}
-
