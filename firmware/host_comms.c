@@ -20,6 +20,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/nvic.h>
 
+#include "hw_backend.h"
 #include "host_comms.h"
 #include "ring.h"
 
@@ -59,30 +60,6 @@ static enum e_hrx_state hrx_state = HRX_RX;
  */
 static void host_comms_rx(uint8_t rxb);
 
-
-static void usart_setup(void) {
-	rcc_periph_clock_enable(RCC_USART2);
-
-	/* A2 = TX, A3 = RX */
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO2 | GPIO3);
-	gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, GPIO2);
-	gpio_set_af(GPIOA, GPIO_AF1, GPIO2 | GPIO3);
-
-	usart_set_baudrate(USART2, 115200);
-	usart_set_databits(USART2, 8);
-	usart_set_stopbits(USART2, USART_STOPBITS_1);
-	usart_set_mode(USART2, USART_MODE_TX_RX);
-	usart_set_parity(USART2, USART_PARITY_NONE);
-	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
-
-	usart_enable(USART2);
-	//purge possibly garbage byte and error flags
-	usart_recv(USART2);
-	USART2_ICR = USART_ICR_ORECF | USART_ICR_NCF | USART_ICR_FECF | USART_ICR_PECF;
-
-	usart_enable_rx_interrupt(USART2);
-	nvic_enable_irq(NVIC_USART2_IRQ);
-}
 
 void host_comms_init(void) {
 	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));

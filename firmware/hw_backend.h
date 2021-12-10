@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <libopencm3/cm3/scb.h>
-
 /** Initialize hardware back-end
  *
  * includes peripheral clocks, timers, and IO.
@@ -26,12 +24,13 @@ void delay_us(uint32_t us);
 /** Get current timestamp in us */
 uint32_t get_us(void);
 
-#define reset_cpu scb_reset_system
+void reset_cpu(void);
 
 void prep_gpib_pins(bool mode);
 
 void restart_wdt(void);
 
+void usart_setup(void);
 
 /** TODO ? these could be replaced by "EEPROM emulation", see ST AN2594 */
 #define write_eeprom(addr, data)
