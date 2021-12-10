@@ -82,7 +82,7 @@ void prep_gpib_pins(bool mode) {
  */
 
 #if (TMR_FREERUN != TIM2)
-#error timer RCC must be changed !
+#error some stuff is hardcoded for TIM2 here !
 #endif
 
 /* Called when systick fires */
@@ -101,7 +101,7 @@ static void init_timers(void) {
 	rcc_periph_clock_enable(RCC_TIM2);
 
 	/* free-running microsecond counter */
-	timer_reset(TMR_FREERUN);
+	rcc_periph_reset_pulse(RST_TIM2);
 	TIM_CR1(TMR_FREERUN) = 0;	//defaults : upcount, no reload, etc
 	TIM_PSC(TMR_FREERUN) = APB_FREQ_MHZ - 1;
 	timer_enable_counter(TMR_FREERUN);
