@@ -13,6 +13,86 @@
  * Warning : DIO_PORT and CONTROL_PORT need 5V tolerant pins !
  * FLOW_PORT can be regular 3.3V IO since it's output-only.
  *
+ */
+
+/*
+ * These settings are for hw-1.00, stm32F070C6 / 70CB
+ *
+ *
+ * Mapping:
+ *
+ * GPIOA
+ * 2 : LED
+ * 4,5,6 : FLOW_PORT.{TE,PE,DC} (3V3)
+ * 8,9,10 : CONTROL_PORT_1 {DAV,NRFD,NDAC} (5V)
+ * 11,12 : reserved for USB
+ * 13,14 : SWD/SWCLK for debugging
+ * 15 : CONTROL_PORT_1 {EOI} (5V)
+ *
+ * GPIOB	Can't use PB0:1 because not 5Vtol !!
+ * 2,3,4,5 : CONTROL_PORT_2 {REN,IFC,ATN,SRQ} (5V)
+ * 8-15 : DIO to GPIB (5V).
+ *
+ */
+
+#undef USE_SN75162
+
+
+#define LED_PORT GPIOA
+#define LED_ERROR GPIO2
+#define LED_STATUS GPIO2
+
+
+/* GPIB data lines DIO1-DIO8 on PB8-15 */
+#define DIO_PORT GPIOB
+#define DIO_PORTSHIFT 8
+/** write DIO, takes care of inversion */
+#define WRITE_DIO(x) gpio_port_write(DIO_PORT, ~(x) << DIO_PORTSHIFT)
+/** read DIO lines, takes care of inversion */
+#define READ_DIO(x) ((~gpio_port_read(DIO_PORT) >> DIO_PORTSHIFT) & 0xFF)
+
+/* GPIB control lines
+ * super messy
+ *
+ */
+#define DAV_CP GPIOA
+#define NRFD_CP GPIOA
+#define NDAC_CP GPIOA	//NRFD and NDAC must be on the same port
+#define EOI_CP GPIOA	//EOI and DAV must be on the same port
+
+#define DAV GPIO8
+#define NRFD GPIO9
+#define NDAC GPIO10
+#define EOI GPIO15
+
+#define REN_CP GPIOB
+#define IFC_CP GPIOB
+#define ATN_CP GPIOB
+#define SRQ_CP GPIOB
+
+#define REN GPIO2
+#define IFC GPIO3
+#define ATN GPIO4
+#define SRQ GPIO5
+
+
+/* Direction and output mode controls
+ * for the 7516x drivers
+ */
+#define FLOW_PORT GPIOA
+
+#define TE GPIO4
+#define PE GPIO5
+#define DC GPIO6
+
+// timing
+#define APB_FREQ_MHZ	(48)	//we're going to be running off USB
+#define APB_FREQ_HZ	(APB_FREQ_MHZ*1000*1000UL)
+
+
+
+#if 0
+/*
  * These settings are for a STM32F072 Discovery board,
  * USART comms.
  *
@@ -94,6 +174,8 @@
 /********** TIMING */
 #define APB_FREQ_MHZ	(48)	//we're going to be running off USB
 #define APB_FREQ_HZ	(APB_FREQ_MHZ*1000*1000UL)
+
+#endif	//f072disco settings
 
 /** free-running timing source
  * 32-bit microsecond counter

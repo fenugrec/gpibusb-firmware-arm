@@ -248,10 +248,8 @@ void hw_setup(void) {
 	wdt_setup();
 	init_timers();
 
-	/* we have stuff on GPIO A,B,C anyway */
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
-	rcc_periph_clock_enable(RCC_GPIOC);
 
 	/* disable printf buffering so it calls _write every time instead
 	 * of waiting for a fflush() or other conditions. This will help keep
