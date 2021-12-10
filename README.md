@@ -6,7 +6,7 @@ Most of the code was restructured and modified.
 ## status : haha
 
 ## hardware
-Not sure of the details yet. Needs the two GPIB driver ICs (SN75160 + SN75161/75162).
+hw 1.00 : buggy PCB based on stm32F070 , with two GPIB driver ICs (SN75160 + SN75161/75162). Not released.
 
 This should run on pretty much any ARM mcu (note) that is supported by libopencm3. I'm working with an STM32F072 discovery board.
 (note): the one hard requirement is to have 8 consecutive GPIO pins that are 5V-tolerant. See firmware/hw_conf.h .
