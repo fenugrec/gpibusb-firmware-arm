@@ -34,6 +34,14 @@ void restart_wdt(void);
 */
 void hw_startcomms(void);
 
+/** queue byte to send to host
+*/
+void hw_host_tx(uint8_t txb);
+
+/** queue multiple bytes to send to host
+*/
+void hw_host_tx_m(uint8_t *data, unsigned len);
+
 /** TODO ? these could be replaced by "EEPROM emulation", see ST AN2594 */
 #define write_eeprom(addr, data)
 #define read_eeprom(addr) 0

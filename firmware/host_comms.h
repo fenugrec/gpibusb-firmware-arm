@@ -35,6 +35,11 @@
  */
 void host_comms_init(void);
 
+/** callback for data received from host
+ *
+ * Possibly called from a UART / USB interrupt
+ */
+void host_comms_rx(uint8_t rxb);
 
 /** RX from host: sink can poll ring_read_ch() */
 extern struct ring input_ring;

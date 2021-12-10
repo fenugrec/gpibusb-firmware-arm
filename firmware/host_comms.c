@@ -16,7 +16,6 @@
 #include <stdint.h>
 
 #include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/nvic.h>
 
@@ -30,9 +29,6 @@
 /**** globals */
 struct ring input_ring;
 
-/**** private */
-static struct ring output_ring;
-
 /* Each incoming chunk is saved into the input FIFO.
  *
  * we do minimal filtering, except length check
@@ -40,7 +36,6 @@ static struct ring output_ring;
  */
 #define UART_BUFFER_SIZE (HOST_IN_BUFSIZE * 3)
 
-static uint8_t output_ring_buffer[HOST_IN_BUFSIZE];
 static uint8_t input_ring_buffer[UART_BUFFER_SIZE];
 
 static unsigned in_len;	//length of chunk being received from host
@@ -54,15 +49,9 @@ static enum e_hrx_state hrx_state = HRX_RX;
 
 
 /***** funcs */
-/** Parse one byte received from host
- *
- * Possibly called from a UART / USB interrupt
- */
-static void host_comms_rx(uint8_t rxb);
 
 
 void host_comms_init(void) {
-	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));
 	ring_init(&input_ring, input_ring_buffer, sizeof(input_ring_buffer));
 	hrx_state = HRX_RX;
 	in_len = 0;
@@ -77,7 +66,7 @@ void host_comms_init(void) {
  * Does not distinguish between data or commands.
  * Converts unescaped \r (CR) to \n
  */
-static void host_comms_rx(uint8_t rxb) {
+void host_comms_rx(uint8_t rxb) {
 
 	if (in_len == HOST_IN_BUFSIZE) {
 		//overflow
@@ -118,44 +107,10 @@ static void host_comms_rx(uint8_t rxb) {
 }
 
 void host_tx(uint8_t txb) {
-	if (ring_write_ch(&output_ring, txb) == -1) {
-		//TODO : overflow
-		return;
-	}
-	usart_enable_tx_interrupt(USART2);	//should trigger TXE instantly ?
-	return;
+	hw_host_tx(txb);
 }
 
 void host_tx_m(uint8_t *data, unsigned len) {
-	if (ring_write(&output_ring, data, len) != len) {
-		//TODO : overflow
-		return;
-	}
-	usart_enable_tx_interrupt(USART2);	//should trigger TXE instantly ?
-	return;
+	hw_host_tx_m(data, len);
 }
 
-
-void usart2_isr(void) {
-	u8 rxbyte;
-	u8 txbyte;
-
-	// TODO : check for framing / overrun errors too
-
-	// Check if we were called because of RXNE.
-	if (usart_get_flag(USART2, USART_ISR_RXNE)) {
-		rxbyte = usart_recv(USART2);
-		host_comms_rx(rxbyte);
-	}
-
-	// Check if we were called because of TXE.
-	if (usart_get_flag(USART2, USART_ISR_TXE)) {
-		if (ring_read_ch(&output_ring, &txbyte) == -1) {
-			//no more data in buffer.
-			usart_disable_tx_interrupt(USART2);
-		} else {
-			//non-blocking : we'll end up back here anyway
-			usart_send(USART2, txbyte);
-		}
-	}
-}
