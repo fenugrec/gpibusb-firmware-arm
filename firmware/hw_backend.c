@@ -197,7 +197,10 @@ void hw_host_tx(uint8_t txb) {
 }
 
 void hw_host_tx_m(uint8_t *data, unsigned len) {
-	if (ring_write(&output_ring, data, len) != len) {
+	if (len > 256) {
+		len = 256;
+	}
+	if (ring_write(&output_ring, data, (ring_size_t) len) != (ring_size_t) len) {
 		//TODO : overflow
 		return;
 	}

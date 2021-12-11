@@ -39,6 +39,8 @@ void hw_startcomms(void);
 void hw_host_tx(uint8_t txb);
 
 /** queue multiple bytes to send to host
+*
+* @param len max 256 bytes. extra data is dropped
 */
 void hw_host_tx_m(uint8_t *data, unsigned len);
 
