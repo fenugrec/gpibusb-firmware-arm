@@ -23,8 +23,6 @@
 
 /** INCLUDES ******************************************************************/
 
-#include <libopencm3/stm32/gpio.h>
-
 #include "firmware.h"
 #include "hw_conf.h"
 #include "hw_backend.h"
@@ -46,12 +44,11 @@ int main(void)
 
 	// TODO: Load settings from EEPROM
 
-	gpio_clear(LED_PORT, LED_ERROR);
-
 	cmd_parser_init();
 	host_comms_init();
 	hw_startcomms();
 
+	hw_led(LEDPATTERN_IDLE);
 	cmd_poll();
 
 	return 0;

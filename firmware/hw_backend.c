@@ -27,11 +27,33 @@
 
 /****** IO, GPIO */
 
+// TODO : LED blink and polarity
 static void led_setup(void) {
 	/* LEDs, active high */
 	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
 	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS | LED_ERROR);
 
+}
+
+void hw_led(enum LED_PATTERN np) {
+	switch (np) {
+		case LEDPATTERN_OFF:
+			gpio_clear(LED_PORT, LED_ERROR | LED_STATUS);
+			break;
+		case LEDPATTERN_ERROR:
+			gpio_set(LED_PORT, LED_ERROR);
+			break;
+		case LEDPATTERN_IDLE:
+			gpio_clear(LED_PORT, LED_ERROR);
+			gpio_set(LED_PORT, LED_STATUS);
+			break;
+		case LEDPATTERN_ACT:
+			gpio_set(LED_PORT, LED_STATUS);
+			break;
+		default:
+			//XXX assert
+			break;
+	}
 }
 
 void prep_gpib_pins(bool mode) {

@@ -44,7 +44,22 @@ void hw_host_tx(uint8_t txb);
 */
 void hw_host_tx_m(uint8_t *data, unsigned len);
 
-/** TODO ? these could be replaced by "EEPROM emulation", see ST AN2594 */
+/**************** IO
+*/
+enum LED_PATTERN {
+	LEDPATTERN_OFF,	// all off
+	LEDPATTERN_ERROR,
+	LEDPATTERN_IDLE,	//normal ops
+	LEDPATTERN_ACT,	//traffic / activity
+};
+
+/** set LEDs to given pattern
+*/
+void hw_led(enum LED_PATTERN np);
+
+/**************** EEPROM
+* TODO ? these could be replaced by "EEPROM emulation", see ST AN2594
+*/
 #define write_eeprom(addr, data)
 #define read_eeprom(addr) 0
 
