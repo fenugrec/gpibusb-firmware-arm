@@ -32,7 +32,7 @@ add_custom_command(
 set (FW_SRCS
 	${CMAKE_SOURCE_DIR}/printf/src/printf/printf.c
 	ring.c gpib.c cmd_parser.c hw_backend.c host_comms.c
-	libc_stubs.c cmd_hashtable.c
+	libc_stubs.c cmd_hashtable.c usb_cdc.c
 	firmware.c
 )
 

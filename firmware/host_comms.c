@@ -2,8 +2,7 @@
  *
  * (c) fenugrec 2018
  *
- * The RX channel (receiving from host) needs at least one FIFO buffer
- * since the USART is running without flow control.
+ * The RX channel (receiving from host) needs a FIFO buffer
  *
  * To simplify the command parser, we do some initial filtering
  * according to state and received length.

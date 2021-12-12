@@ -28,6 +28,7 @@
 #include "hw_backend.h"
 #include "cmd_parser.h"
 #include "host_comms.h"
+#include "usb_cdc.h"
 
 #include "gpib.h"
 
@@ -49,7 +50,10 @@ int main(void)
 	hw_startcomms();
 
 	hw_led(LEDPATTERN_IDLE);
+	fwusb_init();
+
 	while (1) {
+		fwusb_poll();
 		cmd_poll();
 	}
 
