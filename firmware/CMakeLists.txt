@@ -17,9 +17,16 @@
 set (TGTNAME firmware)
 
 
-#### TODO : hashtable
-#cmd_hashtable.c: cmd_hashtable.gen
-#gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
+## Generate command parser hashtable with gperf.
+# cmd_hashtable.c is part of the repo so gperf is not a hard requirement
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/cmd_hashtable.c
+	COMMENT "Generating command hashtable"
+	COMMAND gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cmd_hashtable.gen
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 ### build source file lists (useful later)
 set (FW_SRCS

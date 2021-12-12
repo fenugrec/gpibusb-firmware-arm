@@ -46,7 +46,7 @@ set (OPENCM3_DIR ${CMAKE_SOURCE_DIR}/libopencm3)
 
 add_custom_target(libopencm3
 	COMMAND make TARGETS=stm32/f0 V=1
-	COMMENT building libopencm3
+	COMMENT "building libopencm3"
 	WORKING_DIRECTORY ${OPENCM3_DIR}
 )
 
