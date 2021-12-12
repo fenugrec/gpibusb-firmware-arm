@@ -97,9 +97,6 @@ static bool srq_state(void) {
 }
 
 
-/** initialize command parser
- *
- */
 void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
     if (read_eeprom(0x00) == VALID_EEPROM_CODE)
@@ -132,6 +129,8 @@ void cmd_parser_init(void) {
     {
         gpib_controller_assign();
     }
+
+	printf("Command parser ready.%c", eot_char);
 
 }
 
@@ -602,117 +601,110 @@ static void device_poll(void) {
 	}
 }
 
-/** wait for command inputs, or GPIB traffic if in device mode
- *
- * Assumes an interrupt-based process is feeding the input FIFO.
- * This func does not return
- */
+
 void cmd_poll(void) {
 	u8 rxb;
-	u8 input_buf[HOST_IN_BUFSIZE];
-	unsigned in_len = 0;
-	unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
-	unsigned arg_pos = 0;
-	bool in_cmd = 0;
-	bool escape_next = 0;
-	bool wait_guardbyte = 0;
-	bool has_args = 0;
+	static u8 input_buf[HOST_IN_BUFSIZE];
+	static unsigned in_len = 0;
+	static unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
+	static unsigned arg_pos = 0;
+	static bool in_cmd = 0;
+	static bool escape_next = 0;
+	static bool wait_guardbyte = 0;
+	static bool has_args = 0;
 
-
-	printf("Command parser ready.%c", eot_char);
-
-	while (1) {
 #ifdef WITH_WDT
-		restart_wdt();
+	restart_wdt();
 #endif
-		if (!mode) {
-			device_poll();
-		}
+	if (!mode) {
+		device_poll();
+	}
 
-		//build chunk from FIFO
-		if (ring_read_ch(&input_ring, &rxb) == -1) {
-			//no data
-			continue;
-		}
-		if ((in_len == 0) && (rxb == '+')) {
-			//start of new command chunk
-			in_cmd = 1;
-			cmd_len = 0;
-			has_args = 0;
-			arg_pos = 0;
-		}
+	//build chunk from FIFO
+	if (ring_read_ch(&input_ring, &rxb) == -1) {
+		//no data
+		return;
+	}
+	if ((in_len == 0) && (rxb == '+')) {
+		//start of new command chunk
+		in_cmd = 1;
+		cmd_len = 0;
+		has_args = 0;
+		arg_pos = 0;
+	}
 
-		if (wait_guardbyte) {
-			//just finished a chunk; make sure it was valid
-			wait_guardbyte = 0;
-			if (rxb != CHUNK_VALID) {
-				//discard
-				in_len = 0;
-				continue;
-			}
-			if (in_cmd) {
-				if (arg_pos) {
-					//non-empty args
-					chunk_cmd((char *) input_buf, cmd_len, 1);
-				} else {
-					chunk_cmd((char *) input_buf, cmd_len, 0);
-				}
-			} else {
-				chunk_data((char *) input_buf, in_len);
-			}
+	if (wait_guardbyte) {
+		//just finished a chunk; make sure it was valid
+		wait_guardbyte = 0;
+		if (rxb != CHUNK_VALID) {
+			//discard
 			in_len = 0;
-			continue;
+			return;
 		}
-
-		if (!escape_next && (rxb == 27)) {
-			//regardless of chunk type (command or data),
-			//strip escape char
-			escape_next = 1;
-			continue;
-		}
-
 		if (in_cmd) {
-			if (!escape_next && (rxb == '\n')) {
-				//0-terminate.
-				wait_guardbyte = 1;
-				input_buf[in_len] = 0;
-				continue;
-			}
-			escape_next = 0;
-			//also, tokenize now instead of calling strtok later.
-			//Only split args once.
-			if (has_args) {
-				input_buf[in_len++] = rxb;
-				continue;
-			}
-			if (rxb == ':') {
-				//commands of form "+<cmd>:<args>" : split args after ':'
-				input_buf[in_len++] = rxb;
-				cmd_len = in_len;
-				input_buf[in_len++] = 0;
-				has_args = 1;
-				arg_pos = in_len;
-			} else if (rxb == ' ') {
-				cmd_len = in_len;
-				//commands of form "++<cmd> <args>": split args on ' '
-				input_buf[in_len++] = 0;
-				has_args = 1;
-				arg_pos = in_len;
+			if (arg_pos) {
+				//non-empty args
+				chunk_cmd((char *) input_buf, cmd_len, 1);
 			} else {
-				input_buf[in_len++] = rxb;
-				cmd_len++;
+				chunk_cmd((char *) input_buf, cmd_len, 0);
 			}
-
-			continue;
+		} else {
+			chunk_data((char *) input_buf, in_len);
 		}
+		in_len = 0;
+		return;
+	}
 
-		// if we made it here, we're dealing with data.
+	if (!escape_next && (rxb == 27)) {
+		//regardless of chunk type (command or data),
+		//strip escape char
+		escape_next = 1;
+		return;
+	}
+
+	if (in_cmd) {
 		if (!escape_next && (rxb == '\n')) {
-			//terminate.
+			//0-terminate.
 			wait_guardbyte = 1;
-			continue;
+			input_buf[in_len] = 0;
+			return;
 		}
-		input_buf[in_len++] = rxb;
 		escape_next = 0;
-	}	//while 1
+		//also, tokenize now instead of calling strtok later.
+		//Only split args once.
+		if (has_args) {
+			input_buf[in_len++] = rxb;
+			return;
+		}
+		if (rxb == ':') {
+			//commands of form "+<cmd>:<args>" : split args after ':'
+			input_buf[in_len++] = rxb;
+			cmd_len = in_len;
+			input_buf[in_len++] = 0;
+			has_args = 1;
+			arg_pos = in_len;
+		} else if (rxb == ' ') {
+			cmd_len = in_len;
+			//commands of form "++<cmd> <args>": split args on ' '
+			input_buf[in_len++] = 0;
+			has_args = 1;
+			arg_pos = in_len;
+		} else {
+			input_buf[in_len++] = rxb;
+			cmd_len++;
+		}
+
+		return;
+	}
+
+	// if we made it here, we're dealing with data.
+	if (!escape_next && (rxb == '\n')) {
+		//terminate.
+		wait_guardbyte = 1;
+		return;
+	}
+	input_buf[in_len++] = rxb;
+	escape_next = 0;
+
+	return;
 }

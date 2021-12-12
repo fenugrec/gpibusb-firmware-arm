@@ -44,12 +44,14 @@ int main(void)
 
 	// TODO: Load settings from EEPROM
 
-	cmd_parser_init();
 	host_comms_init();
+	cmd_parser_init();
 	hw_startcomms();
 
 	hw_led(LEDPATTERN_IDLE);
-	cmd_poll();
+	while (1) {
+		cmd_poll();
+	}
 
 	return 0;
 }
