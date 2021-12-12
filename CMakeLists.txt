@@ -18,6 +18,7 @@ add_compile_options(
 #    -fno-move-loop-invariants
     -Os -ggdb3
 #    -flto -ffat-lto-objects
+	-specs=nano.specs
 )
 
 add_link_options(

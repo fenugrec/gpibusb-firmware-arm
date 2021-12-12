@@ -7,8 +7,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-
 
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
@@ -275,12 +273,6 @@ void hw_setup(void) {
 
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
-
-	/* disable printf buffering so it calls _write every time instead
-	 * of waiting for a fflush() or other conditions. This will help keep
-	 * the output in sequence.
-	 * XXX This will need to be tuned when changing from UART to USB */
-	setvbuf(stdout, NULL, _IONBF, 0);
 
 	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));
 	usart_setup();

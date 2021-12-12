@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <printf/printf.h>
+
 #include <libopencm3/stm32/gpio.h>
 
 #include "libc_stubs.h"

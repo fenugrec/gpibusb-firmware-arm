@@ -30,10 +30,15 @@ add_custom_command(
 
 ### build source file lists (useful later)
 set (FW_SRCS
+	${CMAKE_SOURCE_DIR}/printf/src/printf/printf.c
 	ring.c gpib.c cmd_parser.c hw_backend.c host_comms.c
 	libc_stubs.c cmd_hashtable.c
 	firmware.c
 )
+
+## make sure printf.c uses our printf_config.h
+set_source_files_properties(${CMAKE_SOURCE_DIR}/printf/src/printf/printf.c
+	PROPERTIES COMPILE_OPTIONS "-DPRINTF_INCLUDE_CONFIG_H")
 
 
 #and GLOB all the headers. This is *only* so that the headers end up in
@@ -55,15 +60,17 @@ target_link_options(${TGTNAME} PRIVATE -T ${CMAKE_SOURCE_DIR}/ldscripts/stm32f07
 target_link_options(${TGTNAME} PRIVATE -Wl,-Map=${TGTNAME}.map)
 
 target_include_directories(${TGTNAME} PRIVATE
+	${CMAKE_SOURCE_DIR}/firmware
 	${CMAKE_SOURCE_DIR}/libopencm3/include
 	${CMAKE_SOURCE_DIR}/libopencmsis/include
 	${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/printf/src
 )
 target_link_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/lib
 )
 
-target_link_libraries(${TGTNAME} opencm3_stm32f0 c gcc nosys)
+target_link_libraries(${TGTNAME} opencm3_stm32f0)
 
 #report size post-build
 string(REPLACE "objcopy" "size" CMAKE_OBJSIZE "${CMAKE_OBJCOPY}")

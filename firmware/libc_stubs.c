@@ -2,7 +2,8 @@
 
 
 #include <ctype.h>	//toupper
-#include <errno.h>	//for _write()
+
+#include <printf/printf.h>
 
 #include "hw_backend.h"
 #include "libc_stubs.h"
@@ -58,12 +59,7 @@ int htoi(const char *buf) {
 }
 
 
-int _write(int file, char *ptr, int len) {
-	if (file == 1) {
-		hw_host_tx_m((uint8_t *)ptr, len);
-		return len;
-	}
-
-	errno = EIO;
-	return -1;
+void putchar_(char character) {
+	hw_host_tx((uint8_t) character);
+	return;
 }
