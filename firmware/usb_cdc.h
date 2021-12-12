@@ -1,6 +1,8 @@
 #ifndef USB_CDC_H
 #define USB_CDC_H
 
+#include "ring.h"
+
 /** Init USB */
 void fwusb_init(void);
 
