@@ -1,7 +1,10 @@
+# based on CMake buildsys of candlelight-fw project
+# and other sources.
+# Note, this is still pretty ugly and has stuff spread here and in subdirectories;
+# parts of this are also unused yet.
+
 cmake_minimum_required(VERSION 3.13)
 project(gpibusb_cdc C ASM)
-
-# based on CMake buildsys of candlelight-fw project
 
 add_compile_options(
     -std=gnu11
@@ -80,8 +83,8 @@ function(make_bin_file target)
 endfunction()
 
 ## report size
+string(REPLACE "objcopy" "size" CMAKE_OBJSIZE "${CMAKE_OBJCOPY}")
 function(show_object_size target)
-    string(REPLACE "objcopy" "size" CMAKE_OBJSIZE "${CMAKE_OBJCOPY}")
     add_custom_command(
         TARGET ${target} POST_BUILD
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

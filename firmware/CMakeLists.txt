@@ -45,11 +45,14 @@ file (GLOB FW_HEADERS *.h)
 ### Now define targets.
 
 add_executable(${TGTNAME} ${FW_SRCS} ${FW_HEADERS})
+
 #make sure libopencm3 builds first
 add_dependencies(${TGTNAME} libopencm3)
+
+target_compile_definitions(${TGTNAME} PRIVATE STM32F0)
 target_link_options(${TGTNAME} PRIVATE -T ${CMAKE_SOURCE_DIR}/ldscripts/stm32f070.ld)
 #target_link_options(${TGTNAME} PRIVATE -T ${CMAKE_SOURCE_DIR}/firmware/generated.stm32f070cb.ld)
-target_link_options(${TGTNAME} PRIVATE -Wl,-Map=${TGTNAME}.map)
+
 target_include_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/include
 	${CMAKE_SOURCE_DIR}/libopencmsis/include
@@ -58,6 +61,13 @@ target_include_directories(${TGTNAME} PRIVATE
 target_link_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/lib
 )
-target_compile_definitions(${TGTNAME} PRIVATE STM32F0)
+
 target_link_libraries(${TGTNAME} opencm3_stm32f0 c gcc nosys)
 
+#report size post-build
+string(REPLACE "objcopy" "size" CMAKE_OBJSIZE "${CMAKE_OBJCOPY}")
+add_custom_command(
+	TARGET ${TGTNAME} POST_BUILD
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	COMMAND ${CMAKE_OBJSIZE} ${TGTNAME}
+)
