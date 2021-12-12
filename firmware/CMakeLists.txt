@@ -52,6 +52,7 @@ add_dependencies(${TGTNAME} libopencm3)
 target_compile_definitions(${TGTNAME} PRIVATE STM32F0)
 target_link_options(${TGTNAME} PRIVATE -T ${CMAKE_SOURCE_DIR}/ldscripts/stm32f070.ld)
 #target_link_options(${TGTNAME} PRIVATE -T ${CMAKE_SOURCE_DIR}/firmware/generated.stm32f070cb.ld)
+target_link_options(${TGTNAME} PRIVATE -Wl,-Map=${TGTNAME}.map)
 
 target_include_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/include
@@ -70,4 +71,12 @@ add_custom_command(
 	TARGET ${TGTNAME} POST_BUILD
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 	COMMAND ${CMAKE_OBJSIZE} ${TGTNAME}
+)
+
+#produce .bin file
+add_custom_command(
+	TARGET ${TGTNAME} POST_BUILD
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	BYPRODUCTS ${TGTNAME}.bin
+	COMMAND ${CMAKE_OBJCOPY} -O binary ${TGTNAME} ${TGTNAME}.bin
 )
