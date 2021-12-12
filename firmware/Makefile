@@ -19,12 +19,13 @@ OBJS = ring.o gpib.o cmd_parser.o hw_backend.o host_comms.o libc_stubs.o \
 	cmd_hashtable.o
 
 OPENCM3_DIR=../libopencm3
-LDSCRIPT = ../stm32f0-discovery.ld
+DEVICE=stm32f070cb
+#LDSCRIPT = ../stm32f0-discovery.ld
 
 include ../libopencm3.target.mk
 
-all: $(BINARY).bin
-	@$(SIZE) $(BINARY).elf
+#all: $(BINARY).bin
+#	@$(SIZE) $(BINARY).elf
 
 cmd_hashtable.c: cmd_hashtable.gen
 	gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen

@@ -3,6 +3,7 @@
 ##
 ## Copyright (C) 2009 Uwe Hermann <uwe@hermann-uwe.de>
 ## Copyright (C) 2010 Piotr Esden-Tempski <piotr@esden.net>
+## Copyright (C) 2011 Fergus Noble <fergusnoble@gmail.com>
 ##
 ## This library is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU Lesser General Public License as published by
@@ -18,18 +19,22 @@
 ## along with this library.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-LIBNAME		= opencm3_stm32f0
-DEFS		= -DSTM32F0
+# You should use linker script generation! Specify device!
+ifeq ($(DEVICE),)
+LIBNAME		= opencm3_stm32f4
+DEFS		+= -DSTM32F4
 
 FP_FLAGS	?= -msoft-float
-ARCH_FLAGS	= -mthumb -mcpu=cortex-m0 $(FP_FLAGS) -specs=nano.specs
+ARCH_FLAGS	= -mthumb -mcpu=cortex-m0 $(FP_FLAGS)
+# --specs=nano.specs --specs=nosys.specs
+endif
 
 ################################################################################
 # OpenOCD specific variables
 
 OOCD		?= openocd
-OOCD_INTERFACE	?= flossjtag
-OOCD_BOARD	?= olimex_stm32_h103
+OOCD_INTERFACE	?= stlink-v2
+OOCD_TARGET	?= stm32f0x
 
 ################################################################################
 # Black Magic Probe specific variables
@@ -38,7 +43,7 @@ BMP_PORT	?=
 
 ################################################################################
 # texane/stlink specific variables
-STLINK_PORT	?= :4242
+#STLINK_PORT	?= :4242
 
 
 include ../libopencm3.rules.mk

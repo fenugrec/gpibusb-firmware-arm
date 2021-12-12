@@ -1,3 +1,4 @@
+
 ##
 ## This file is part of the libopencm3 project.
 ##
@@ -28,17 +29,17 @@ endif
 ###############################################################################
 # Executables
 
-PREFIX		?= arm-none-eabi
+PREFIX		?= arm-none-eabi-
 
-CC		:= $(PREFIX)-gcc
-CXX		:= $(PREFIX)-g++
-LD		:= $(PREFIX)-gcc
-AR		:= $(PREFIX)-ar
-AS		:= $(PREFIX)-as
-OBJCOPY		:= $(PREFIX)-objcopy
-OBJDUMP		:= $(PREFIX)-objdump
-GDB		:= $(PREFIX)-gdb
-SIZE	:= $(PREFIX)-size
+CC		:= $(PREFIX)gcc
+CXX		:= $(PREFIX)g++
+LD		:= $(PREFIX)gcc
+AR		:= $(PREFIX)ar
+AS		:= $(PREFIX)as
+SIZE	:= $(PREFIX)size
+OBJCOPY		:= $(PREFIX)objcopy
+OBJDUMP		:= $(PREFIX)objdump
+GDB		:= $(PREFIX)gdb
 STFLASH		= $(shell which st-flash)
 STYLECHECK	:= /checkpatch.pl
 STYLECHECKFLAGS	:= --no-tree -f --terse --mailback
@@ -129,6 +130,7 @@ TGT_LDFLAGS		+= -T$(LDSCRIPT)
 TGT_LDFLAGS		+= $(ARCH_FLAGS) $(DEBUG)
 TGT_LDFLAGS		+= -Wl,-Map=$(*).map -Wl,--cref
 TGT_LDFLAGS		+= -Wl,--gc-sections
+TGT_LDFLAGS		+= -specs=nano.specs
 ifeq ($(V),99)
 TGT_LDFLAGS		+= -Wl,--print-gc-sections
 endif
@@ -146,13 +148,14 @@ LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 .SECONDEXPANSION:
 .SECONDARY:
 
-all: elf
+all: elf bin
 
 elf: $(BINARY).elf
 bin: $(BINARY).bin
 hex: $(BINARY).hex
 srec: $(BINARY).srec
 list: $(BINARY).list
+GENERATED_BINARIES=$(BINARY).elf $(BINARY).bin $(BINARY).hex $(BINARY).srec $(BINARY).list $(BINARY).map
 
 images: $(BINARY).images
 flash: $(BINARY).flash
@@ -165,6 +168,12 @@ $(LDSCRIPT):
     endif
 else
 include $(OPENCM3_DIR)/mk/genlink-rules.mk
+endif
+
+$(OPENCM3_DIR)/lib/lib$(LIBNAME).a:
+ifeq (,$(wildcard $@))
+	$(warning $(LIBNAME).a not found, attempting to rebuild in $(OPENCM3_DIR))
+	$(MAKE) -C $(OPENCM3_DIR)
 endif
 
 # Define a helper macro for debugging make errors online
@@ -180,6 +189,7 @@ print-%:
 %.bin: %.elf
 	@#printf "  OBJCOPY $(*).bin\n"
 	$(Q)$(OBJCOPY) -Obinary $(*).elf $(*).bin
+	$(Q)$(SIZE) $(*).elf
 
 %.hex: %.elf
 	@#printf "  OBJCOPY $(*).hex\n"
@@ -193,7 +203,7 @@ print-%:
 	@#printf "  OBJDUMP $(*).list\n"
 	$(Q)$(OBJDUMP) -S $(*).elf > $(*).list
 
-%.elf %.map: $(OBJS) $(LDSCRIPT)
+%.elf %.map: $(OBJS) $(LDSCRIPT) $(OPENCM3_DIR)/lib/lib$(LIBNAME).a
 	@#printf "  LD      $(*).elf\n"
 	$(Q)$(LD) $(TGT_LDFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(*).elf
 
@@ -211,7 +221,7 @@ print-%:
 
 clean:
 	@#printf "  CLEAN\n"
-	$(Q)$(RM) *.o *.d *.elf *.bin *.hex *.srec *.list *.map generated.* ${OBJS} ${OBJS:%.o:%.d}
+	$(Q)$(RM) $(GENERATED_BINARIES) generated.* $(OBJS) $(OBJS:%.o=%.d)
 
 stylecheck: $(STYLECHECKFILES:=.stylecheck)
 styleclean: $(STYLECHECKFILES:=.styleclean)
