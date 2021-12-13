@@ -23,6 +23,24 @@
 
 /****** IO, GPIO */
 
+/** enable 5V supply for sn75xx drivers.
+ *
+ * they draw a ton of current and should be disabled
+ * when USB is suspended. TODO
+ */
+static void enable_5v(bool enable) {
+	bool set = enable;
+#if EN5V_ACTIVEHIGH==0
+	//if active-low : reverse polarity
+	set = !enable;
+#endif // EN5V_ACTIVEHIGH
+	if (set) {
+		gpio_set(EN5V_PORT, EN5V_PIN);
+	} else {
+		gpio_clear(EN5V_PORT, EN5V_PIN);
+	}
+}
+
 // TODO : LED blink and polarity
 static void led_setup(void) {
 	/* LEDs, active high */
@@ -217,5 +235,6 @@ void hw_setup(void) {
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
 	gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
 
+	enable_5v(1);
 	led_setup();
 }

@@ -22,6 +22,7 @@
  * Mapping:
  *
  * GPIOA
+ * 0 : active low enable_5V
  * 2 : LED
  * 4,5,6 : FLOW_PORT.{TE,PE,DC} (3V3)
  * 8,9,10 : CONTROL_PORT_1 {DAV,NRFD,NDAC} (5V)
@@ -36,6 +37,10 @@
  */
 
 #undef USE_SN75162
+
+#define EN5V_PORT GPIOA
+#define EN5V_PIN GPIO0
+#define EN5V_ACTIVEHIGH 0	//= active low
 
 
 #define LED_PORT GPIOA
