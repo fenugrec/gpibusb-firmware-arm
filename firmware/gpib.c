@@ -39,7 +39,7 @@
 bool mode = 1;
 bool debug = 0; // enable or disable read&write error messages
 char eot_char = '\r'; // default CR
-uint32_t timeout = 1000;
+uint32_t timeout = 1000;	//in ms
 // Variables for device mode
 bool device_talk = false;
 bool device_listen = false;
@@ -84,7 +84,7 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
-	u32 t0, tdelta = timeout * 1000;
+	u32 t0, tdelta = timeout;
 
 	// TODO: Set pin modes to output as required for writing, and revert to input on exit/abort
 
@@ -105,7 +105,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
-		if ((get_us() - t0) >= tdelta) {
+		if ((get_ms() - t0) >= tdelta) {
 			if (debug == 1) {
 				printf("write: timeout: waiting for NRFD+ && NDAC-%c", eot_char);
 			}
@@ -126,11 +126,11 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		#endif
 
 		// Wait for NDAC to go low, indicating previous bit is now done with
-		t0 = get_us();
+		t0 = get_ms();
 		while(gpio_get(NDAC_CP, NDAC)) {
 #ifdef WITH_TIMEOUT
 			restart_wdt();
-			if ((get_us() - t0) >= tdelta) {
+			if ((get_ms() - t0) >= tdelta) {
 				if (debug == 1) {
 					printf("write timeout: waiting for NDAC-%c", eot_char);
 				}
@@ -149,11 +149,11 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
         if((i==length-1) && (use_eoi)) {gpio_clear(EOI_CP, EOI);}
 
         // Wait for NRFD to go high, indicating listeners are ready for data
-		t0 = get_us();
+		t0 = get_ms();
 		while(!gpio_get(NRFD_CP, NRFD)) {
 #ifdef WITH_TIMEOUT
 			restart_wdt();
-			if ((get_us() - t0) >= tdelta) {
+			if ((get_ms() - t0) >= tdelta) {
 				if (debug == 1) {
 					 printf("write timeout: Waiting for NRFD+%c", eot_char);
 				}
@@ -169,11 +169,11 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		gpio_clear(DAV_CP, DAV);
 
 		// Wait for NDAC to go high, all listeners have accepted the byte
-		t0 = get_us();
+		t0 = get_ms();
 		while(!gpio_get(NDAC_CP, NDAC)) {
 #ifdef WITH_TIMEOUT
 			restart_wdt();
-			if ((get_us() - t0) >= tdelta) {
+			if ((get_ms() - t0) >= tdelta) {
 				if (debug == 1) {
 					 printf("write timeout: Waiting for NDAC+%c", eot_char);
 				}
@@ -212,7 +212,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 * Returns 0 if everything went fine
 */
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
-	u32 t0, tdelta = timeout * 1000;
+	u32 t0, tdelta = timeout;
 
 	// Raise NRFD, informing the talker we are ready for the byte
 	gpio_set(NRFD_CP, NRFD);
@@ -221,11 +221,11 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	gpio_clear(NDAC_CP, NDAC);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
-	t0 = get_us();
+	t0 = get_ms();
 	while(gpio_get(DAV_CP, DAV)) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
-		if ((get_us() - t0) >= tdelta) {
+		if ((get_ms() - t0) >= tdelta) {
 			if (debug == 1) {
 				 printf("readbyte timeout: Waiting for DAV-%c", eot_char);
 			}
@@ -251,11 +251,11 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	gpio_set(NDAC_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
-	t0 = get_us();
+	t0 = get_ms();
 	while(!gpio_get(DAV_CP, DAV)) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
-		if ((get_us() - t0) >= tdelta) {
+		if ((get_ms() - t0) >= tdelta) {
 			if (debug == 1) {
 				 printf("readbyte timeout: Waiting for DAV+%c", eot_char);
 			}

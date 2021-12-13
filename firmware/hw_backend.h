@@ -16,13 +16,18 @@
  */
 void hw_setup(void);
 
-void delay_us(uint32_t us);
+void delay_us(uint16_t us);
 
-/** delay up to 4294967 ms */
-#define delay_ms(x) delay_us((x) * 1000)
+void delay_ms(uint16_t ms);
+
+/** get current timestamp in ms
+ *
+ * not interrupt-safe
+ */
+uint32_t get_ms(void);
 
 /** Get current timestamp in us */
-uint32_t get_us(void);
+uint16_t get_us(void);
 
 void reset_cpu(void);
 

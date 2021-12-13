@@ -183,10 +183,11 @@
 
 #endif	//f072disco settings
 
-/** free-running timing source
- * 32-bit microsecond counter
+/** free-running 16-bit microsecond counter
+ *
+ * the F0 doesn't have any 32-bit counters !
  */
 
-#define TMR_FREERUN TIM2
+#define TMR_FREERUN TIM14
 
 #endif //_HW_CONF_H

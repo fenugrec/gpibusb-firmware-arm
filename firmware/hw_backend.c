@@ -50,10 +50,9 @@ static struct {
 
 
 static void led_setup(void) {
-	/* LEDs, active high */
-	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
-	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS | LED_ERROR);
-
+	gpio_mode_setup(LED_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_STATUS);
+	led_update(LEDPATTERN_OFF);
+	return;
 }
 
 // TODO (higher level): get out of Error state on next good command ?
@@ -71,7 +70,7 @@ void led_update(enum LED_PATTERN np) {
 }
 
 void led_poll(void) {
-	u32 tcur = get_us();
+	u32 tcur = get_ms();
 
 	// check if due for a state change
 	if ((tcur - led_status.ts_last) < led_status.ts_delta) {
@@ -97,27 +96,27 @@ void led_poll(void) {
 		case LEDPATTERN_OFF:
 			//stay off at least 500ms
 			led_status.state_next = 0;
-			led_status.ts_delta = 500 * 1000U;
+			led_status.ts_delta = 500;
 			break;
 		case LEDPATTERN_ERROR:
 			//solid on at least 500ms
 			led_status.state_next = 1;
-			led_status.ts_delta = 500 * 1000U;
+			led_status.ts_delta = 500;
 			break;
 		case LEDPATTERN_IDLE:
 			//slow pulse
 			if (led_status.state_next) {
 				//ON for 900ms
-				led_status.ts_delta = 900 * 1000U;
+				led_status.ts_delta = 900;
 			} else {
 				//then off for 100ms
-				led_status.ts_delta = 100 * 1000U;
+				led_status.ts_delta = 100;
 			}
 			led_status.state_next = !led_status.state_next;
 			break;
 		case LEDPATTERN_ACT:
 			//fast blink
-			led_status.ts_delta = 100 * 1000U;
+			led_status.ts_delta = 100;
 			led_status.state_next = !led_status.state_next;
 			break;
 		default:
@@ -179,22 +178,25 @@ void prep_gpib_pins(bool mode) {
  *
  */
 
-#if (TMR_FREERUN != TIM2)
-#error some stuff is hardcoded for TIM2 here !
+#if (TMR_FREERUN != TIM14)
+#error some stuff is hardcoded for TIM14 here !
 #endif
+
+volatile u32 freerun_ms;
 
 /* Called when systick fires */
 void sys_tick_handler(void)
 {
+	freerun_ms += 1;
 	return;
 }
 
 
 static void init_timers(void) {
-	rcc_periph_clock_enable(RCC_TIM2);
+	rcc_periph_clock_enable(RCC_TIM14);
 
 	/* free-running microsecond counter */
-	rcc_periph_reset_pulse(RST_TIM2);
+	rcc_periph_reset_pulse(RST_TIM14);
 	TIM_CR1(TMR_FREERUN) = 0;	//defaults : upcount, no reload, etc
 	TIM_PSC(TMR_FREERUN) = APB_FREQ_MHZ - 1;
 	timer_enable_counter(TMR_FREERUN);
@@ -204,21 +206,32 @@ static void init_timers(void) {
 	/* clear counter so it starts right away */
 	STK_CVR = 0;
 
-	systick_set_reload(rcc_ahb_frequency / 8 / 1000);
+	systick_set_reload(rcc_ahb_frequency / (8 * 1000U));
 	systick_counter_enable();
 	systick_interrupt_enable();
 }
 
-void delay_us(u32 us) {
-	u32 t0 = TIM_CNT(TMR_FREERUN);
+
+void delay_ms(uint16_t ms) {
+	u32 t0 = get_ms();
+	while ((get_ms() - t0) < ms);
+	return;
+}
+
+
+void delay_us(uint16_t us) {
+	u16 t0 = TIM_CNT(TMR_FREERUN);
 	while ((TIM_CNT(TMR_FREERUN) - t0) < us);
 	return;
 }
 
-uint32_t get_us(void) {
+uint16_t get_us(void) {
 	return TIM_CNT(TMR_FREERUN);
 }
 
+uint32_t get_ms(void) {
+	return freerun_ms;
+}
 
 /********* WDT
 *
