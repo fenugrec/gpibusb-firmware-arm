@@ -22,7 +22,7 @@
  * Mapping:
  *
  * GPIOA
- * 0 : active low enable_5V
+ * 0 : active low enable_5V (XXX will need to move to PB6 for hw-1.01)
  * 2 : LED
  * 4,5,6 : FLOW_PORT.{TE,PE,DC} (3V3)
  * 8,9,10 : CONTROL_PORT_1 {DAV,NRFD,NDAC} (5V)
