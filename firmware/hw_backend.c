@@ -58,7 +58,15 @@ static void led_setup(void) {
 
 // TODO (higher level): get out of Error state on next good command ?
 void led_update(enum LED_PATTERN np) {
+	if (led_status.pattern == np) {
+		//no change
+		return;
+	}
+
+	//different pattern : call poll now to take effect before next tdelta
 	led_status.pattern = np;
+	led_status.ts_delta = 0;	//force
+	led_poll();
 	return;
 }
 
