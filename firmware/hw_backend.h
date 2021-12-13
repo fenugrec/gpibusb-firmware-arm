@@ -55,7 +55,12 @@ enum LED_PATTERN {
 
 /** set LEDs to given pattern
 */
-void hw_led(enum LED_PATTERN np);
+void led_update(enum LED_PATTERN np);
+
+/** call regularly to udpate patterns
+*/
+void led_poll(void);
+
 
 /**************** EEPROM
 * TODO ? these could be replaced by "EEPROM emulation", see ST AN2594

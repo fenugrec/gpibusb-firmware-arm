@@ -49,12 +49,13 @@ int main(void)
 	cmd_parser_init();
 	hw_startcomms();
 
-	hw_led(LEDPATTERN_IDLE);
+	led_update(LEDPATTERN_IDLE);
 	fwusb_init();
 
 	while (1) {
 		fwusb_poll();
 		cmd_poll();
+		led_poll();
 	}
 
 	return 0;

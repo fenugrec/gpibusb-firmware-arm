@@ -41,7 +41,14 @@ static void enable_5v(bool enable) {
 	}
 }
 
-// TODO : LED blink and polarity
+static struct {
+	u32 ts_last;	//last toggle
+	u32 ts_delta;	//interval to next toggle
+	enum LED_PATTERN pattern;
+	bool state_next;
+} led_status = {0};
+
+
 static void led_setup(void) {
 	/* LEDs, active high */
 	gpio_set(LED_PORT, LED_ERROR | LED_STATUS);
@@ -49,26 +56,68 @@ static void led_setup(void) {
 
 }
 
-void hw_led(enum LED_PATTERN np) {
-	switch (np) {
+// TODO (higher level): get out of Error state on next good command ?
+void led_update(enum LED_PATTERN np) {
+	led_status.pattern = np;
+	return;
+}
+
+void led_poll(void) {
+	u32 tcur = get_us();
+
+	// check if due for a state change
+	if ((tcur - led_status.ts_last) < led_status.ts_delta) {
+		return;
+	}
+	led_status.ts_last = tcur;
+
+	bool set = led_status.state_next;
+#if (LED_ACTIVEHIGH == 0)
+	//invert logic
+	set = !set;
+#endif
+
+	//set new LED state
+	if (set) {
+		gpio_set(LED_PORT, LED_STATUS);
+	} else {
+		gpio_clear(LED_PORT, LED_STATUS);
+	}
+
+	//decide next state and delta according to pattern
+	switch (led_status.pattern) {
 		case LEDPATTERN_OFF:
-			gpio_clear(LED_PORT, LED_ERROR | LED_STATUS);
+			//stay off at least 500ms
+			led_status.state_next = 0;
+			led_status.ts_delta = 500 * 1000U;
 			break;
 		case LEDPATTERN_ERROR:
-			gpio_set(LED_PORT, LED_ERROR);
+			//solid on at least 500ms
+			led_status.state_next = 1;
+			led_status.ts_delta = 500 * 1000U;
 			break;
 		case LEDPATTERN_IDLE:
-			gpio_clear(LED_PORT, LED_ERROR);
-			gpio_set(LED_PORT, LED_STATUS);
+			//slow pulse
+			if (led_status.state_next) {
+				//ON for 900ms
+				led_status.ts_delta = 900 * 1000U;
+			} else {
+				//then off for 100ms
+				led_status.ts_delta = 100 * 1000U;
+			}
+			led_status.state_next = !led_status.state_next;
 			break;
 		case LEDPATTERN_ACT:
-			gpio_set(LED_PORT, LED_STATUS);
+			//fast blink
+			led_status.ts_delta = 100 * 1000U;
+			led_status.state_next = !led_status.state_next;
 			break;
 		default:
 			//XXX assert
 			break;
 	}
 }
+
 
 void prep_gpib_pins(bool mode) {
 	/* Flow control pins */
@@ -129,12 +178,7 @@ void prep_gpib_pins(bool mode) {
 /* Called when systick fires */
 void sys_tick_handler(void)
 {
-	static unsigned ms = 0;
-	ms++;
-	if (ms > 300) {
-		gpio_toggle(LED_PORT, LED_STATUS);
-		ms = 0;
-	}
+	return;
 }
 
 

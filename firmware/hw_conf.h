@@ -46,6 +46,7 @@
 #define LED_PORT GPIOA
 #define LED_ERROR GPIO2
 #define LED_STATUS GPIO2
+#define LED_ACTIVEHIGH 0	//=active low
 
 
 /* GPIB data lines DIO1-DIO8 on PB8-15 */
