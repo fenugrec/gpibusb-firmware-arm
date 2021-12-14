@@ -101,7 +101,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	// Before we start transfering, we have to make sure that NRFD is high
 	// and NDAC is low
 
-	t0 = get_us();
+	t0 = get_ms();
 	while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
