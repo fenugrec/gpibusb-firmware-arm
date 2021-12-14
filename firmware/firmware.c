@@ -53,6 +53,7 @@ int main(void)
 	fwusb_init();
 
 	while (1) {
+		restart_wdt();
 		fwusb_poll();
 //		cmd_poll();
 		led_poll();
