@@ -31,6 +31,7 @@ add_custom_command(
 ### build source file lists (useful later)
 set (FW_SRCS
 	${CMAKE_SOURCE_DIR}/printf/src/printf/printf.c
+	${CMAKE_SOURCE_DIR}/etools/ecbuff.c
 	ring.c gpib.c cmd_parser.c hw_backend.c host_comms.c
 	libc_stubs.c cmd_hashtable.c usb_cdc.c
 	firmware.c
@@ -65,6 +66,7 @@ target_include_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencmsis/include
 	${CMAKE_CURRENT_BINARY_DIR}
 	${CMAKE_SOURCE_DIR}/printf/src
+	${CMAKE_SOURCE_DIR}/etools
 )
 target_link_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/lib
