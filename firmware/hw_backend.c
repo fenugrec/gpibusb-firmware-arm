@@ -290,6 +290,8 @@ void hw_setup(void) {
 	rcc_clock_setup_in_hse_8mhz_out_48mhz();
 
 	rcc_periph_clock_enable(RCC_USB);
+	rcc_set_usbclk_source(RCC_PLL);
+
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	/* need this to be able to halt the wdt while debugging */
@@ -299,10 +301,6 @@ void hw_setup(void) {
 	wdt_setup();
 #endif // WITH_WDT
 	init_timers();
-
-	// USB pins
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
-	gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
 
 	enable_5v(1);
 	led_setup();

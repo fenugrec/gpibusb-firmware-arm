@@ -46,15 +46,15 @@ int main(void)
 	// TODO: Load settings from EEPROM
 
 	host_comms_init();
-	cmd_parser_init();
-	hw_startcomms();
+//	cmd_parser_init();
+//	hw_startcomms();
 
 	led_update(LEDPATTERN_IDLE);
 	fwusb_init();
 
 	while (1) {
 		fwusb_poll();
-		cmd_poll();
+//		cmd_poll();
 		led_poll();
 	}
 
