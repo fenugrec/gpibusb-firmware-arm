@@ -54,7 +54,6 @@ int main(void)
 
 	while (1) {
 		restart_wdt();
-		fwusb_poll();
 //		cmd_poll();
 		led_poll();
 	}

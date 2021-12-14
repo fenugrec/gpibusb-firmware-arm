@@ -1,5 +1,5 @@
 /*
- * This file is part of the libopencm3 project.
+ * This file is adapted from a libopencm3 example project.
  *
  * Copyright (C) 2010 Gareth McMullin <gareth@blacksphere.co.nz>
  *
@@ -18,6 +18,7 @@
  */
 
 #include <stdlib.h>
+#include <libopencm3/cm3/nvic.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
 
@@ -225,7 +226,7 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 	}
 }
 
-/* should be called after a CTR condition "correct transfer received
+/* should be called after a CTR condition "correct transfer received"
  */
 static void cdcacm_data_tx_cb(usbd_device *usbd_dev, uint8_t ep) {
 	(void) usbd_dev;
@@ -255,6 +256,47 @@ static usbd_device *usbd_dev;
 struct ring output_ring;
 static uint8_t output_ring_buffer[HOST_IN_BUFSIZE];
 
+/** called every SOF (1ms)
+ *
+ * Just registering this callback should enable the interrupt ?
+ * check if we have any data to send to host.
+*/
+static void usbsof_cb(void) {
+
+	unsigned len;
+	u8 buf[BULK_EP_MAXSIZE];
+
+	// send any pending data if possible
+	if (usb_stuff.usbwrite_busy) {
+		return;
+	}
+
+	for (len = 0;len < BULK_EP_MAXSIZE; len++) {
+		//copy while counting bytes
+		if (ring_read_ch(&output_ring, &buf[len]) < 0) {
+			//no more
+			break;
+		}
+	}
+
+	if (len == 0) {
+		return;
+	}
+
+	if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {;
+		usb_stuff.usbwrite_busy = 1;
+	} else {
+		// ep_write failed for no reason ??
+	}
+
+}
+
+
+void usb_isr (void) {
+	usbd_poll(usbd_dev);
+}
+
+
 /**** public funcs */
 void fwusb_init(void) {
 	// need a fifo to hold data and build packets to host
@@ -265,29 +307,7 @@ void fwusb_init(void) {
 			usbd_control_buffer, sizeof(usbd_control_buffer));
 
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
-}
+	usbd_register_sof_callback(usbd_dev, usbsof_cb);
 
-void fwusb_poll(void) {
-	unsigned len = 0;
-	u8 buf[BULK_EP_MAXSIZE];
-
-	// send any pending data if possible
-	if (!usb_stuff.usbwrite_busy) {
-		for (;len < sizeof(buf); len++) {
-			//copy while counting bytes
-			if (ring_read_ch(&output_ring, &buf[len]) < 0) {
-				//no more
-				break;
-			}
-		}
-	}
-	if (len) {
-		if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {;
-			usb_stuff.usbwrite_busy = 1;
-		} else {
-			// ep_write failed for no reason ??
-		}
-	}
-
-	usbd_poll(usbd_dev);
+	nvic_enable_irq(NVIC_USB_IRQ);
 }
