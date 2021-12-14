@@ -38,6 +38,9 @@ static struct {
 #define DATA_OUT_EP	0x01
 #define BULK_EP_MAXSIZE 64
 
+#define USB_VID 0x1d50	//openmoko
+#define USB_PID 0x0448	//unused PID so far. 488 as in "ISO 488" !
+
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
 	.bDescriptorType = USB_DT_DEVICE,
@@ -46,8 +49,8 @@ static const struct usb_device_descriptor dev = {
 	.bDeviceSubClass = 0,
 	.bDeviceProtocol = 0,
 	.bMaxPacketSize0 = 64,
-	.idVendor = 0x0483,
-	.idProduct = 0x5740,
+	.idVendor = USB_VID,
+	.idProduct = USB_PID,
 	.bcdDevice = 0x0200,
 	.iManufacturer = 1,
 	.iProduct = 2,
