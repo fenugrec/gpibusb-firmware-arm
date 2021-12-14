@@ -33,6 +33,10 @@ static struct {
 } usb_stuff = {0};
 
 
+#define COMM_IN_EP	0x83
+#define DATA_IN_EP	0x82
+#define DATA_OUT_EP	0x01
+#define BULK_EP_MAXSIZE 64
 
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
@@ -59,7 +63,7 @@ static const struct usb_device_descriptor dev = {
 static const struct usb_endpoint_descriptor comm_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x83,
+	.bEndpointAddress = COMM_IN_EP,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval = 255,
@@ -68,16 +72,16 @@ static const struct usb_endpoint_descriptor comm_endp[] = {{
 static const struct usb_endpoint_descriptor data_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x01,
+	.bEndpointAddress = DATA_OUT_EP,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = BULK_EP_MAXSIZE,
 	.bInterval = 1,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x82,
+	.bEndpointAddress = DATA_IN_EP,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = BULK_EP_MAXSIZE,
 	.bInterval = 1,
 } };
 
@@ -163,12 +167,13 @@ static const struct usb_config_descriptor config = {
 	.bConfigurationValue = 1,
 	.iConfiguration = 0,
 	.bmAttributes = 0x80,
-	.bMaxPower = 0x32,
+	.bMaxPower = 100,
 
 	.interface = ifaces,
 };
 
-static const char * usb_strings[] = {
+#define USB_NUM_STRINGS 3
+static const char * usb_strings[USB_NUM_STRINGS] = {
 	"garbage tech",
 	"GPIB-USB",
 	"serno",
@@ -208,8 +213,8 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
 	(void)ep;
 
-	u8 buf[64];
-	unsigned len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
+	u8 buf[BULK_EP_MAXSIZE];
+	unsigned len = usbd_ep_read_packet(usbd_dev, DATA_OUT_EP, buf, BULK_EP_MAXSIZE);
 
 	unsigned cnt;
 	for (cnt = 0; cnt < len; cnt++) {
@@ -229,11 +234,11 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 {
 	(void)wValue;
 
-	usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64,
+	usbd_ep_setup(usbd_dev, DATA_OUT_EP, USB_ENDPOINT_ATTR_BULK, BULK_EP_MAXSIZE,
 			cdcacm_data_rx_cb);
-	usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64,
+	usbd_ep_setup(usbd_dev, DATA_IN_EP, USB_ENDPOINT_ATTR_BULK, BULK_EP_MAXSIZE,
 			cdcacm_data_tx_cb);
-	usbd_ep_setup(usbd_dev, 0x83, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
+	usbd_ep_setup(usbd_dev, COMM_IN_EP, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 
 	usbd_register_control_callback(
 				usbd_dev,
@@ -253,7 +258,7 @@ void fwusb_init(void) {
 	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));
 
 	usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
-			usb_strings, 3,
+			usb_strings, USB_NUM_STRINGS,
 			usbd_control_buffer, sizeof(usbd_control_buffer));
 
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
@@ -261,7 +266,7 @@ void fwusb_init(void) {
 
 void fwusb_poll(void) {
 	unsigned len = 0;
-	u8 buf[64]; //TODO : MAXPACKETIZE
+	u8 buf[BULK_EP_MAXSIZE];
 
 	// send any pending data if possible
 	if (!usb_stuff.usbwrite_busy) {
@@ -274,7 +279,7 @@ void fwusb_poll(void) {
 		}
 	}
 	if (len) {
-		if (usbd_ep_write_packet(usbd_dev, 0x82, buf, len) == len) {;
+		if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {;
 			usb_stuff.usbwrite_busy = 1;
 		} else {
 			// ep_write failed for no reason ??
