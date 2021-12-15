@@ -31,7 +31,7 @@ uint16_t get_us(void);
 
 void reset_cpu(void);
 
-void prep_gpib_pins(bool mode);
+void prep_gpib_pins(bool controller_mode);
 
 void restart_wdt(void);
 

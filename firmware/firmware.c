@@ -41,7 +41,7 @@ int main(void)
 {
 	hw_setup();
 
-	prep_gpib_pins(mode);
+	prep_gpib_pins(controller_mode);
 
 	// TODO: Load settings from EEPROM
 

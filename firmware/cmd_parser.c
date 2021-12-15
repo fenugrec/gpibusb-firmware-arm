@@ -103,7 +103,7 @@ void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
     if (read_eeprom(0x00) == VALID_EEPROM_CODE)
     {
-        mode = read_eeprom(0x01);
+        controller_mode = read_eeprom(0x01);
         partnerAddress = read_eeprom(0x02);
         eot_char = read_eeprom(0x03);
         eot_enable = read_eeprom(0x04);
@@ -127,7 +127,7 @@ void cmd_parser_init(void) {
         write_eeprom(0x08, 0); // listen_only
         write_eeprom(0x09, 1); // save_cfg
     }
-    if (mode)
+    if (controller_mode)
     {
         gpib_controller_assign();
     }
@@ -172,7 +172,7 @@ void do_readTimeout(const char *args) {
 void do_readCmd(const char *args) {
 	// +read
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 	if (gpib_read(eoiUse, eos_code, eos_string, eot_enable)) {
 		if (debug == 1) {
 			printf("Read error occured.%c", eot_char);
@@ -184,7 +184,7 @@ void do_readCmd(const char *args) {
 void do_readCmd2(const char *args) {
 	// ++read
 	//XXX TODO : merge with do_readCmd ?
-	if (!mode) return;
+	if (!controller_mode) return;
 	if (*args == '\n') {
 		gpib_read(false, eos_code, eos_string, eot_enable); // read until EOS condition
 	} else if (*args == 'e') {
@@ -243,7 +243,7 @@ void do_getCmd(const char *args) {
 	// +get
 	u8 writeError = 0;
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 
 	if (*args == '\n') {
 		writeError = writeError || gpib_address_target(partnerAddress);
@@ -259,7 +259,7 @@ void do_trg(const char *args) {
 	// ++trg , XXX suspiciously similar to +get
 	u8 writeError = 0;
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 	if (*args == '\n') {
 			writeError = writeError || gpib_address_target(partnerAddress);
 			//XXX TODO : do something with writeError
@@ -298,7 +298,7 @@ void do_clr(const char *args) {
 	// ++clr
 	u8 writeError = 0;
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 	//XXX TODO : do something with writeError
 	// This command is special in that we must
 	// address a specific instrument.
@@ -325,7 +325,7 @@ void do_eotChar(const char *args) {
 void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 	gpio_clear(IFC_CP, IFC);
 	delay_ms(200);
 	gpio_set(IFC_CP, IFC);
@@ -335,7 +335,7 @@ void do_llo(const char *args) {
 	u8 writeError = 0;
 	(void) args;
 	//XXX TODO : do something with writeError
-	if (!mode) return;
+	if (!controller_mode) return;
 	writeError = writeError || gpib_address_target(partnerAddress);
 	cmd_buf[0] = CMD_LLO;
 	writeError = writeError || gpib_cmd(cmd_buf);
@@ -345,7 +345,7 @@ void do_loc(const char *args) {
 	u8 writeError = 0;
 	(void) args;
 	//XXX TODO : do something with writeError
-	if (!mode) return;
+	if (!controller_mode) return;
 
 	writeError = writeError || gpib_address_target(partnerAddress);
 	cmd_buf[0] = CMD_GTL;
@@ -354,7 +354,7 @@ void do_loc(const char *args) {
 void do_lon(const char *args) {
 	// ++lon {0|1}
 	//TODO : listen mode
-	if (mode) return;
+	if (controller_mode) return;
 	if (*args == '\n') {
 		printf("%i%c", listen_only, eot_char);
 	} else {
@@ -364,11 +364,11 @@ void do_lon(const char *args) {
 void do_mode(const char *args) {
 	// ++mode {0|1}
 	if (*args == '\n') {
-		printf("%i%c", mode, eot_char);
+		printf("%i%c", controller_mode, eot_char);
 	} else {
-		mode = (bool) atoi(args);
-		prep_gpib_pins(mode);
-		if (mode) {
+		controller_mode = (bool) atoi(args);
+		prep_gpib_pins(controller_mode);
+		if (controller_mode) {
 			gpib_controller_assign();
 		}
 	}
@@ -380,7 +380,7 @@ void do_savecfg(const char *args) {
 	} else {
 		save_cfg = (bool) atoi(args);
 		if (save_cfg) {
-			write_eeprom(0x01, mode);
+			write_eeprom(0x01, controller_mode);
 			write_eeprom(0x02, partnerAddress);
 			write_eeprom(0x03, eot_char);
 			write_eeprom(0x04, eot_enable);
@@ -395,12 +395,12 @@ void do_savecfg(const char *args) {
 void do_srq(const char *args) {
 	// ++srq
 	(void) args;
-	if (!mode) return;
+	if (!controller_mode) return;
 	printf("%i%c", srq_state(), eot_char);
 }
 void do_spoll(const char *args) {
 	// ++spoll N
-	if (!mode) return;
+	if (!controller_mode) return;
 	if (*args == '\n') {
 		if (!gpib_serial_poll(partnerAddress, &status_byte)) {
 			printf("%u%c", (unsigned) status_byte, eot_char);
@@ -413,7 +413,7 @@ void do_spoll(const char *args) {
 }
 void do_status(const char *args) {
 	// ++status
-	if (mode) return;
+	if (controller_mode) return;
 	if (*args == '\n') {
 		printf("%u%c", (unsigned) status_byte, eot_char);
 	} else {
@@ -456,7 +456,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// Not an internal command, send to bus
 	// Command all talkers and listeners to stop
 	// and tell target to listen.
-	if (mode)
+	if (controller_mode)
 	{
 		writeError = writeError || gpib_address_target(partnerAddress);
 	// Set the controller into talker mode
@@ -467,7 +467,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 #ifdef VERBOSE_DEBUG
 	printf("gpib_write: %s%c",buf_pnt, eot_char);
 #endif
-	if (mode || device_talk)
+	if (controller_mode || device_talk)
 	{
 		if(eos_code != EOS_NUL)   // If have an EOS char, need to output
 		{
@@ -485,7 +485,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 		}
 	}
 	// If cmd contains a question mark -> is a query
-	if(autoread && mode)
+	if(autoread && controller_mode)
 	{
 		if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
 		{
@@ -618,7 +618,7 @@ void cmd_poll(void) {
 #ifdef WITH_WDT
 	restart_wdt();
 #endif
-	if (!mode) {
+	if (!controller_mode) {
 		device_poll();
 	}
 

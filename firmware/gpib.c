@@ -36,7 +36,7 @@
 #include "stypes.h"
 
 /* global vars */
-bool mode = 1;
+bool controller_mode = 1;
 bool debug = 0; // enable or disable read&write error messages
 char eot_char = '\r'; // default CR
 uint32_t timeout = 1000;	//in ms
@@ -111,7 +111,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 			}
 			device_talk = false;
 			device_srq = false;
-			prep_gpib_pins(mode);
+			prep_gpib_pins(controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -136,7 +136,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 				}
 				device_talk = false;
 				device_srq = false;
-				prep_gpib_pins(mode);
+				prep_gpib_pins(controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -159,7 +159,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 				}
 				device_talk = false;
 				device_srq = false;
-				prep_gpib_pins(mode);
+				prep_gpib_pins(controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -179,7 +179,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 				}
 				device_talk = false;
 				device_srq = false;
-				prep_gpib_pins(mode);
+				prep_gpib_pins(controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -230,7 +230,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 				 printf("readbyte timeout: Waiting for DAV-%c", eot_char);
 			}
 			device_listen = false;
-			prep_gpib_pins(mode);
+			prep_gpib_pins(controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -260,7 +260,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 				 printf("readbyte timeout: Waiting for DAV+%c", eot_char);
 			}
 			device_listen = false;
-			prep_gpib_pins(mode);
+			prep_gpib_pins(controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -290,7 +290,7 @@ uint32_t gpib_read(bool use_eoi,
     uint8_t cmd_buf[3];
     uint32_t error_found = 0;
 
-    if(mode) {
+    if(controller_mode) {
         // Command all talkers and listeners to stop
         cmd_buf[0] = CMD_UNT;
         error_found = error_found || gpib_cmd(cmd_buf);
@@ -380,7 +380,7 @@ uint32_t gpib_read(bool use_eoi,
     printf("gpib_read loop end%c", eot_char);
     #endif
 
-    if (mode) {
+    if (controller_mode) {
         // Command all talkers and listeners to stop
         error_found = 0;
         cmd_buf[0] = CMD_UNT;

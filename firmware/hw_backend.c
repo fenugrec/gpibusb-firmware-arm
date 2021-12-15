@@ -122,10 +122,10 @@ void led_poll(void) {
 }
 
 
-void prep_gpib_pins(bool mode) {
+void prep_gpib_pins(bool controller_mode) {
 	/* Flow control pins */
 	gpio_clear(FLOW_PORT, TE | PE);
-	if (mode) {
+	if (controller_mode) {
 #ifdef USE_SN75162
 		gpio_set(FLOW_PORT, SC); // TX on REN and IFC
 #endif
@@ -150,7 +150,7 @@ void prep_gpib_pins(bool mode) {
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, 0xFF << DIO_PORTSHIFT);
 
 	// Set mode and pin state for all GPIB control lines
-	if (mode) {
+	if (controller_mode) {
 		gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI | DAV);
 		gpio_mode_setup(SRQ_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
 		gpio_set(ATN_CP, ATN | IFC);

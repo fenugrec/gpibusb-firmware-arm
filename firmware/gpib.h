@@ -52,7 +52,7 @@ uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 #define CMD_SPD 0x19
 
 /* Global vars; cmd_parser needs to see this */
-extern bool mode;		//1 if controller mode
+extern bool controller_mode;		//1 if controller mode
 extern bool debug;	// enable or disable read&write error messages
 extern char eot_char;	//char to append to each string sent to host
 extern uint32_t timeout;	//in milliseconds
