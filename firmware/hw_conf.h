@@ -54,8 +54,11 @@
 #define DIO_PORTSHIFT 8
 #define DIO_PORTMASK (0xFF << DIO_PORTSHIFT)
 
-/** write DIO, takes care of inversion */
-#define WRITE_DIO(x) gpio_port_write(DIO_PORT, ~(x) << DIO_PORTSHIFT)
+/** write DIO, takes care of inversion.
+ * also need to mask other bits because some control signals are also on GPIOB
+ */
+#define WRITE_DIO(x) gpio_port_write(DIO_PORT, \
+						(GPIO_ODR(DIO_PORT) & ~DIO_PORTMASK) | (~(x) << DIO_PORTSHIFT))
 
 /** read DIO lines, takes care of inversion */
 #define READ_DIO(x) ((~gpio_port_read(DIO_PORT) >> DIO_PORTSHIFT) & 0xFF)
