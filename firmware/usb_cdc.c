@@ -1,7 +1,12 @@
 /*
  * This file is adapted from a libopencm3 example project.
  *
+ * Converted to process usbd_poll() inside the USB interrupt;
+ * that means the callbacks run in an ISR context and must only
+ * interact with the main thread via thread-safe constructs.
+ *
  * Copyright (C) 2010 Gareth McMullin <gareth@blacksphere.co.nz>
+ * (c) 2021 fenugrec
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

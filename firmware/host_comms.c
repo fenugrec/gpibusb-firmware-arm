@@ -1,6 +1,7 @@
 /* Host communications code
  *
- * (c) fenugrec 2018
+ * (c) fenugrec 2018-2021
+ * GPLv3
  *
  * The RX channel (receiving from host) needs a FIFO buffer
  *
@@ -9,7 +10,7 @@
  *
  * Once a complete chunk (either command
  * or data) is received, it gets copied to a command buffer to be
- * parsed by the cmd_parser. XXXX
+ * parsed by the cmd_parser.
  */
 
 #include <stdint.h>

@@ -1,30 +1,39 @@
 USB-GPIB interface
 
-This is a fork of gpib-usb-firmware-arm, initially published by Galvant (/ S. Casagrande).
-Most of the code was restructured and modified.
+This is a fork of gpib-usb-firmware-arm, initially published by Galvant  S. Casagrande).
+In the current state, only the GPIB layer and the command implementations were kept, but the rest was restructured and rewritten to run as a USB-CDC device on a single mcu.
 
-## status : haha
+## status
+testing in progress.
+- USB enumerates
+- command processor responds to commands (++ver , ++srq etc)
+
 
 ## hardware
 hw 1.00 : buggy PCB based on stm32F070 , with two GPIB driver ICs (SN75160 + SN75161/75162). Not released.
+hw 1.01 : fixed dumb 1.00 bugs; WIP schematics in hw/ but PCB layout not done.
 
-This should run on pretty much any ARM mcu (note) that is supported by libopencm3. I'm working with an STM32F072 discovery board.
-(note): the one hard requirement is to have 8 consecutive GPIO pins that are 5V-tolerant. See firmware/hw_conf.h .
+This should run on many ARM mcus supported by libopencm3 with :
+ - basic timers
+ - USB driver
+ - 5V-tolerant pins (at least 8 consecutive pins for DIO signals, and a few control signals as well. See firmware/hw_conf.h )
+
+My first batch of PCBs use an STM32F070 which is fairly limited and should be good lowest common denominator. Beware of low pin-count devices that may lack the 5V-tolerant pins.
+
 
 ## getting & compiling
 * clone this repo
 
-* retrieve libopencm3 submodule :
+* retrieve submodules :
 
 `git submodule update --init`
 
-compile locm3 :
+* compile using cmake : (find a sample gcctoolchain file in cmake/) 
+` mkdir build && cd build && cmake-gui ..`
 
-* `cd libopencm3 && make TARGETS=stm32/f0`
+compile the firmware and debug :
 
-compile the firmware and debug/flash :
-
-* `cd firmware && make `
+* `make`
 * `make debug`
 
 There is also a rudimentary .gdbinit file included to help with debugging, particular to view peripheral register contents "easily".
