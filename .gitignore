@@ -24,6 +24,9 @@ build
 generated.*.ld
 .gdb_history
 
+#openocd log
+oocd.log
+
 # Project files from idea/netbeans/eclipse
 nbproject/
 .idea/

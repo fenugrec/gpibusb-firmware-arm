@@ -89,3 +89,11 @@ add_custom_command(
 	BYPRODUCTS ${TGTNAME}.bin
 	COMMAND ${CMAKE_OBJCOPY} -O binary ${TGTNAME} ${TGTNAME}.bin
 )
+
+#add debugging target. Fugly
+string(REPLACE "objcopy" "gdb" GDB_CMD "${CMAKE_OBJCOPY}")
+add_custom_target(debug
+	COMMAND ${GDB_CMD} $<TARGET_FILE:${TGTNAME}> -x gdb_oocd.cmds
+	DEPENDS ${TGTNAME}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
