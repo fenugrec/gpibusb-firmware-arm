@@ -12,13 +12,10 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/systick.h>
-#include <libopencm3/usb/usbd.h>
 
 #include "hw_conf.h"
 #include "hw_backend.h"
-#include "host_comms.h" //XXX gross, need the host_rx callback
 #include "stypes.h"
-#include "usb_cdc.h"
 
 /****** IO, GPIO */
 
@@ -274,7 +271,7 @@ void hw_setup(void) {
 
 #ifdef WITH_WDT
 	wdt_setup();
-#endif // WITH_WDT
+#endif
 	init_timers();
 
 	enable_5v(1);

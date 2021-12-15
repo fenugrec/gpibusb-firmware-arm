@@ -1,4 +1,8 @@
-
+/* libc replacements and stubs for generic functions
+ *
+ * (c) fenugrec 2018-2021
+ * GPLv3
+ */
 
 
 #include <ctype.h>	//toupper
@@ -58,7 +62,7 @@ int htoi(const char *buf) {
 	return sign? rv:-rv ;
 }
 
-
+/** custom printf needs this */
 void putchar_(char character) {
 	host_tx((uint8_t) character);
 	return;
