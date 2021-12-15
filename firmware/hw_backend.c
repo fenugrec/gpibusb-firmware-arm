@@ -17,7 +17,6 @@
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "host_comms.h" //XXX gross, need the host_rx callback
-#include "ring.h"
 #include "stypes.h"
 #include "usb_cdc.h"
 
@@ -253,30 +252,6 @@ static void wdt_setup(void) {
 void restart_wdt(void) {
 	iwdg_reset();
 }
-
-void hw_startcomms(void) {
-	return;
-}
-
-void hw_host_tx(uint8_t txb) {
-	if (ring_write_ch(&output_ring, txb) == -1) {
-		//TODO : overflow
-		return;
-	}
-	return;
-}
-
-void hw_host_tx_m(uint8_t *data, unsigned len) {
-	if (len > 256) {
-		len = 256;
-	}
-	if (ring_write(&output_ring, data, (ring_size_t) len) != (ring_size_t) len) {
-		//TODO : overflow
-		return;
-	}
-	return;
-}
-
 
 /********** misc
 */

@@ -5,7 +5,7 @@
 
 #include <printf/printf.h>
 
-#include "hw_backend.h"
+#include "host_comms.h"
 #include "libc_stubs.h"
 
 /* htoi : copied from freediag but without octal
@@ -60,6 +60,6 @@ int htoi(const char *buf) {
 
 
 void putchar_(char character) {
-	hw_host_tx((uint8_t) character);
+	host_tx((uint8_t) character);
 	return;
 }

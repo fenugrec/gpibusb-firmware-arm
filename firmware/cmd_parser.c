@@ -40,7 +40,7 @@
 #include "firmware.h"
 #include "gpib.h"
 #include "host_comms.h"
-#include "ring.h"
+#include "ecbuff.h"
 #include "hw_backend.h"
 #include "cmd_hashtable.h"
 #include "cmd_handlers.h"
@@ -623,7 +623,7 @@ void cmd_poll(void) {
 	}
 
 	//build chunk from FIFO
-	if (ring_read_ch(&input_ring, &rxb) == -1) {
+	if (!ecbuff_read(fifo_in, &rxb)) {
 		//no data
 		return;
 	}

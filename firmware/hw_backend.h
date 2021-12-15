@@ -35,19 +35,6 @@ void prep_gpib_pins(bool mode);
 
 void restart_wdt(void);
 
-/** enable comms with host (interrupts etc). Command parser etc must be init'd first
-*/
-void hw_startcomms(void);
-
-/** queue byte to send to host
-*/
-void hw_host_tx(uint8_t txb);
-
-/** queue multiple bytes to send to host
-*
-* @param len max 256 bytes. extra data is dropped
-*/
-void hw_host_tx_m(uint8_t *data, unsigned len);
 
 /**************** IO
 */

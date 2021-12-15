@@ -16,22 +16,26 @@
 
 #include "hw_backend.h"
 #include "host_comms.h"
-#include "ring.h"
+#include "ecbuff.h"
 
 #include "stypes.h"
 
 
 /**** globals */
-struct ring input_ring;
 
-/* Each incoming chunk is saved into the input FIFO.
- *
- * we do minimal filtering, except length check
+
+/* incoming data is saved into the input FIFO, after
+ * minimal filtering, length check
  * and overflow recovery.
  */
-#define UART_BUFFER_SIZE (HOST_IN_BUFSIZE * 3)
+static _Alignas(ecbuff) uint8_t fifo_in_buf[sizeof(ecbuff) + HOST_IN_BUFSIZE];
+ecbuff *fifo_in = (ecbuff *) fifo_in_buf;
 
-static uint8_t input_ring_buffer[UART_BUFFER_SIZE];
+/* FIFO of data to host */
+static _Alignas(ecbuff) uint8_t fifo_out_buf[sizeof(ecbuff) + HOST_OUT_BUFSIZE];
+ecbuff *fifo_out = (ecbuff *) fifo_out_buf;
+
+
 
 static unsigned in_len;	//length of chunk being received from host
 
@@ -47,7 +51,9 @@ static enum e_hrx_state hrx_state = HRX_RX;
 
 
 void host_comms_init(void) {
-	ring_init(&input_ring, input_ring_buffer, sizeof(input_ring_buffer));
+	ecbuff_init(fifo_in, HOST_IN_BUFSIZE, 1);
+	ecbuff_init(fifo_out, HOST_OUT_BUFSIZE, 1);
+
 	hrx_state = HRX_RX;
 	in_len = 0;
 	return;
@@ -62,11 +68,15 @@ void host_comms_init(void) {
  * Converts unescaped \r (CR) to \n
  */
 void host_comms_rx(uint8_t rxb) {
+	const u8 lf = '\n';
+	const u8 chunkvalid = CHUNK_VALID;	//gross
+	const u8 chunkinvalid = CHUNK_INVALID;	//gross
 
 	if (in_len == HOST_IN_BUFSIZE) {
 		//overflow
-		ring_write_ch(&input_ring, '\n');
-		ring_write_ch(&input_ring, CHUNK_INVALID);
+
+		ecbuff_write(fifo_in, &lf);
+		ecbuff_write(fifo_in, &chunkinvalid);
 		hrx_state = HRX_RESYNC;
 		return;
 	}
@@ -77,17 +87,17 @@ void host_comms_rx(uint8_t rxb) {
 			hrx_state = HRX_ESCAPE;
 		} else 	if ((rxb == '\r') || (rxb == '\n')) {
 			//terminate chunk normally
-			ring_write_ch(&input_ring, '\n');
-			ring_write_ch(&input_ring, CHUNK_VALID);
+			ecbuff_write(fifo_in, &lf);
+			ecbuff_write(fifo_in, &chunkvalid);
 			break;
 		}
-		ring_write_ch(&input_ring, rxb);
+		ecbuff_write(fifo_in, &rxb);
 		in_len += 1;
 		break;
 	case HRX_ESCAPE:
 		//previous byte was Escape: do not check for \r or \n termination
 		hrx_state = HRX_RX;
-		ring_write_ch(&input_ring, rxb);
+		ecbuff_write(fifo_in, &rxb);
 		in_len += 1;
 		break;
 	case HRX_RESYNC:
@@ -99,4 +109,28 @@ void host_comms_rx(uint8_t rxb) {
 		}
 		break;
 	}
+}
+
+
+void host_tx(uint8_t txb) {
+	if (!ecbuff_write(fifo_out, &txb)) {
+		//TODO : overflow
+		return;
+	}
+	return;
+}
+
+void host_tx_m(uint8_t *data, unsigned len) {
+	if (len > 256) {
+		len = 256;
+	}
+	//fugly, loop write
+	unsigned idx;
+	for (idx = 0; idx < len; idx++) {
+		if (!ecbuff_write(fifo_out, &data[idx])) {
+			//TODO : overflow
+			return;
+		}
+	}
+	return;
 }

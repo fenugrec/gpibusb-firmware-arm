@@ -23,13 +23,14 @@
 #include <libopencm3/usb/cdc.h>
 
 #include "host_comms.h"
-#include "ring.h"
+#include "ecbuff.h"
 #include "stypes.h"
 #include "usb_cdc.h"
 
 /** manage some internal state
 */
 static struct {
+	bool vcp_avail;	//don't send BULK_OUT packets until enumerated and host is doing ACM/VCP stuff
 	bool usbwrite_busy;	//set to 1 after writing a packet to the EP, cleared in callback
 } usb_stuff = {0};
 
@@ -204,6 +205,7 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 		return USBD_REQ_HANDLED;
 		}
 	case USB_CDC_REQ_SET_LINE_CODING:
+		usb_stuff.vcp_avail = 1;
 		if (*len < sizeof(struct usb_cdc_line_coding)) {
 			return USBD_REQ_NOTSUPP;
 		}
@@ -253,8 +255,6 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 
 /**** private */
 static usbd_device *usbd_dev;
-struct ring output_ring;
-static uint8_t output_ring_buffer[HOST_IN_BUFSIZE];
 
 /** called every SOF (1ms)
  *
@@ -266,6 +266,11 @@ static void usbsof_cb(void) {
 	unsigned len;
 	u8 buf[BULK_EP_MAXSIZE];
 
+	if (!usb_stuff.vcp_avail) {
+		//if not enumerated yet, don't send stuff
+		return;
+	}
+
 	// send any pending data if possible
 	if (usb_stuff.usbwrite_busy) {
 		return;
@@ -273,7 +278,7 @@ static void usbsof_cb(void) {
 
 	for (len = 0;len < BULK_EP_MAXSIZE; len++) {
 		//copy while counting bytes
-		if (ring_read_ch(&output_ring, &buf[len]) < 0) {
+		if (!ecbuff_read(fifo_out, &buf[len])) {
 			//no more
 			break;
 		}
@@ -299,9 +304,6 @@ void usb_isr (void) {
 
 /**** public funcs */
 void fwusb_init(void) {
-	// need a fifo to hold data and build packets to host
-	ring_init(&output_ring, output_ring_buffer, sizeof(output_ring_buffer));
-
 	usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
 			usb_strings, USB_NUM_STRINGS,
 			usbd_control_buffer, sizeof(usbd_control_buffer));
