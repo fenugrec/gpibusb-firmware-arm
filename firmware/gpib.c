@@ -143,6 +143,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		}
 
         // Put the byte on the data lines
+        gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
         WRITE_DIO(byte);
 
         // Assert EOI if on last byte and using EOI
@@ -189,7 +190,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		gpio_set(DAV_CP, DAV);
     } // Finished outputting all bytes to the listeners
 
-    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, 0xFF << DIO_PORTSHIFT);
+    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, DIO_PORTMASK);
     gpio_clear(FLOW_PORT, TE); // Disable talking
 
     // If the byte was a GPIB command byte, release ATN line
