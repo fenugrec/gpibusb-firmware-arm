@@ -73,121 +73,124 @@ unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
 unsigned arg_pos = 0;	//
 bool in_cmd = 0;
 
+unsigned cmdchunk_len = 0; //length of last cmd processed in chunk_cmd
+unsigned datachunk_len = 0;	//length of last chunk processed in chunk_data
+
 
 /** bogus cmd chunk handler */
 static void chunk_cmd(char * ibuf, unsigned dummy, bool has_args) {
 	(void) ibuf;
 	(void) has_args;
-	cmd_len = dummy;
+	cmdchunk_len = dummy;
 	if (has_args) {
-		arg_pos = cmd_len + 1;
+		arg_pos = cmdchunk_len + 1;
 	} else {
-		arg_pos = cmd_len;
+		arg_pos = cmdchunk_len;
 	}
 }
 /** bogus data chunk handler */
 static void chunk_data(char * ibuf, unsigned datalen) {
 	(void) ibuf;
-	(void) datalen;
+	datachunk_len = datalen;
 }
 
 /** hacked cmd_poll to be fed one byte at a time;
  * @return 1 when a chunk is
  * parsed (that would have resulted in a call to cmd_chunk or data_chunk)
  *
- * uses globals
+ * uses globals instead of some static vars so the test jig can inspect local state
  */
 bool test_cmd_poll(u8 rxb) {
-
 	static bool escape_next = 0;
 	static bool wait_guardbyte = 0;
 	static bool has_args = 0;
 
-	bool bogus = 1;
-	while (bogus) {
-		bogus = 0;	//force to run once
-		if ((in_len == 0) && (rxb == '+')) {
+	if (in_len == 0) {
+		if (rxb == '+') {
 			//start of new command chunk
 			in_cmd = 1;
 			cmd_len = 0;
 			has_args = 0;
 			arg_pos = 0;
+		} else {
+			//data chunk
+			in_cmd = 0;
 		}
-
-		if (wait_guardbyte) {
-			//just finished a chunk; make sure it was valid
-			wait_guardbyte = 0;
-			if (rxb != CHUNK_VALID) {
-				//discard
-				in_len = 0;
-				continue;
-			}
-			if (in_cmd) {
-				if (arg_pos) {
-					//non-empty args
-					chunk_cmd((char *) input_buf, cmd_len, 1);
-				} else {
-					chunk_cmd((char *) input_buf, cmd_len, 0);
-				}
-			} else {
-				chunk_data((char *) input_buf, in_len);
-			}
-			return 1;
-			in_len = 0;
-			continue;
-		}
-
-		if (!escape_next && (rxb == 27)) {
-			//regardless of chunk type (command or data),
-			//strip escape char
-			escape_next = 1;
-			continue;
-		}
-
-		if (in_cmd) {
-			if (!escape_next && (rxb == '\n')) {
-				//0-terminate.
-				wait_guardbyte = 1;
-				input_buf[in_len] = 0;
-				continue;
-			}
-			escape_next = 0;
-			//also, tokenize now instead of calling strtok later.
-			//Only split args once.
-			if (has_args) {
-				input_buf[in_len++] = rxb;
-				continue;
-			}
-			if (rxb == ':') {
-				//commands of form "+<cmd>:<args>" : split args after ':'
-				input_buf[in_len++] = rxb;
-				cmd_len = in_len;
-				input_buf[in_len++] = 0;
-				has_args = 1;
-				arg_pos = in_len;
-			} else if (rxb == ' ') {
-				cmd_len = in_len;
-				//commands of form "++<cmd> <args>": split args on ' '
-				input_buf[in_len++] = 0;
-				has_args = 1;
-				arg_pos = in_len;
-			} else {
-				input_buf[in_len++] = rxb;
-				cmd_len++;
-			}
-
-			continue;
-		}
-
-		// if we made it here, we're dealing with data.
-		if (!escape_next && (rxb == '\n')) {
-			//terminate.
-			wait_guardbyte = 1;
-			continue;
-		}
-		input_buf[in_len++] = rxb;
-		escape_next = 0;
 	}
+
+	if (wait_guardbyte) {
+		//just finished a chunk; make sure it was valid
+		wait_guardbyte = 0;
+		if (rxb != CHUNK_VALID) {
+			//discard
+			in_len = 0;
+			return 0;
+		}
+		if (in_cmd) {
+			if (arg_pos) {
+				//non-empty args
+				chunk_cmd((char *) input_buf, cmd_len, 1);
+			} else {
+				chunk_cmd((char *) input_buf, cmd_len, 0);
+			}
+		} else {
+			chunk_data((char *) input_buf, in_len);
+		}
+		in_len = 0;
+		return 1;
+	}
+
+	if (!escape_next && (rxb == 27)) {
+		//regardless of chunk type (command or data),
+		//strip escape char
+		escape_next = 1;
+		return 0;
+	}
+
+	if (in_cmd) {
+		if (!escape_next && (rxb == '\n')) {
+			//0-terminate.
+			wait_guardbyte = 1;
+			input_buf[in_len] = 0;
+			return 0;
+		}
+		escape_next = 0;
+		//also, tokenize now instead of calling strtok later.
+		//Only split args once.
+		if (has_args) {
+			input_buf[in_len++] = rxb;
+			return 0;
+		}
+		if (rxb == ':') {
+			//commands of form "+<cmd>:<args>" : split args after ':'
+			input_buf[in_len++] = rxb;
+			cmd_len = in_len;
+			input_buf[in_len++] = 0;
+			has_args = 1;
+			arg_pos = in_len;
+		} else if (rxb == ' ') {
+			cmd_len = in_len;
+			//commands of form "++<cmd> <args>": split args on ' '
+			input_buf[in_len++] = 0;
+			has_args = 1;
+			arg_pos = in_len;
+		} else {
+			input_buf[in_len++] = rxb;
+			cmd_len++;
+		}
+
+		return 0;
+	}
+
+	// if we made it here, we're dealing with data.
+	if (!escape_next && (rxb == '\n')) {
+		//terminate.
+		wait_guardbyte = 1;
+		return 0;
+	}
+	input_buf[in_len++] = rxb;
+	escape_next = 0;
+
 	return 0;
 }
 
@@ -238,15 +241,15 @@ bool run_test(const struct tvect *tv) {
 	}
 	// expected length match ? different depending on cmd/data
 	if (in_cmd) {
-		if (cmd_len != tv->expected_len) {
+		if (cmdchunk_len != tv->expected_len) {
 			printf("FAIL\tbad cmd len, got %u, want %u\t",
-					cmd_len, tv->expected_len);
+					cmdchunk_len, tv->expected_len);
 		return 0;
 		}
 	} else {
-		if (in_len != tv->expected_len) {
+		if (datachunk_len != tv->expected_len) {
 			printf("FAIL\tbad data len, got %u, want %u\t",
-					in_len, tv->expected_len);
+					datachunk_len, tv->expected_len);
 		return 0;
 		}
 	}
