@@ -201,9 +201,6 @@ bool run_test(const struct tvect *tv) {
 	bool done = 0;
 
 	// 1) reset stuff
-	in_len = 0;
-	cmd_len = 0;
-	in_cmd = 0;
 	memset(input_buf, 0xFF, sizeof(input_buf));
 
 	// 2) feed input string
