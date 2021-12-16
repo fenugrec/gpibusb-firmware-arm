@@ -142,7 +142,7 @@ void cmd_parser_init(void) {
 
 void do_addr(const char *args) {
 	// ++addr N
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", partnerAddress, eot_char);
 	} else {
 		partnerAddress = atoi(args);
@@ -151,7 +151,7 @@ void do_addr(const char *args) {
 void do_readTimeout(const char *args) {
 	// +t N
 	// ++read_tmo_ms N
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%lu%c", (unsigned long) timeout, eot_char);
 		return;
 	}
@@ -166,7 +166,7 @@ void do_readCmd2(const char *args) {
 	//XXX TODO : err msg when read error occurs
 	//TODO : fix arg checking
 	if (!controller_mode) return;
-	if (*args == '\n') {
+	if (*args == 0) {
 		gpib_read(GPIBREAD_TMO,0, eot_enable); // read until EOS condition
 	} else if (*args == 'e') {
 		gpib_read(GPIBREAD_EOI, 0, eot_enable); // read until EOI flagged
@@ -177,7 +177,7 @@ void do_readCmd2(const char *args) {
 }
 void do_eos2(const char *args) {
 	// ++eos {0|1|2|3}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", eos_code, eot_char);
 	} else {
 		eos_code = atoi(args);
@@ -186,7 +186,7 @@ void do_eos2(const char *args) {
 }
 void do_eoi(const char *args) {
 	// ++eoi {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", eoiUse, eot_char);
 	} else {
 		eoiUse = (bool) atoi(args);
@@ -206,7 +206,7 @@ void do_trg(const char *args) {
 	u8 writeError = 0;
 	(void) args;
 	if (!controller_mode) return;
-	if (*args == '\n') {
+	if (*args == 0) {
 			writeError = writeError || gpib_address_target(partnerAddress);
 			//XXX TODO : do something with writeError
 			cmd_buf[0] = CMD_GET;
@@ -218,7 +218,7 @@ void do_trg(const char *args) {
 }
 void do_autoRead(const char *args) {
 	// ++auto {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", autoread, eot_char);
 	} else {
 		autoread = (bool) atoi(args);
@@ -232,7 +232,7 @@ void do_reset(const char *args) {
 }
 void do_debug(const char *args) {
 // +debug {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", debug, eot_char);
 	} else {
 		debug = (bool) atoi(args);
@@ -252,7 +252,7 @@ void do_clr(const char *args) {
 }
 void do_eotEnable(const char *args) {
 	// ++eot_enable {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", eot_enable, eot_char);
 	} else {
 		eot_enable = (bool) atoi(args);
@@ -260,7 +260,7 @@ void do_eotEnable(const char *args) {
 }
 void do_eotChar(const char *args) {
 	// ++eot_char N
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", eot_char, eot_char);
 	} else {
 		eot_char = atoi(args);
@@ -299,7 +299,7 @@ void do_lon(const char *args) {
 	// ++lon {0|1}
 	//TODO : listen mode
 	if (controller_mode) return;
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", listen_only, eot_char);
 	} else {
 		listen_only = (bool) atoi(args);
@@ -307,7 +307,7 @@ void do_lon(const char *args) {
 }
 void do_mode(const char *args) {
 	// ++mode {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", controller_mode, eot_char);
 	} else {
 		controller_mode = (bool) atoi(args);
@@ -319,7 +319,7 @@ void do_mode(const char *args) {
 }
 void do_savecfg(const char *args) {
 	// ++savecfg {0|1}
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%i%c", save_cfg, eot_char);
 	} else {
 		save_cfg = (bool) atoi(args);
@@ -345,7 +345,7 @@ void do_srq(const char *args) {
 void do_spoll(const char *args) {
 	// ++spoll N
 	if (!controller_mode) return;
-	if (*args == '\n') {
+	if (*args == 0) {
 		if (!gpib_serial_poll(partnerAddress, &status_byte)) {
 			printf("%u%c", (unsigned) status_byte, eot_char);
 		}
@@ -358,7 +358,7 @@ void do_spoll(const char *args) {
 void do_status(const char *args) {
 	// ++status
 	if (controller_mode) return;
-	if (*args == '\n') {
+	if (*args == 0) {
 		printf("%u%c", (unsigned) status_byte, eot_char);
 	} else {
 		status_byte = (u8) atoi(args);
