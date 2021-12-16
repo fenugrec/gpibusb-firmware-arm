@@ -28,4 +28,13 @@
 #define WITH_WDT
 #define VERBOSE_DEBUG
 
+#ifdef VERBOSE_DEBUG
+//even with verbose debug, still honor debug flag
+#define DEBUG_PRINTF(fmt, ...) \
+	if (!debug) { \
+	} else printf(fmt, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTF(fmt, ...) ((void) 0)
+#endif
+
 #endif // _FIRMWARE_H

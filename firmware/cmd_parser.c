@@ -372,9 +372,7 @@ void do_help(const char *args) {
 }
 void do_nothing(const char *args) {
 	(void) args;
-	if (debug) {
-		printf("Unrecognized command.%c", eot_char);
-	}
+	DEBUG_PRINTF("Unrecognized command.%c", eot_char);
 }
 
 /** Parse command
@@ -415,22 +413,19 @@ static void chunk_data(char *rawdata, unsigned len) {
 		writeError = writeError || gpib_cmd(cmd_buf);
 	}
 	// Send out command to the bus
-#ifdef VERBOSE_DEBUG
-	printf("gpib_write: %.*s%c", len, buf_pnt, eot_char);
-#endif
+	DEBUG_PRINTF("gpib_write: %.*s%c", len, buf_pnt, eot_char);
+
 	if (controller_mode || device_talk)
 	{
 		if(eos_code != EOS_NUL)   // If have an EOS char, need to output
 		{
 	// termination byte to inst
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
-			if (!writeError)
+			if (!writeError) {
+				DEBUG_PRINTF("gpib_write eos[%u] (%02X...)", eos_len, eos_string[0]);
 				writeError = gpib_write((u8 *) eos_string, eos_len, eoiUse);
-#ifdef VERBOSE_DEBUG
-			printf("eos_string: 0x");
-			print_hex((u8 *) eos_string, eos_len);
-			printf("%c", eot_char);
-#endif
+			}
+
 		}
 		else
 		{
@@ -471,44 +466,32 @@ static void device_poll(void) {
 			if (cmd_buf[0] == partnerAddress + CMD_TAD)
 			{
 				device_talk = true;
-#ifdef VERBOSE_DEBUG
-				printf("Instructed to talk%c", eot_char);
-#endif
+				DEBUG_PRINTF("Instructed to talk%c", eot_char);
 			}
 			else if (cmd_buf[0] == partnerAddress + CMD_LAD)
 			{
 				device_listen = true;
-#ifdef VERBOSE_DEBUG
-				printf("Instructed to listen%c", eot_char);
-#endif
+				DEBUG_PRINTF("Instructed to listen%c", eot_char);
 			}
 			else if (cmd_buf[0] == CMD_UNL)
 			{
 				device_listen = false;
-#ifdef VERBOSE_DEBUG
-				printf("Instructed to stop listen%c", eot_char);
-#endif
+				DEBUG_PRINTF("Instructed to stop listen%c", eot_char);
 			}
 			else if (cmd_buf[0] == CMD_UNT)
 			{
 				device_talk = false;
-#ifdef VERBOSE_DEBUG
-				printf("Instructed to stop talk%c", eot_char);
-#endif
+				DEBUG_PRINTF("Instructed to stop talk%c", eot_char);
 			}
 			else if (cmd_buf[0] == CMD_SPE)
 			{
 				device_srq = true;
-#ifdef VERBOSE_DEBUG
-				printf("SQR start%c", eot_char);
-#endif
+				DEBUG_PRINTF("SQR start%c", eot_char);
 			}
 			else if (cmd_buf[0] == CMD_SPD)
 			{
 				device_srq = false;
-#ifdef VERBOSE_DEBUG
-				printf("SQR end%c", eot_char);
-#endif
+				DEBUG_PRINTF("SQR end%c", eot_char);
 			}
 			else if (cmd_buf[0] == CMD_DCL)
 			{
@@ -541,9 +524,8 @@ static void device_poll(void) {
 			if ((device_listen))
 			{
 				output_low(NDAC_CP, NDAC);
-#ifdef VERBOSE_DEBUG
-				printf("Starting device mode gpib_read%c", eot_char);
-#endif
+				DEBUG_PRINTF("Starting device mode gpib_read%c", eot_char);
+
 				gpib_read(GPIBREAD_TMO, 0, eot_enable);
 				device_listen = false;
 			}

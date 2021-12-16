@@ -112,9 +112,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 #ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
-			if (debug == 1) {
-				printf("write: timeout: waiting for NRFD+ && NDAC-%c", eot_char);
-			}
+			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-%c", eot_char);
 			device_talk = false;
 			device_srq = false;
 			prep_gpib_pins(controller_mode);
@@ -127,9 +125,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	for(i=0;i<length;i++) {
 		byte = bytes[i];
 
-		#ifdef VERBOSE_DEBUG
-		printf("Writing byte: %c (%02X)%c", byte, byte, eot_char);
-		#endif
+		DEBUG_PRINTF("Writing byte: %c (%02X)%c", byte, byte, eot_char);
 
 		// Wait for NDAC to go low, indicating previous bit is now done with
 		t0 = get_ms();
@@ -137,9 +133,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 #ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
-				if (debug == 1) {
-					printf("write timeout: waiting for NDAC-%c", eot_char);
-				}
+				DEBUG_PRINTF("write timeout: waiting for NDAC-%c", eot_char);
 				device_talk = false;
 				device_srq = false;
 				prep_gpib_pins(controller_mode);
@@ -161,9 +155,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 #ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
-				if (debug == 1) {
-					 printf("write timeout: Waiting for NRFD+%c", eot_char);
-				}
+				DEBUG_PRINTF("write timeout: Waiting for NRFD+%c", eot_char);
 				device_talk = false;
 				device_srq = false;
 				prep_gpib_pins(controller_mode);
@@ -181,9 +173,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 #ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
-				if (debug == 1) {
-					 printf("write timeout: Waiting for NDAC+%c", eot_char);
-				}
+				DEBUG_PRINTF("write timeout: Waiting for NDAC+%c", eot_char);
 				device_talk = false;
 				device_srq = false;
 				prep_gpib_pins(controller_mode);
@@ -234,9 +224,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
-			if (debug == 1) {
-				 printf("readbyte timeout: Waiting for DAV-%c", eot_char);
-			}
+			DEBUG_PRINTF("readbyte timeout: Waiting for DAV-%c", eot_char);
 			device_listen = false;
 			prep_gpib_pins(controller_mode);
 			return 1;
@@ -251,9 +239,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	*byte = READ_DIO();
 	*eoi_status = gpio_get(EOI_CP, EOI);
 
-	#ifdef VERBOSE_DEBUG
-	printf("Got byte: %c (%02X)%c", *byte, *byte, eot_char);
-	#endif
+	DEBUG_PRINTF("Got byte: %c (%02X)%c", *byte, *byte, eot_char);
 
 	// Un-assert NDAC, informing talker that we have accepted the byte
 	gpio_mode_setup(NDAC_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, NDAC);
@@ -264,9 +250,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 #ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
-			if (debug == 1) {
-				 printf("readbyte timeout: Waiting for DAV+%c", eot_char);
-			}
+			DEBUG_PRINTF("readbyte timeout: Waiting for DAV+%c", eot_char);
 			device_listen = false;
 			prep_gpib_pins(controller_mode);
 			return 1;
@@ -318,9 +302,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
     }
 
     // Beginning of GPIB read loop
-    #ifdef VERBOSE_DEBUG
-    printf("gpib_read loop start%c", eot_char);
-    #endif
+    DEBUG_PRINTF("gpib_read loop start%c", eot_char);
 
 	// TODO: Make sure modes are set correctly
     gpio_clear(FLOW_PORT, TE);
@@ -377,9 +359,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 		host_tx(eot_char);
     }
 
-    #ifdef VERBOSE_DEBUG
-    printf("gpib_read loop end%c", eot_char);
-    #endif
+    DEBUG_PRINTF("gpib_read loop end%c", eot_char);
 
     if (controller_mode) {
         // Command all talkers and listeners to stop
@@ -390,9 +370,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
         error_found = error_found || gpib_cmd(cmd_buf);
     }
 
-    #ifdef VERBOSE_DEBUG
-    printf("gpib_read end%c", eot_char);
-    #endif
+	DEBUG_PRINTF("gpib_read end%c", eot_char);
 
     return error_found;
 }
