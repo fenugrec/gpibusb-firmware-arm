@@ -169,6 +169,20 @@ void prep_gpib_pins(bool controller_mode) {
 
 }
 
+// TODO : if these become a bottleneck, they could be changed to
+// manipulate ODR and MODER regs directly.
+
+void output_high(uint32_t gpioport, uint16_t gpios) {
+	gpio_set(gpioport, gpios);
+	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpios);
+}
+
+
+void output_low(uint32_t gpioport, uint16_t gpios) {
+	gpio_clear(gpioport, gpios);
+	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpios);
+}
+
 /********* TIMERS
  *
  *

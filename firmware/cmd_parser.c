@@ -326,9 +326,9 @@ void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
 	if (!controller_mode) return;
-	gpio_clear(IFC_CP, IFC);
+	output_low(IFC_CP, IFC);
 	delay_ms(200);
-	gpio_set(IFC_CP, IFC);
+	output_high(IFC_CP, IFC);	//XXX orig version just tristates IFC ? we're controller, who cares ?
 }
 void do_llo(const char *args) {
 	// ++llo
@@ -507,13 +507,13 @@ static void device_poll(void) {
 	{
 		if (!gpio_get(ATN_CP, ATN))
 		{
-			gpio_clear(NDAC_CP, NDAC);
+			output_low(NDAC_CP, NDAC);
 			// Get the CMD byte sent by the controller
 			if (gpib_read_byte(cmd_buf, &eoi_status)) {
 				//error (timeout ?)
 				return;
 			}
-			gpio_set(NRFD_CP, NRFD);
+			output_high(NRFD_CP, NRFD);
 			if (cmd_buf[0] == partnerAddress + 0x40)
 			{
 				device_talk = true;
@@ -576,7 +576,7 @@ static void device_poll(void) {
 			{
 				printf("%c%c", CMD_GET, eot_char);
 			}
-			gpio_set(NDAC_CP, NDAC);
+			output_high(NDAC_CP, NDAC);
 		}
 	}
 	else
@@ -586,7 +586,7 @@ static void device_poll(void) {
 		{
 			if ((device_listen))
 			{
-				gpio_clear(NDAC_CP, NDAC);
+				output_low(NDAC_CP, NDAC);
 #ifdef VERBOSE_DEBUG
 				printf("Starting device mode gpib_read%c", eot_char);
 #endif

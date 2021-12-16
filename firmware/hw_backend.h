@@ -54,6 +54,27 @@ void led_update(enum LED_PATTERN np);
 void led_poll(void);
 
 
+/* Some IO helpers. Original code used these implementations from CCS that
+ * implicitly set port direction !
+ * These don't need to be used for stuff like LED or the 7516xx driver control signals
+ * (PE, TC, DC etc)
+ */
+
+/** set pin output HIGH
+ *
+ * @param gpioport
+ * @param gpios : bitmask, can be multiple pins OR'ed
+ */
+void output_high(uint32_t gpioport, uint16_t gpios);
+
+/** set pin output HIGH
+ *
+ * @param gpioport
+ * @param gpios : bitmask, can be multiple pins OR'ed
+ */
+void output_low(uint32_t gpioport, uint16_t gpios);
+
+
 /**************** EEPROM
 * TODO ? these could be replaced by "EEPROM emulation", see ST AN2594
 */

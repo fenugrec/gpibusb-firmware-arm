@@ -26,6 +26,6 @@
 
 #define WITH_TIMEOUT
 #define WITH_WDT
-//#define VERBOSE_DEBUG
+#define VERBOSE_DEBUG
 
 #endif // _FIRMWARE_H
