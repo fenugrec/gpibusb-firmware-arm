@@ -31,6 +31,12 @@ uint16_t get_us(void);
 
 void reset_cpu(void);
 
+/** restart in DFU mode */
+void reset_dfu(void);
+
+/** must be called as early as possible */
+void pre_main(void);
+
 void prep_gpib_pins(bool controller_mode);
 
 void restart_wdt(void);

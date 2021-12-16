@@ -13,6 +13,8 @@
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/systick.h>
 
+#include <cmsis_compiler.h>	//can't include core_cm0.h because of conflicts with locm's headers
+
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "stypes.h"
@@ -270,6 +272,38 @@ void restart_wdt(void) {
 void reset_cpu(void) {
 	scb_reset_system();
 }
+
+#define DFU_MAGIC 0x5555AAAA
+/* these are very device-specific, and not in any locm3/CMSIS/ST headers ? */
+//#define SYSMEM_BASE 0x1fffc400	//good for F070x6
+#define SYSMEM_BASE 0x1fffc800	// F070xB
+
+/* special struct stored in a RAM area not cleared at reset
+ *
+ */
+static struct {
+	u32 dfu_token;	//alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
+} sys_state  __attribute__ ((section (".svram")));
+
+
+void reset_dfu(void) {
+	sys_state.dfu_token = DFU_MAGIC;
+	scb_reset_system();
+}
+
+
+void pre_main(void) {
+	if (sys_state.dfu_token != DFU_MAGIC) return;
+	sys_state.dfu_token = 0;
+
+	void (*bootloader)(void) = (void (*)(void)) (*((uint32_t *) (SYSMEM_BASE + 4)));
+
+	__set_MSP(*(uint32_t*) SYSMEM_BASE);
+	bootloader();
+
+	while (1);
+}
+
 
 /* **** global hw setup */
 void hw_setup(void) {

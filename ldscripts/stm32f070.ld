@@ -101,6 +101,15 @@ SECTIONS
 		_ebss = .;
 	} >ram
 
+
+/* "semi-volatile" ram outside BSS section to conserve data accross assert/watchdog resets etc */
+  .svram :
+  {
+	_ssvram = .;
+    KEEP(*(.svram));
+	_svram_size = . - _ssvram;
+  } >ram
+
 	/*
 	 * The .eh_frame section appears to be used for C++ exception handling.
 	 * You may need to fix this if you're using C++.

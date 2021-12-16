@@ -10,6 +10,7 @@ void do_strip(const char *args);
 void do_version2(const char *args);
 void do_autoRead(const char *args);
 void do_reset(const char *args);
+void do_reset_dfu(const char *args);
 void do_debug(const char *args);
 void do_clr(const char *args);
 void do_eotEnable(const char *args);

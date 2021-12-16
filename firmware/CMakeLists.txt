@@ -65,6 +65,7 @@ target_include_directories(${TGTNAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/libopencm3/include
 	${CMAKE_SOURCE_DIR}/libopencmsis/include
 	${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/cmsis
 	${CMAKE_SOURCE_DIR}/printf/src
 	${CMAKE_SOURCE_DIR}/etools
 )

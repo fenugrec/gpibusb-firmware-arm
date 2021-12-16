@@ -1,0 +1,2 @@
+V5.0.4
+Grabbed these from stm32cube's CMSIS includes. Need these just for a few low-level defines.

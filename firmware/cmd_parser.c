@@ -225,11 +225,21 @@ void do_autoRead(const char *args) {
 	}
 }
 void do_reset(const char *args) {
-	// +reset
+	// ++rst
 	(void) args;
-	delay_ms(1);
+	printf("Rebooting in 3 seconds !\n");
+	delay_ms(3000);
 	reset_cpu();
 }
+
+void do_reset_dfu(const char *args) {
+	// +dfu
+	(void) args;
+	printf("Rebooting in DFU mode in 3 seconds !\n");
+	delay_ms(3000);
+	reset_dfu();
+}
+
 void do_debug(const char *args) {
 // +debug {0|1}
 	if (*args == 0) {

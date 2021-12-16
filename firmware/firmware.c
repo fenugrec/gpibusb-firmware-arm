@@ -26,6 +26,7 @@
 
 int main(void)
 {
+	pre_main();
 	hw_setup();
 
 	prep_gpib_pins(controller_mode);
