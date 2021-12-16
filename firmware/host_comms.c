@@ -38,11 +38,15 @@ ecbuff *fifo_out = (ecbuff *) fifo_out_buf;
 
 
 /** Host RX state machine */
-enum e_hrx_state {HRX_RX, HRX_ESCAPE, HRX_RESYNC};
+enum e_hrx_state {
+	HRX_RX,	// while building a chunk
+	HRX_ESCAPE,	// pass next byte without ending chunk
+	HRX_DISCARD, //discard next char if it's a LF
+	HRX_RESYNC,	//after a buffer overflow : wait for CR/LF
+};
+
 static enum e_hrx_state hrx_state = HRX_RX;
-	//HRX_RX while building a chunk
-	//HRX_ESCAPE will not end the chunk if the next byte is \r or \n
-	//HRX_RESYNC after a buffer overflow
+
 
 
 /***** funcs */
@@ -62,7 +66,7 @@ void host_comms_init(void) {
  * appends a CHUNK_VALID / _INVALID guard byte after each chunk.
  *
  * Does not distinguish between data or commands.
- * Converts unescaped \r (CR) to \n
+ * converts unescaped CR and CR+LF sequences to LF
  */
 void host_comms_rx(uint8_t rxb) {
 	const u8 lf = '\n';
@@ -83,10 +87,27 @@ void host_comms_rx(uint8_t rxb) {
 	case HRX_RX:
 		if (rxb == 27) {
 			hrx_state = HRX_ESCAPE;
-		} else 	if ((rxb == '\r') || (rxb == '\n')) {
+		} else if (rxb == '\r') {
+			//CR : replace with LF, and discard next LF if applicable
+			ecbuff_write(fifo_in, &lf);
+			ecbuff_write(fifo_in, &chunkvalid);
+			hrx_state = HRX_DISCARD;
+			break;
+		} else if (rxb == '\n') {
 			//terminate chunk normally
 			ecbuff_write(fifo_in, &lf);
 			ecbuff_write(fifo_in, &chunkvalid);
+			break;
+		}
+		//if it was an escape, it needs to be passed on
+		ecbuff_write(fifo_in, &rxb);
+		break;
+	case HRX_DISCARD:
+		//previous byte was a CR which already terminated the chunk.
+		//if it was part of a CRLF, no need to send a lone LF
+		hrx_state = HRX_RX;
+		if (rxb == '\n') {
+			//drop, and go back to normal
 			break;
 		}
 		ecbuff_write(fifo_in, &rxb);
@@ -97,11 +118,15 @@ void host_comms_rx(uint8_t rxb) {
 		ecbuff_write(fifo_in, &rxb);
 		break;
 	case HRX_RESYNC:
-		if ((rxb == '\r') || (rxb == '\n')) {
-			//if the host sends both CR+LF, the "LF" will cause
-			// an empty command to be parsed. No big deal
+		if (rxb == '\r') {
+			//possibly a CR+LF
+			hrx_state = HRX_DISCARD;
+		} else if (rxb == '\n') {
 			hrx_state = HRX_RX;
 		}
+		break;
+	default:
+		//XXX assert
 		break;
 	}
 }

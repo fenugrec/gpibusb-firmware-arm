@@ -399,6 +399,11 @@ static void chunk_data(char *rawdata, unsigned len) {
 	char *buf_pnt = rawdata;
     char writeError = 0;
 
+    if (len == 0) {
+		//can happen if we receive a stray LF from host
+		return;
+    }
+
 	// Not an internal command, send to bus
 	// Command all talkers and listeners to stop
 	// and tell target to listen.
