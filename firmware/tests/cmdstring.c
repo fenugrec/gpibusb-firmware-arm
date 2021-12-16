@@ -29,7 +29,7 @@
 
 struct tvect {
 	const char *input;
-	unsigned input_len;
+	unsigned input_len;	//if 0, input len will be determined by 0-termination
 	const char *expected_out;	//unescaped command token or data chunk
 	unsigned expected_len;	//either length of command tok, or length of unescaped data
 	bool is_cmd;
@@ -42,28 +42,27 @@ struct tvect {
 #define NOARGS 0
 #define WITHARGS 1
 
-//XXXX todo : make input_len optional because pain
 /* test vectors; it's assumed they're all marked as CHUNK_VALID */
 const struct tvect vectors[] = {
 	/* some commands, no escapes */
-	{"+\n", 2, "+", 1, IS_CMD, NOARGS, 1},
-	{"+a\n", 3, "+a", 2, IS_CMD, NOARGS, 2},
-	{"+a:\n", 4, "+a:", 3, IS_CMD, NOARGS, 4},	//correct command tok, but no args
-	{"++a \n", 5, "++a", 3, IS_CMD, NOARGS, 4},	//space-separated tok, but no args
+	{"+\n", 0, "+", 1, IS_CMD, NOARGS, 1},
+	{"+a\n", 0, "+a", 2, IS_CMD, NOARGS, 2},
+	{"+a:\n", 0, "+a:", 3, IS_CMD, NOARGS, 4},	//correct command tok, but no args
+	{"++a \n", 0, "++a", 3, IS_CMD, NOARGS, 4},	//space-separated tok, but no args
 	/* more commands, with escapes */
-	{"+a\x1b""\nb\n", 6, "+a\nb", 4, IS_CMD, NOARGS,  4},	//escaped \n
-	{"+a\x1b""a\n", 5, "+aa", 3, IS_CMD, NOARGS, 3},	//escaped 'a' for no reason
+	{"+a\x1b""\nb\n", 0, "+a\nb", 4, IS_CMD, NOARGS,  4},	//escaped \n
+	{"+a\x1b""a\n", 0, "+aa", 3, IS_CMD, NOARGS, 3},	//escaped 'a' for no reason
 	/* data, with and without escapes */
-	{"++ver\n", 6, "++ver", 5, IS_CMD, NOARGS, 6}, //dummy command to precede data
-	{"1234\n", 5, "1234", 4, IS_DATA, NOARGS, 5},	//normal chunk
-	{"\n", 1, "", 0, IS_DATA, NOARGS, 0},	//stray \n : empty chunk
-	{"123\x1b""\n\n", 6, "123\n", 4, IS_DATA, NOARGS, 5},	//escaped \n
-	{"123\x1b""4\n", 6, "1234", 4, IS_DATA, NOARGS, 4},	//escaped 4
+	{"++ver\n", 0, "++ver", 5, IS_CMD, NOARGS, 6}, //dummy command to precede data
+	{"1234\n", 0, "1234", 4, IS_DATA, NOARGS, 5},	//normal chunk
+	{"\n", 0, "", 0, IS_DATA, NOARGS, 0},	//stray \n : empty chunk
+	{"123\x1b""\n\n", 0, "123\n", 4, IS_DATA, NOARGS, 5},	//escaped \n
+	{"123\x1b""4\n", 0, "1234", 4, IS_DATA, NOARGS, 4},	//escaped 4
 	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, IS_DATA, NOARGS, 6},	//escaped 0x00
 	/* args */
-	{"++a 3\n", 6, "++a", 3, IS_CMD, WITHARGS, 4},	//single arg
-	{"+a:3\n", 5, "+a:", 3, IS_CMD, WITHARGS, 4},	//single arg
-	{"++a 3 4\n", 8, "++a", 3, IS_CMD, WITHARGS, 4},	//multiple args
+	{"++a 3\n", 0, "++a", 3, IS_CMD, WITHARGS, 4},	//single arg
+	{"+a:3\n", 0, "+a:", 3, IS_CMD, WITHARGS, 4},	//single arg
+	{"++a 3 4\n", 0, "++a", 3, IS_CMD, WITHARGS, 4},	//multiple args
 	{NULL, 0, NULL, 0, 0, 0, 0}
 };
 
@@ -205,12 +204,24 @@ bool run_test(const struct tvect *tv) {
 	memset(input_buf, 0xFF, sizeof(input_buf));
 
 	// 2) feed input string
-	for (icur=0; icur < tv->input_len; icur++) {
+	icur = 0;
+	while (1) {
+		if (tv->input_len == 0) {
+			//detect end by 0-term
+			if (tv->input[icur] == 0) {
+				break;
+			}
+		} else {
+			if (icur >= tv->input_len) {
+				break;
+			}
+		}
 		done = test_cmd_poll((u8) tv->input[icur]);
 		if (done) {
 			printf("FAIL\tchunk ended early @ %u\t", icur);
 			return 0;
 		}
+		icur++;
 	}
 	// 3) cmd_poll should be waiting for guard byte here
 	done = test_cmd_poll(CHUNK_VALID);
