@@ -32,7 +32,7 @@ ENTRY(reset_handler)
 MEMORY
 {
   ram    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 6K
-  rom    (rx)    : ORIGIN = 0x8000000,   LENGTH = 16K
+  rom    (rx)    : ORIGIN = 0x8000000,   LENGTH = 32K
 }
 
 
