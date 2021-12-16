@@ -42,7 +42,9 @@ uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 
 #define CMD_DCL 0x14
+#define CMD_LAD 0x20
 #define CMD_UNL 0x3f
+#define CMD_TAD 0x40
 #define CMD_UNT 0x5f
 #define CMD_GET 0x8
 #define CMD_SDC 0x04
@@ -56,6 +58,8 @@ extern bool controller_mode;		//1 if controller mode
 extern bool debug;	// enable or disable read&write error messages
 extern char eot_char;	//char to append to each string sent to host
 extern uint32_t timeout;	//in milliseconds
+extern int partnerAddress;
+extern int myAddress;
 // Variables for device mode
 extern bool device_talk;
 extern bool device_listen;

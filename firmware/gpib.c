@@ -36,6 +36,8 @@
 #include "stypes.h"
 
 /* global vars */
+int partnerAddress = 1;
+int myAddress = 0;
 bool controller_mode = 1;
 bool debug = 0; // enable or disable read&write error messages
 char eot_char = '\r'; // default CR
@@ -302,12 +304,12 @@ uint32_t gpib_read(bool use_eoi,
         if(error_found){return 1;}
 
         // Set the controller into listener mode
-        cmd_buf[0] = 0 + 0x20; // FIXME: Should be my_address + 0x20
+        cmd_buf[0] = myAddress + CMD_LAD;
         error_found = error_found || gpib_cmd(cmd_buf);
         if(error_found){return 1;}
 
         // Set target device into talker mode
-        cmd_buf[0] = 1 + 0x40; // FIXME: Should be address + 0x40
+        cmd_buf[0] = partnerAddress + CMD_TAD;
         error_found = gpib_cmd(cmd_buf);
         if(error_found){return 1;}
     }
@@ -412,7 +414,7 @@ uint32_t gpib_address_target(uint32_t address) {
     write_error = write_error || gpib_cmd(cmd_buf);
     cmd_buf[0] = CMD_UNL; // Everyone stop listening
     write_error = write_error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = address + 0x20;
+    cmd_buf[0] = address + CMD_LAD;
     write_error = write_error || gpib_cmd(cmd_buf);
     return write_error;
 }
@@ -453,7 +455,7 @@ uint32_t gpib_serial_poll(int address, u8 *status_byte) {
 
     cmd_buf[0] = CMD_SPE; // enable serial poll
     error = error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = address + 0x40;
+    cmd_buf[0] = address + CMD_TAD;
     error = error || gpib_cmd(cmd_buf);
     if (error) return -1;
 

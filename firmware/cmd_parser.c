@@ -54,8 +54,6 @@
 #define VERSION 5
 
 u8 cmd_buf[1];
-int partnerAddress = 1;
-int myAddress;
 char eos = 10; // Default end of string character.
 char eos_string[3] = "";
 char eos_code = EOS_NUL;
@@ -460,7 +458,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	{
 		writeError = writeError || gpib_address_target(partnerAddress);
 	// Set the controller into talker mode
-		cmd_buf[0] = myAddress + 0x40;
+		cmd_buf[0] = myAddress + CMD_TAD;
 		writeError = writeError || gpib_cmd(cmd_buf);
 	}
 	// Send out command to the bus
@@ -514,14 +512,14 @@ static void device_poll(void) {
 				return;
 			}
 			output_high(NRFD_CP, NRFD);
-			if (cmd_buf[0] == partnerAddress + 0x40)
+			if (cmd_buf[0] == partnerAddress + CMD_TAD)
 			{
 				device_talk = true;
 #ifdef VERBOSE_DEBUG
 				printf("Instructed to talk%c", eot_char);
 #endif
 			}
-			else if (cmd_buf[0] == partnerAddress + 0x20)
+			else if (cmd_buf[0] == partnerAddress + CMD_LAD)
 			{
 				device_listen = true;
 #ifdef VERBOSE_DEBUG
