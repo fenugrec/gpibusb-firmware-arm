@@ -42,6 +42,7 @@ struct tvect {
 #define NOARGS 0
 #define WITHARGS 1
 
+//XXXX todo : make input_len optional because pain
 /* test vectors; it's assumed they're all marked as CHUNK_VALID */
 const struct tvect vectors[] = {
 	/* some commands, no escapes */
@@ -53,8 +54,9 @@ const struct tvect vectors[] = {
 	{"+a\x1b""\nb\n", 6, "+a\nb", 4, IS_CMD, NOARGS,  4},	//escaped \n
 	{"+a\x1b""a\n", 5, "+aa", 3, IS_CMD, NOARGS, 3},	//escaped 'a' for no reason
 	/* data, with and without escapes */
-	{"\n", 1, "", 0, IS_DATA, NOARGS, 0},	//stray \n : empty chunk
+	{"++ver\n", 6, "++ver", 5, IS_CMD, NOARGS, 6}, //dummy command to precede data
 	{"1234\n", 5, "1234", 4, IS_DATA, NOARGS, 5},	//normal chunk
+	{"\n", 1, "", 0, IS_DATA, NOARGS, 0},	//stray \n : empty chunk
 	{"123\x1b""\n\n", 6, "123\n", 4, IS_DATA, NOARGS, 5},	//escaped \n
 	{"123\x1b""4\n", 6, "1234", 4, IS_DATA, NOARGS, 4},	//escaped 4
 	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, IS_DATA, NOARGS, 6},	//escaped 0x00
