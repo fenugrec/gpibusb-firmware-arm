@@ -149,7 +149,7 @@ void do_addr(const char *args) {
 	}
 }
 void do_readTimeout(const char *args) {
-	// +t:N
+	// +t N
 	// ++read_tmo_ms N
 	if (*args == '\n') {
 		printf("%lu%c", (unsigned long) timeout, eot_char);
@@ -193,7 +193,7 @@ void do_eoi(const char *args) {
 	}
 }
 void do_strip(const char *args) {
-	// +strip:{0|1}
+	// +strip {0|1}
 	strip = (bool) atoi(args);
 }
 void do_version2(const char *args) {
@@ -217,7 +217,6 @@ void do_trg(const char *args) {
 	}*/
 }
 void do_autoRead(const char *args) {
-	// +autoread:{0|1}
 	// ++auto {0|1}
 	if (*args == '\n') {
 		printf("%i%c", autoread, eot_char);
@@ -232,8 +231,7 @@ void do_reset(const char *args) {
 	reset_cpu();
 }
 void do_debug(const char *args) {
-// +debug:{0|1}
-// ++debug {0|1}
+// +debug {0|1}
 	if (*args == '\n') {
 		printf("%i%c", debug, eot_char);
 	} else {
@@ -377,7 +375,7 @@ void do_nothing(const char *args) {
 
 /** Parse command
  *
- * @param cmd 0-split command plus args (starts with '+' or "++"), e.g. {"+a:","31"}
+ * @param cmd 0-split command plus args (starts with '+' or "++"), e.g. {"+a","31"}
  * @param cmd_len : len (excluding 0) of command token, e.g. strlen("+a:")
  * @param has_args : if 0, *args will point to a 0x00
  *
@@ -619,14 +617,7 @@ void cmd_poll(void) {
 			input_buf[in_len++] = rxb;
 			return;
 		}
-		if (rxb == ':') {
-			//commands of form "+<cmd>:<args>" : split args after ':'
-			input_buf[in_len++] = rxb;
-			cmd_len = in_len;
-			input_buf[in_len++] = 0;
-			has_args = 1;
-			arg_pos = in_len;
-		} else if (rxb == ' ') {
+		if (rxb == ' ') {
 			cmd_len = in_len;
 			//commands of form "++<cmd> <args>": split args on ' '
 			input_buf[in_len++] = 0;
