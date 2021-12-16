@@ -12,6 +12,7 @@ add_compile_options(
     -Wall -Wextra -Werror
 	-Wextra -Wshadow -Wimplicit-function-declaration
 	-Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
+	-fno-builtin-printf
 #    -fsigned-char
     -ffunction-sections -fdata-sections
 #    -ffreestanding
@@ -117,7 +118,7 @@ endfunction()
 
 
 ######### commands for adding each target have a lot in common: make helper func.
-# 
+#
 
 function(add_f070_target TGTNAME)
 	add_executable(${TGTNAME}_fw ${SOURCE_FILES})
