@@ -8,6 +8,7 @@
 
 #include <ctype.h>	//toupper
 
+#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include "host_comms.h"
@@ -73,6 +74,6 @@ void print_hex(const uint8_t *data, unsigned len) {
 	unsigned i;
 	(void) data;
 	for (i = 0; i < len; i++) {
-//		printf_("%02X ", (unsigned) data[i]);
+		printf("%02X ", (unsigned) data[i]);
 	}
 }
