@@ -37,9 +37,6 @@ static _Alignas(ecbuff) uint8_t fifo_out_buf[sizeof(ecbuff) + HOST_OUT_BUFSIZE];
 ecbuff *fifo_out = (ecbuff *) fifo_out_buf;
 
 
-
-static unsigned in_len;	//length of chunk being received from host
-
 /** Host RX state machine */
 enum e_hrx_state {HRX_RX, HRX_ESCAPE, HRX_RESYNC};
 static enum e_hrx_state hrx_state = HRX_RX;
@@ -56,7 +53,6 @@ void host_comms_init(void) {
 	ecbuff_init(fifo_out, HOST_OUT_BUFSIZE, 1);
 
 	hrx_state = HRX_RX;
-	in_len = 0;
 	return;
 }
 
@@ -73,7 +69,7 @@ void host_comms_rx(uint8_t rxb) {
 	const u8 chunkvalid = CHUNK_VALID;	//gross
 	const u8 chunkinvalid = CHUNK_INVALID;	//gross
 
-	if (in_len == HOST_IN_BUFSIZE) {
+	if (ecbuff_unused(fifo_in) <= 2) {
 		//overflow
 
 		ecbuff_write(fifo_in, &lf);
@@ -93,20 +89,17 @@ void host_comms_rx(uint8_t rxb) {
 			break;
 		}
 		ecbuff_write(fifo_in, &rxb);
-		in_len += 1;
 		break;
 	case HRX_ESCAPE:
 		//previous byte was Escape: do not check for \r or \n termination
 		hrx_state = HRX_RX;
 		ecbuff_write(fifo_in, &rxb);
-		in_len += 1;
 		break;
 	case HRX_RESYNC:
 		if ((rxb == '\r') || (rxb == '\n')) {
 			//if the host sends both CR+LF, the "LF" will cause
 			// an empty command to be parsed. No big deal
 			hrx_state = HRX_RX;
-			in_len = 0;
 		}
 		break;
 	}
