@@ -12,7 +12,19 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../host_comms.h"
+/****** just copied the essential parts from "../host_comms.h"
+*/
+#define HOST_IN_BUFSIZE 256
+#define HOST_OUT_BUFSIZE 256
+
+/* at the end of each \n-terminated chunk in the
+ * FIFO, we place a guard byte. This might be set
+ * to INVALID if we detect read errors
+ */
+#define CHUNK_INVALID 0
+#define CHUNK_VALID	1
+/*************************/
+
 #include "../stypes.h"
 
 struct tvect {
@@ -25,30 +37,32 @@ struct tvect {
 	unsigned arg_pos;	//pos within input_buf; if no args, inputbuf[arg_pos] == 0
 };
 
+#define IS_CMD 1
+#define IS_DATA 0
 #define NOARGS 0
 #define WITHARGS 1
 
 /* test vectors; it's assumed they're all marked as CHUNK_VALID */
 const struct tvect vectors[] = {
 	/* some commands, no escapes */
-	{"+\n", 2, "+", 1, 1, NOARGS, 1},
-	{"+a\n", 3, "+a", 2, 1, NOARGS, 2},
-	{"+a:\n", 4, "+a:", 3, 1, NOARGS, 4},	//correct command tok, but no args
-	{"++a \n", 5, "++a", 3, 1, NOARGS, 4},	//space-separated tok, but no args
-	/* more commands, with esacpes */
-	{"+a\x1b""\nb\n", 6, "+a\nb", 4, 1, NOARGS,  4},	//escaped \n
-	{"+a\x1b""a\n", 5, "+aa", 3, 1, NOARGS, 3},	//escaped 'a' for no reason
+	{"+\n", 2, "+", 1, IS_CMD, NOARGS, 1},
+	{"+a\n", 3, "+a", 2, IS_CMD, NOARGS, 2},
+	{"+a:\n", 4, "+a:", 3, IS_CMD, NOARGS, 4},	//correct command tok, but no args
+	{"++a \n", 5, "++a", 3, IS_CMD, NOARGS, 4},	//space-separated tok, but no args
+	/* more commands, with escapes */
+	{"+a\x1b""\nb\n", 6, "+a\nb", 4, IS_CMD, NOARGS,  4},	//escaped \n
+	{"+a\x1b""a\n", 5, "+aa", 3, IS_CMD, NOARGS, 3},	//escaped 'a' for no reason
 	/* data, with and without escapes */
-	{"\n", 1, "", 0, 0, NOARGS, 0},	//stray \n : empty chunk
-	{"1234\n", 5, "1234", 4, 0, NOARGS, 5},	//normal chunk
-	{"123\x1b""\n\n", 6, "123\n", 4, 0, NOARGS, 5},	//escaped \n
-	{"123\x1b""4\n", 6, "1234", 4, 0, NOARGS, 4},	//escaped 4
-	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, 0, NOARGS, 6},	//escaped 0x00
+	{"\n", 1, "", 0, IS_DATA, NOARGS, 0},	//stray \n : empty chunk
+	{"1234\n", 5, "1234", 4, IS_DATA, NOARGS, 5},	//normal chunk
+	{"123\x1b""\n\n", 6, "123\n", 4, IS_DATA, NOARGS, 5},	//escaped \n
+	{"123\x1b""4\n", 6, "1234", 4, IS_DATA, NOARGS, 4},	//escaped 4
+	{"12\x1b\x00""34\n", 7, "12\x00""34", 5, IS_DATA, NOARGS, 6},	//escaped 0x00
 	/* args */
-	{"++a 3\n", 6, "++a", 3, 1, WITHARGS, 4},	//single arg
-	{"+a:3\n", 5, "+a:", 3, 1, WITHARGS, 4},	//single arg
-	{"++a 3 4\n", 8, "++a", 3, 1, WITHARGS, 4},	//multiple args
-	{NULL, 0, NULL, 0, 0, NOARGS, 0}
+	{"++a 3\n", 6, "++a", 3, IS_CMD, WITHARGS, 4},	//single arg
+	{"+a:3\n", 5, "+a:", 3, IS_CMD, WITHARGS, 4},	//single arg
+	{"++a 3 4\n", 8, "++a", 3, IS_CMD, WITHARGS, 4},	//multiple args
+	{NULL, 0, NULL, 0, 0, 0, 0}
 };
 
 
