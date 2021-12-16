@@ -625,12 +625,17 @@ void cmd_poll(void) {
 		//no data
 		return;
 	}
-	if ((in_len == 0) && (rxb == '+')) {
-		//start of new command chunk
-		in_cmd = 1;
-		cmd_len = 0;
-		has_args = 0;
-		arg_pos = 0;
+	if (in_len == 0) {
+		if (rxb == '+') {
+			//start of new command chunk
+			in_cmd = 1;
+			cmd_len = 0;
+			has_args = 0;
+			arg_pos = 0;
+		} else {
+			//data chunk
+			in_cmd = 0;
+		}
 	}
 
 	if (wait_guardbyte) {
