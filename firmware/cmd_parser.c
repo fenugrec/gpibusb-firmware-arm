@@ -139,10 +139,7 @@ void cmd_parser_init(void) {
  *** To add / remove commands, cmd_handlers.h and cmd_hashtable.gen
  *** must be updated
  */
-void do_address(const char *args) {
-	// +a:N
-	partnerAddress = atoi(args);
-}
+
 void do_addr(const char *args) {
 	// ++addr N
 	if (*args == '\n') {
@@ -151,37 +148,22 @@ void do_addr(const char *args) {
 		partnerAddress = atoi(args);
 	}
 }
-void do_timeout(const char *args) {
+void do_readTimeout(const char *args) {
 	// +t:N
+	// ++read_tmo_ms N
+	if (*args == '\n') {
+		printf("%lu%c", (unsigned long) timeout, eot_char);
+		return;
+	}
 	u32 temp = (u32) atoi(args);
 
 	/* bounds-check timeout value before saving */
 	if (temp > MAX_TIMEOUT) temp=MAX_TIMEOUT;
 	timeout = temp;
 }
-void do_readTimeout(const char *args) {
-	// ++read_tmo_ms N
-	if (*args == '\n') {
-		printf("%lu%c", (unsigned long) timeout, eot_char);
-	} else {
-		do_timeout(args);
-	}
-}
-void do_readCmd(const char *args) {
-	// +read
-	(void) args;
-	if (!controller_mode) return;
-	if (gpib_read(eoiUse, eos_code, eos_string, eot_enable)) {
-		if (debug == 1) {
-			printf("Read error occured.%c", eot_char);
-		}
-//delay_ms(1);
-//reset_cpu();
-	}
-}
 void do_readCmd2(const char *args) {
 	// ++read
-	//XXX TODO : merge with do_readCmd ?
+	//XXX TODO : err msg when read error occurs
 	if (!controller_mode) return;
 	if (*args == '\n') {
 		gpib_read(false, eos_code, eos_string, eot_enable); // read until EOS condition
@@ -192,20 +174,7 @@ void do_readCmd2(const char *args) {
 		// read until specified character
 		}*/
 }
-void do_test(const char *args) {
-	// +test
-	(void) args;
-	printf("testing%c", eot_char);
-}
-void do_eos(const char *args) {
-	// +eos:N
-	eos = atoi(args); // Parse out the end of string byte
-	eos_string[0] = eos;
-	eos_string[1] = 0x00;
-	eos_code = EOS_CUSTOM;
-}
 void do_eos2(const char *args) {
-	//XXX TODO : merge with +eos
 	// ++eos {0|1|2|3}
 	if (*args == '\n') {
 		printf("%i%c", eos_code, eot_char);
@@ -216,7 +185,6 @@ void do_eos2(const char *args) {
 }
 void do_eoi(const char *args) {
 	// ++eoi {0|1}
-	// +eoi:{0|1}
 	if (*args == '\n') {
 		printf("%i%c", eoiUse, eot_char);
 	} else {
@@ -227,31 +195,10 @@ void do_strip(const char *args) {
 	// +strip:{0|1}
 	strip = (bool) atoi(args);
 }
-void do_version(const char *args) {
-	// +ver	XXX TODO : merge with ++ver ?
-	(void) args;
-	printf("%i%c", VERSION, eot_char);
-}
 void do_version2(const char *args) {
 	// ++ver
 	(void) args;
 	printf("Version %i.0%c", VERSION, eot_char);
-}
-void do_getCmd(const char *args) {
-	// +get
-	u8 writeError = 0;
-	(void) args;
-	if (!controller_mode) return;
-
-	if (*args == '\n') {
-		writeError = writeError || gpib_address_target(partnerAddress);
-		//XXX TODO : do something with writeError
-		cmd_buf[0] = CMD_GET;
-		gpib_cmd(cmd_buf);
-	}
-	/*else if (*(buf_pnt+5) == 32) {
-	TODO: Add support for specified addresses
-	}*/
 }
 void do_trg(const char *args) {
 	// ++trg , XXX suspiciously similar to +get

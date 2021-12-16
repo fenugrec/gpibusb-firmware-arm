@@ -22,17 +22,7 @@ struct cmd_entry { char *name; void (*handler)(const char *args); };
 # gperf control file to generate cmd_hashtable.c
 # the list below must correspond to the function decls in "cmd_handlers.h "
 ##### Original Command Set
-"+a:", do_address
-"+t:", do_timeout
-"+eos:", do_eos
-"+eoi:", do_eoi
-"+test", do_test
-"+read", do_readCmd
-"+get", do_getCmd
 "+strip:", do_strip
-"+ver", do_version
-"+autoread:", do_autoRead
-"+reset", do_reset
 "+debug:", do_debug
 ##### Prologix Compatible Command Set
 "++addr", do_addr
