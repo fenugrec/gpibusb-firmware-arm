@@ -31,4 +31,12 @@ int htoi(const char *buf);
  */
 int _write(int file, char *ptr, int len);
 
+
+/** printf data as hexpairs
+ *
+ * format : "%02X %02X ...."
+ */
+void print_hex(const uint8_t *data, unsigned len);
+
+
 #endif // _LIBC_STUBS_H

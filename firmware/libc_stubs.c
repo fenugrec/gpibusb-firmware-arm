@@ -1,4 +1,5 @@
-/* libc replacements and stubs for generic functions
+/* libc replacements and stubs , plus
+ * generic utility funcs
  *
  * (c) fenugrec 2018-2021
  * GPLv3
@@ -66,4 +67,12 @@ int htoi(const char *buf) {
 void putchar_(char character) {
 	host_tx((uint8_t) character);
 	return;
+}
+
+void print_hex(const uint8_t *data, unsigned len) {
+	unsigned i;
+	(void) data;
+	for (i = 0; i < len; i++) {
+//		printf_("%02X ", (unsigned) data[i]);
+	}
 }

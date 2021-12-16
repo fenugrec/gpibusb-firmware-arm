@@ -23,7 +23,10 @@
 */
 
 #include <stdbool.h>
-#include <stdio.h>
+
+#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include <printf/printf.h>
+
 #include <string.h>
 
 #include <libopencm3/stm32/gpio.h>

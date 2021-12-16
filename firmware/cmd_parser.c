@@ -27,9 +27,9 @@
 */
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
+#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include <libopencm3/stm32/gpio.h>
@@ -463,7 +463,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	}
 	// Send out command to the bus
 #ifdef VERBOSE_DEBUG
-	printf("gpib_write: %s%c",buf_pnt, eot_char);
+	printf("gpib_write: %.*s%c", len, buf_pnt, eot_char);
 #endif
 	if (controller_mode || device_talk)
 	{
@@ -474,7 +474,9 @@ static void chunk_data(char *rawdata, unsigned len) {
 			if (!writeError)
 				writeError = gpib_write((u8 *) eos_string, 0, eoiUse);
 #ifdef VERBOSE_DEBUG
-			printf("eos_string: %s%c",eos_string, eot_char);
+			printf("eos_string: 0x");
+			print_hex((u8 *) eos_string, 2);
+			printf("%c", eot_char);
 #endif
 		}
 		else
