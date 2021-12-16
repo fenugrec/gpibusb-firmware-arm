@@ -476,7 +476,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 #ifdef VERBOSE_DEBUG
 			printf("eos_string: 0x");
 			print_hex((u8 *) eos_string, 2);
-			printf("%c", eot_char);
+			putchar_(eot_char);
 #endif
 		}
 		else
