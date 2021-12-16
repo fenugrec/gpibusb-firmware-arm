@@ -69,6 +69,7 @@ void host_comms_rx(uint8_t rxb) {
 	const u8 chunkvalid = CHUNK_VALID;	//gross
 	const u8 chunkinvalid = CHUNK_INVALID;	//gross
 
+	if (ecbuff_is_full(fifo_in)) return;
 	if (ecbuff_unused(fifo_in) <= 2) {
 		//overflow
 
