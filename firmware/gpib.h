@@ -35,8 +35,15 @@ enum eos_codes {
 uint32_t gpib_cmd(uint8_t *bytes);
 uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status);
-uint32_t gpib_read(bool use_eoi, enum eos_codes eos_code,
-					const char *eos_string, bool eot_enable);
+
+/** method of GPIB read termination */
+enum gpib_readmode {
+	GPIBREAD_EOI,
+	GPIBREAD_EOS,	//after specified char
+	GPIBREAD_TMO,	//after timeout
+};
+uint32_t gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
+
 uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);

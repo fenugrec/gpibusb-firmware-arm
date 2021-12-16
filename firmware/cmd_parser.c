@@ -54,8 +54,8 @@
 #define VERSION 5
 
 u8 cmd_buf[1];
-char eos = 10; // Default end of string character.
 char eos_string[3] = "";
+unsigned eos_len = 0;
 char eos_code = EOS_NUL;
 bool eoiUse = 1; // By default, we are using EOI to signal end of
 // msg from instrument
@@ -73,21 +73,21 @@ static void set_eos(enum eos_codes newcode) {
 		eos_string[0] = 13;
 		eos_string[1] = 10;
 		eos_string[2] = 0x00;
-		eos = 10;
+		eos_len = 2;
 		break;
 	case EOS_LF:
 		eos_string[0] = 13;
 		eos_string[1] = 0x00;
-		eos = 13;
+		eos_len = 1;
 		break;
 	case EOS_CR:
 		eos_string[0] = 10;
 		eos_string[1] = 0x00;
-		eos = 10;
+		eos_len = 1;
 		break;
 	default:
 		eos_string[0] = 0x00;
-		eos = 0;
+		eos_len = 0;
 		break;
 	}
 }
@@ -162,13 +162,14 @@ void do_readTimeout(const char *args) {
 	timeout = temp;
 }
 void do_readCmd2(const char *args) {
-	// ++read
+	// ++read [eoi|<char>]
 	//XXX TODO : err msg when read error occurs
+	//TODO : fix arg checking
 	if (!controller_mode) return;
 	if (*args == '\n') {
-		gpib_read(false, eos_code, eos_string, eot_enable); // read until EOS condition
+		gpib_read(GPIBREAD_TMO,0, eot_enable); // read until EOS condition
 	} else if (*args == 'e') {
-		gpib_read(true, eos_code, eos_string, eot_enable); // read until EOI flagged
+		gpib_read(GPIBREAD_EOI, 0, eot_enable); // read until EOI flagged
 	}
 	/*else if (*(buf_pnt+6) == 32) {
 		// read until specified character
@@ -419,10 +420,10 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// termination byte to inst
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
 			if (!writeError)
-				writeError = gpib_write((u8 *) eos_string, 0, eoiUse);
+				writeError = gpib_write((u8 *) eos_string, eos_len, eoiUse);
 #ifdef VERBOSE_DEBUG
 			printf("eos_string: 0x");
-			print_hex((u8 *) eos_string, 2);
+			print_hex((u8 *) eos_string, eos_len);
 			printf("%c", eot_char);
 #endif
 		}
@@ -436,7 +437,8 @@ static void chunk_data(char *rawdata, unsigned len) {
 	{
 		if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
 		{
-			gpib_read(eoiUse, eos_code, eos_string, eot_enable);
+			//XXX TODO : with autoread, does prologix terminate by EOI ?
+			gpib_read(GPIBREAD_EOI, 0, eot_enable);
 		}
 		else if(writeError)
 		{
@@ -537,7 +539,7 @@ static void device_poll(void) {
 #ifdef VERBOSE_DEBUG
 				printf("Starting device mode gpib_read%c", eot_char);
 #endif
-				gpib_read(eoiUse, eos_code, eos_string, eot_enable);
+				gpib_read(GPIBREAD_TMO, 0, eot_enable);
 				device_listen = false;
 			}
 			else if (device_talk && device_srq)

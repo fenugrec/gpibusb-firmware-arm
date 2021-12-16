@@ -96,7 +96,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
 	if(atn) { output_low(ATN_CP, ATN); }
-	if(!length) { length = strlen((char*)bytes); }
+	if(!length) { return 0; }
 
 	gpio_mode_setup(NRFD_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
 	gpio_set(FLOW_PORT, TE); // Enable talking
@@ -212,8 +212,8 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 /** Receive a single byte from the GPIB bus
 * Assumes ports were setup properly
 *
-* byte: Pointer to where the received byte will be stored
-* eoi_status: Pointer for storage of EOI line status
+* @param byte: Pointer to where the received byte will be stored
+* @param eoi_status: Pointer for storage of EOI line status
 *
 * Returns 0 if everything went fine
 */
@@ -284,17 +284,17 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 
 /** Read from the GPIB bus until the specified end condition is met
 *
-* use_eoi:
+* @param readmode termination by EOI , char, or timeout
+* @param eos_char (valid if use_eos=1)
 *
 * Returns 0 if everything went fine, or 1 if there was an error
 */
-uint32_t gpib_read(bool use_eoi,
-					enum eos_codes eos_code,
-					const char *eos_string,
+uint32_t gpib_read(enum gpib_readmode readmode,
+					uint8_t eos_char,
 					bool eot_enable) {
     uint8_t byte;
     bool eoi_status = 1;
-    bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
+    //bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
     uint8_t cmd_buf[3];
     uint32_t error_found = 0;
 
@@ -327,7 +327,9 @@ uint32_t gpib_read(bool use_eoi,
     gpio_mode_setup(DAV_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
     gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
 
-    if(use_eoi) { // Read until EOI
+    // TODO : what happens if device keeps sending data, or never sends EOI/EOS ?
+    switch (readmode) {
+	case GPIBREAD_EOI:
         do {
             if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
@@ -336,14 +338,15 @@ uint32_t gpib_read(bool use_eoi,
                 }
                 return 1;
             }
-            if (eoi_status) {
+            host_tx(byte);
+            if (!eoi_status) {
 				//all done
-				host_tx(byte);
 				break;
             }
         } while (eoi_status);
-    // TODO : "strip" for last byte
-	} else { // Read until EOS char found
+        // TODO : "strip" for last byte ?
+		break;
+    case GPIBREAD_EOS:
 		do {
             if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
@@ -353,31 +356,21 @@ uint32_t gpib_read(bool use_eoi,
                 return 1;
             }
             // Check to see if the byte we just read is the specified EOS byte
-            if (eos_code == EOS_CRLF) {
-            	if (eos_checknext) {
-					if (byte == '\n') {
-						//correct CR+LF termination : all done.
-						break;
-					}
-					//not CRLF, so we'll send the previous CR too
-					eos_checknext = 0;
-					host_tx('\r');
-					host_tx(byte);
-					continue;
-				}
-				if((byte == '\r')) {
-					//got a CR; we won't push to host now
-					eos_checknext = 1;
-					continue;
-				}
-            } else { // not CR+LF terminated
-                if((byte == eos_string[0])) {
-					//all done
-					break;
-                }
-				host_tx(byte);
+            if (byte == eos_char) {
+				//all done
+				break;
             }
+            // XXX TODO : is it necessary to strip CR+LF if eos_char is CR (or LF) ?
+            // prologix docs not obvious
+			host_tx(byte);
         } while (1);
+	case GPIBREAD_TMO:
+		printf("read with timeout not implemented\n");
+		//XXX TODO : implement read with timeout
+		break;
+	default:
+		//XXX assert
+		break;
     }	//if !use_eoi
 
     if(eot_enable) {
