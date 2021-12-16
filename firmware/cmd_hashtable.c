@@ -69,9 +69,9 @@ cmd_hash (register const char *str, register size_t len)
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
-      29, 29, 29, 29, 29, 29, 29,  0, 29, 11,
-      18,  0, 29,  0, 13, 10, 29, 29,  9,  3,
-       9,  6, 29, 11,  2,  6,  0,  2,  6, 29,
+      29, 29, 29, 29, 29, 29, 29,  0, 29,  2,
+      20,  0, 29,  0,  9, 11, 29, 29, 13,  1,
+       7,  6, 29, 12,  2,  6,  0, 16,  6, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
@@ -105,8 +105,8 @@ cmd_lookup (register const char *str, register size_t len)
       {"++rst", do_reset},
 #line 40 "cmd_hashtable.gen"
       {"++read", do_readCmd2},
-#line 26 "cmd_hashtable.gen"
-      {"+debug:", do_debug},
+#line 30 "cmd_hashtable.gen"
+      {"++clr", do_clr},
 #line 34 "cmd_hashtable.gen"
       {"++eot_char", do_eotChar},
 #line 32 "cmd_hashtable.gen"
@@ -120,27 +120,27 @@ cmd_lookup (register const char *str, register size_t len)
 #line 41 "cmd_hashtable.gen"
       {"++read_tmo_ms", do_readTimeout},
 #line 31 "cmd_hashtable.gen"
-      {"++eoi:", do_eoi},
+      {"++eoi", do_eoi},
 #line 25 "cmd_hashtable.gen"
-      {"+strip:", do_strip},
-#line 30 "cmd_hashtable.gen"
-      {"++clr", do_clr},
+      {"+strip", do_strip},
+#line 35 "cmd_hashtable.gen"
+      {"++ifc", do_ifc},
 #line 44 "cmd_hashtable.gen"
       {"++spoll", do_spoll},
-#line 36 "cmd_hashtable.gen"
-      {"++llo", do_llo},
+#line 37 "cmd_hashtable.gen"
+      {"++loc", do_loc},
 #line 43 "cmd_hashtable.gen"
       {"++savecfg", do_savecfg},
+#line 26 "cmd_hashtable.gen"
+      {"+debug", do_debug},
 #line 45 "cmd_hashtable.gen"
       {"++srq", do_srq},
+#line 36 "cmd_hashtable.gen"
+      {"++llo", do_llo},
 #line 38 "cmd_hashtable.gen"
       {"++lon", do_lon},
 #line 28 "cmd_hashtable.gen"
       {"++addr", do_addr},
-#line 37 "cmd_hashtable.gen"
-      {"++loc", do_loc},
-#line 35 "cmd_hashtable.gen"
-      {"++ifc", do_ifc},
 #line 39 "cmd_hashtable.gen"
       {"++mode", do_mode},
 #line 49 "cmd_hashtable.gen"
