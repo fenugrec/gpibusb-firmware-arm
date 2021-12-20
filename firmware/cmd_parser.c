@@ -5,7 +5,9 @@
 * This waits on input from host and acts on received commands.
 *
 * © 2013-2014 Steven Casagrande (scasagrande@galvant.ca)
-* (c) 2018 fenugrec
+* (c) 2018-2021 fenugrec
+* bits of Steve Matos' (steve1515) fork were used in here too
+*
 *
 *
 * This file is a part of the GPIBUSB Adapter project.
@@ -151,6 +153,7 @@ void cmd_parser_init(void) {
 
 void do_addr(const char *args) {
 	// ++addr N
+	// TODO : addr [pad [sad]] for secondary address too
 	if (*args == 0) {
 		eot_printf("%i", partnerAddress);
 	} else {
@@ -158,7 +161,6 @@ void do_addr(const char *args) {
 	}
 }
 void do_readTimeout(const char *args) {
-	// +t N
 	// ++read_tmo_ms N
 	if (*args == 0) {
 		eot_printf("%lu", (unsigned long) timeout);
@@ -176,12 +178,13 @@ void do_readCmd2(const char *args) {
 	if (!controller_mode) return;
 	if (*args == 0) {
 		gpib_read(GPIBREAD_TMO,0, eot_enable); // read until EOS condition
-	} else if (*args == 'e') {
+	} else if (strncmp(args, "eoi", 3) == 0) {
 		gpib_read(GPIBREAD_EOI, 0, eot_enable); // read until EOI flagged
-	}
-	/*else if (*(buf_pnt+6) == 32) {
+	} else {
 		// read until specified character
-		}*/
+		u8 tmp_eos = htoi(args);
+		gpib_read(GPIBREAD_EOS, tmp_eos, eot_enable);
+	}
 }
 void do_eos2(const char *args) {
 	// ++eos {0|1|2|3}
@@ -210,7 +213,7 @@ void do_version2(const char *args) {
 	eot_printf("Version %i.0", VERSION);
 }
 void do_trg(const char *args) {
-	// ++trg
+	// ++trg [<PAD1> [<SAD1>] <PAD2> [SAD2] … <PAD15> [<SAD15>]]
 	u8 writeError = 0;
 	(void) args;
 	if (!controller_mode) return;
@@ -219,10 +222,9 @@ void do_trg(const char *args) {
 			//XXX TODO : do something with writeError
 			cmd_buf[0] = CMD_GET;
 			gpib_cmd(cmd_buf);
+	} else {
+		//TODO: Add support for specified addresses
 	}
-	/*else if (*(buf_pnt+5) == 32) {
-	TODO: Add support for specified addresses
-	}*/
 }
 void do_autoRead(const char *args) {
 	// ++auto {0|1}
@@ -361,7 +363,8 @@ void do_srq(const char *args) {
 	eot_printf("%i", srq_state());
 }
 void do_spoll(const char *args) {
-	// ++spoll N
+	// ++spoll [pad [sad]]
+	// TODO : support secodnary addr too
 	if (!controller_mode) return;
 	if (*args == 0) {
 		if (!gpib_serial_poll(partnerAddress, &status_byte)) {
@@ -374,12 +377,17 @@ void do_spoll(const char *args) {
 	}
 }
 void do_status(const char *args) {
-	// ++status
+	// ++status [n]
 	if (controller_mode) return;
 	if (*args == 0) {
 		eot_printf("%u", (unsigned) status_byte);
 	} else {
 		status_byte = (u8) atoi(args);
+		if (status_byte & 0x40) {
+			// prologix: " If the RQS bit (bit #6) of the status byte is set then the SRQ signal is asserted (low)
+			// After a serial poll, SRQ line is de-asserted and status byte is set to 0 "
+			output_low(SRQ_CP, SRQ);
+		} // else { output_high ??? or assume the transition to device mode already did this}
 	}
 }
 void do_help(const char *args) {
