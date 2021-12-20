@@ -391,6 +391,10 @@ void do_nothing(const char *args) {
  *
  */
 static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
+	if (cmd_len == 0) {
+		//can happen if we receive a stray LF from host
+		return;
+    }
 	if (has_args) {
 		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 1]);
 	} else {
