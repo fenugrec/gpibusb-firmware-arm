@@ -85,22 +85,26 @@ void host_comms_rx(uint8_t rxb) {
 
 	switch (hrx_state) {
 	case HRX_RX:
-		if (rxb == 27) {
-			hrx_state = HRX_ESCAPE;
-		} else if (rxb == '\r') {
+		switch (rxb) {
+		case '\r':
 			//CR : replace with LF, and discard next LF if applicable
 			ecbuff_write(fifo_in, &lf);
 			ecbuff_write(fifo_in, &chunkvalid);
 			hrx_state = HRX_DISCARD;
 			break;
-		} else if (rxb == '\n') {
+		case '\n':
 			//terminate chunk normally
 			ecbuff_write(fifo_in, &lf);
 			ecbuff_write(fifo_in, &chunkvalid);
 			break;
+		case 27:
+			//if it was an escape, it needs to be passed on
+			hrx_state = HRX_ESCAPE;
+			//fallthru
+		default:
+			ecbuff_write(fifo_in, &rxb);
+			break;
 		}
-		//if it was an escape, it needs to be passed on
-		ecbuff_write(fifo_in, &rxb);
 		break;
 	case HRX_DISCARD:
 		//previous byte was a CR which already terminated the chunk.
