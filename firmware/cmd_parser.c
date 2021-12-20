@@ -173,7 +173,6 @@ void do_readTimeout(const char *args) {
 void do_readCmd2(const char *args) {
 	// ++read [eoi|<char>]
 	//XXX TODO : err msg when read error occurs
-	//TODO : fix arg checking
 	if (!controller_mode) return;
 	if (*args == 0) {
 		gpib_read(GPIBREAD_TMO,0, eot_enable); // read until EOS condition
@@ -202,7 +201,7 @@ void do_eoi(const char *args) {
 	}
 }
 void do_strip(const char *args) {
-	// +strip {0|1}
+	// ++strip {0|1}
 	strip = (bool) atoi(args);
 }
 void do_version2(const char *args) {
@@ -211,7 +210,7 @@ void do_version2(const char *args) {
 	eot_printf("Version %i.0", VERSION);
 }
 void do_trg(const char *args) {
-	// ++trg , XXX suspiciously similar to +get
+	// ++trg
 	u8 writeError = 0;
 	(void) args;
 	if (!controller_mode) return;
@@ -242,7 +241,7 @@ void do_reset(const char *args) {
 }
 
 void do_reset_dfu(const char *args) {
-	// +dfu
+	// ++dfu
 	(void) args;
 	printf("Rebooting in DFU mode in 3 seconds !\n");
 	delay_ms(3000);
@@ -250,7 +249,7 @@ void do_reset_dfu(const char *args) {
 }
 
 void do_debug(const char *args) {
-// +debug {0|1}
+	// ++debug {0|1}
 	if (*args == 0) {
 		eot_printf("%i", debug);
 	} else {
