@@ -96,6 +96,15 @@ static bool srq_state(void) {
     return !((bool)gpio_get(SRQ_CP, SRQ));
 }
 
+/** need this for most responses ?
+ * as it is, we'll append the EOT char only if eot_enable = 1.
+ * not sure what original prologix does. This is copied from steve1515's fork
+ */
+#define eot_printf(fmt, ...) do {\
+    printf((fmt), ##__VA_ARGS__);\
+    if (eot_enable) printf("%c", eot_char);\
+} while (0)
+
 
 void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
@@ -130,7 +139,7 @@ void cmd_parser_init(void) {
         gpib_controller_assign();
     }
 
-	printf("Command parser ready.%c", eot_char);
+	printf("Command parser ready\n");
 
 }
 
@@ -143,7 +152,7 @@ void cmd_parser_init(void) {
 void do_addr(const char *args) {
 	// ++addr N
 	if (*args == 0) {
-		printf("%i%c", partnerAddress, eot_char);
+		eot_printf("%i", partnerAddress);
 	} else {
 		partnerAddress = atoi(args);
 	}
@@ -152,7 +161,7 @@ void do_readTimeout(const char *args) {
 	// +t N
 	// ++read_tmo_ms N
 	if (*args == 0) {
-		printf("%lu%c", (unsigned long) timeout, eot_char);
+		eot_printf("%lu", (unsigned long) timeout);
 		return;
 	}
 	u32 temp = (u32) atoi(args);
@@ -178,7 +187,7 @@ void do_readCmd2(const char *args) {
 void do_eos2(const char *args) {
 	// ++eos {0|1|2|3}
 	if (*args == 0) {
-		printf("%i%c", eos_code, eot_char);
+		eot_printf("%i", eos_code);
 	} else {
 		eos_code = atoi(args);
 		set_eos(eos_code);
@@ -187,7 +196,7 @@ void do_eos2(const char *args) {
 void do_eoi(const char *args) {
 	// ++eoi {0|1}
 	if (*args == 0) {
-		printf("%i%c", eoiUse, eot_char);
+		eot_printf("%i", eoiUse);
 	} else {
 		eoiUse = (bool) atoi(args);
 	}
@@ -199,7 +208,7 @@ void do_strip(const char *args) {
 void do_version2(const char *args) {
 	// ++ver
 	(void) args;
-	printf("Version %i.0%c", VERSION, eot_char);
+	eot_printf("Version %i.0", VERSION);
 }
 void do_trg(const char *args) {
 	// ++trg , XXX suspiciously similar to +get
@@ -219,7 +228,7 @@ void do_trg(const char *args) {
 void do_autoRead(const char *args) {
 	// ++auto {0|1}
 	if (*args == 0) {
-		printf("%i%c", autoread, eot_char);
+		eot_printf("%i", autoread);
 	} else {
 		autoread = (bool) atoi(args);
 	}
@@ -243,7 +252,7 @@ void do_reset_dfu(const char *args) {
 void do_debug(const char *args) {
 // +debug {0|1}
 	if (*args == 0) {
-		printf("%i%c", debug, eot_char);
+		eot_printf("%i", debug);
 	} else {
 		debug = (bool) atoi(args);
 	}
@@ -263,7 +272,7 @@ void do_clr(const char *args) {
 void do_eotEnable(const char *args) {
 	// ++eot_enable {0|1}
 	if (*args == 0) {
-		printf("%i%c", eot_enable, eot_char);
+		eot_printf("%i", eot_enable);
 	} else {
 		eot_enable = (bool) atoi(args);
 	}
@@ -271,7 +280,7 @@ void do_eotEnable(const char *args) {
 void do_eotChar(const char *args) {
 	// ++eot_char N
 	if (*args == 0) {
-		printf("%i%c", eot_char, eot_char);
+		eot_printf("%i", eot_char);
 	} else {
 		eot_char = atoi(args);
 	}
@@ -310,7 +319,7 @@ void do_lon(const char *args) {
 	//TODO : listen mode
 	if (controller_mode) return;
 	if (*args == 0) {
-		printf("%i%c", listen_only, eot_char);
+		eot_printf("%i", listen_only);
 	} else {
 		listen_only = (bool) atoi(args);
 	}
@@ -318,7 +327,7 @@ void do_lon(const char *args) {
 void do_mode(const char *args) {
 	// ++mode {0|1}
 	if (*args == 0) {
-		printf("%i%c", controller_mode, eot_char);
+		eot_printf("%i", controller_mode);
 	} else {
 		controller_mode = (bool) atoi(args);
 		prep_gpib_pins(controller_mode);
@@ -330,7 +339,7 @@ void do_mode(const char *args) {
 void do_savecfg(const char *args) {
 	// ++savecfg {0|1}
 	if (*args == 0) {
-		printf("%i%c", save_cfg, eot_char);
+		eot_printf("%i", save_cfg);
 	} else {
 		save_cfg = (bool) atoi(args);
 		if (save_cfg) {
@@ -350,18 +359,18 @@ void do_srq(const char *args) {
 	// ++srq
 	(void) args;
 	if (!controller_mode) return;
-	printf("%i%c", srq_state(), eot_char);
+	eot_printf("%i", srq_state());
 }
 void do_spoll(const char *args) {
 	// ++spoll N
 	if (!controller_mode) return;
 	if (*args == 0) {
 		if (!gpib_serial_poll(partnerAddress, &status_byte)) {
-			printf("%u%c", (unsigned) status_byte, eot_char);
+			eot_printf("%u", (unsigned) status_byte);
 		}
 	} else {
 		if (!gpib_serial_poll(atoi(args), &status_byte)) {
-			printf("%u%c", (unsigned) status_byte, eot_char);
+			eot_printf("%u", (unsigned) status_byte);
 		}
 	}
 }
@@ -369,7 +378,7 @@ void do_status(const char *args) {
 	// ++status
 	if (controller_mode) return;
 	if (*args == 0) {
-		printf("%u%c", (unsigned) status_byte, eot_char);
+		eot_printf("%u", (unsigned) status_byte);
 	} else {
 		status_byte = (u8) atoi(args);
 	}
@@ -507,7 +516,7 @@ static void device_poll(void) {
 			}
 			else if (cmd_buf[0] == CMD_DCL)
 			{
-				printf("%c%c", CMD_DCL, eot_char);
+				eot_printf("%c", CMD_DCL);
 				device_listen = false;
 				device_talk = false;
 				device_srq = false;
@@ -515,15 +524,15 @@ static void device_poll(void) {
 			}
 			else if ((cmd_buf[0] == CMD_LLO) && (device_listen))
 			{
-				printf("%c%c", CMD_LLO, eot_char);
+				eot_printf("%c", CMD_LLO);
 			}
 			else if ((cmd_buf[0] == CMD_GTL) && (device_listen))
 			{
-				printf("%c%c", CMD_GTL, eot_char);
+				eot_printf("%c", CMD_GTL);
 			}
 			else if ((cmd_buf[0] == CMD_GET) && (device_listen))
 			{
-				printf("%c%c", CMD_GET, eot_char);
+				eot_printf("%c", CMD_GET);
 			}
 			output_high(NDAC_CP, NDAC);
 		}
