@@ -98,7 +98,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 	if(atn) { output_low(ATN_CP, ATN); }
 	if(!length) { return 0; }
 
-	gpio_mode_setup(NRFD_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, NRFD | NDAC);
+	output_float(NRFD_CP, NRFD | NDAC);
 	gpio_set(FLOW_PORT, TE); // Enable talking
 	output_high(EOI_CP, EOI);
 	output_high(DAV_CP, DAV);
@@ -186,13 +186,13 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		output_high(DAV_CP, DAV);
     } // Finished outputting all bytes to the listeners
 
-    gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, DIO_PORTMASK);
+    output_float(DIO_PORT, DIO_PORTMASK);
     gpio_clear(FLOW_PORT, TE); // Disable talking
 
     // If the byte was a GPIB command byte, release ATN line
     if(atn) { output_high(ATN_CP, ATN); }
 
-    gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV | EOI);
+    output_float(EOI_CP, DAV | EOI);
     output_high(NRFD_CP, NRFD | NDAC);
     gpio_clear(FLOW_PORT, PE);
 
@@ -216,7 +216,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	// Assert NDAC, informing the talker we have not yet accepted the byte
 	output_low(NDAC_CP, NDAC);
 
-	gpio_mode_setup(DAV_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, DAV);
+	output_float(DAV_CP, DAV);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
@@ -242,7 +242,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	DEBUG_PRINTF("Got byte: %c (%02X)%c", *byte, *byte, eot_char);
 
 	// Un-assert NDAC, informing talker that we have accepted the byte
-	gpio_mode_setup(NDAC_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, NDAC);
+	output_float(NDAC_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
 	t0 = get_ms();
@@ -306,7 +306,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 
 	// TODO: Make sure modes are set correctly
     gpio_clear(FLOW_PORT, TE);
-    gpio_mode_setup(DAV_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, DAV);
+    output_float(DAV_CP, DAV);
     gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
 
     // TODO : what happens if device keeps sending data, or never sends EOI/EOS ?

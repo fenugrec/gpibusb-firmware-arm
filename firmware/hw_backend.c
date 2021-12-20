@@ -149,12 +149,12 @@ void prep_gpib_pins(bool controller_mode) {
 
 
 	// Float all DIO lines
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, DIO_PORTMASK);
+	output_float(DIO_PORT, DIO_PORTMASK);
 
 	// Set mode and pin state for all GPIB control lines
 	if (controller_mode) {
-		gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, EOI | DAV);
-		gpio_mode_setup(SRQ_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SRQ);
+		output_float(EOI_CP, EOI | DAV);
+		output_float(SRQ_CP, SRQ);
 		gpio_set(ATN_CP, ATN | IFC);
 		gpio_clear(NRFD_CP, NRFD | NDAC);
 		gpio_clear(REN_CP, REN);
@@ -163,10 +163,8 @@ void prep_gpib_pins(bool controller_mode) {
 		gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
 						NRFD | NDAC);
 	} else {
-		gpio_mode_setup(REN_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						ATN | IFC | SRQ | REN);
-		gpio_mode_setup(EOI_CP, GPIO_MODE_INPUT, GPIO_PUPD_NONE,
-						EOI | DAV | NRFD | NDAC);
+		output_float(REN_CP, ATN | IFC | SRQ | REN);
+		output_float(EOI_CP, EOI | DAV | NRFD | NDAC);
 	}
 
 }
@@ -184,6 +182,12 @@ void output_low(uint32_t gpioport, uint16_t gpios) {
 	gpio_clear(gpioport, gpios);
 	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpios);
 }
+
+
+void output_float(uint32_t gpioport, uint16_t gpios) {
+	gpio_mode_setup(gpioport, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, gpios);
+}
+
 
 /********* TIMERS
  *

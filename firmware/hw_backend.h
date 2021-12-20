@@ -80,6 +80,12 @@ void output_high(uint32_t gpioport, uint16_t gpios);
  */
 void output_low(uint32_t gpioport, uint16_t gpios);
 
+/** set pin output FLOAT (pull-up high)
+ *
+ * @param gpioport
+ * @param gpios : bitmask, can be multiple pins OR'ed
+ */
+void output_float(uint32_t gpioport, uint16_t gpios);
 
 /**************** EEPROM
 * TODO ? these could be replaced by "EEPROM emulation", see ST AN2594
