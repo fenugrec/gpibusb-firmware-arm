@@ -475,94 +475,121 @@ static void chunk_data(char *rawdata, unsigned len) {
 	}
 }
 
+//fwd decls for two helper functions
+static void device_atn(void);
+static void device_noatn(void);
+
+
 /** device mode poll */
 static void device_poll(void) {
-	bool eoi_status;
-	// When in device mode we should be checking the status of the
-	// ATN line to see what we should be doing
-	if (!gpio_get(ATN_CP, ATN))
-	{
-		if (!gpio_get(ATN_CP, ATN))
-		{
-			output_low(NDAC_CP, NDAC);
-			// Get the CMD byte sent by the controller
-			if (gpib_read_byte(cmd_buf, &eoi_status)) {
-				//error (timeout ?)
-				return;
-			}
-			output_high(NRFD_CP, NRFD);
-			if (cmd_buf[0] == partnerAddress + CMD_TAD)
-			{
-				device_talk = true;
-				DEBUG_PRINTF("Instructed to talk%c", eot_char);
-			}
-			else if (cmd_buf[0] == partnerAddress + CMD_LAD)
-			{
-				device_listen = true;
-				DEBUG_PRINTF("Instructed to listen%c", eot_char);
-			}
-			else if (cmd_buf[0] == CMD_UNL)
-			{
-				device_listen = false;
-				DEBUG_PRINTF("Instructed to stop listen%c", eot_char);
-			}
-			else if (cmd_buf[0] == CMD_UNT)
-			{
-				device_talk = false;
-				DEBUG_PRINTF("Instructed to stop talk%c", eot_char);
-			}
-			else if (cmd_buf[0] == CMD_SPE)
-			{
-				device_srq = true;
-				DEBUG_PRINTF("SQR start%c", eot_char);
-			}
-			else if (cmd_buf[0] == CMD_SPD)
-			{
-				device_srq = false;
-				DEBUG_PRINTF("SQR end%c", eot_char);
-			}
-			else if (cmd_buf[0] == CMD_DCL)
-			{
-				eot_printf("%c", CMD_DCL);
-				device_listen = false;
-				device_talk = false;
-				device_srq = false;
-				status_byte = 0;
-			}
-			else if ((cmd_buf[0] == CMD_LLO) && (device_listen))
-			{
-				eot_printf("%c", CMD_LLO);
-			}
-			else if ((cmd_buf[0] == CMD_GTL) && (device_listen))
-			{
-				eot_printf("%c", CMD_GTL);
-			}
-			else if ((cmd_buf[0] == CMD_GET) && (device_listen))
-			{
-				eot_printf("%c", CMD_GET);
-			}
-			output_high(NDAC_CP, NDAC);
-		}
-	}
-	else
-	{
-		delay_us(10);
-		if(gpio_get(ATN_CP, ATN))
-		{
-			if ((device_listen))
-			{
-				output_low(NDAC_CP, NDAC);
-				DEBUG_PRINTF("Starting device mode gpib_read%c", eot_char);
+	// When in device mode, need to monitor IFC and ATN.
+	// but we certainly don't respect t2 <= 200ns for responding to ATN...
+	// but we have t1 (100us) to respond to IFC ?
 
-				gpib_read(GPIBREAD_TMO, 0, eot_enable);
-				device_listen = false;
-			}
-			else if (device_talk && device_srq)
-			{
-				gpib_write(&status_byte, 1, 0);
-				device_srq = false;
-				device_talk = false;
-			}
+	if (!gpio_get(IFC_CP, IFC)) {
+		device_talk = 0;
+		device_listen = 0;
+		device_srq = 0;
+		status_byte = 0;
+		return;
+	}
+
+	if (!gpio_get(ATN_CP, ATN)) {
+		device_atn();
+	} else {
+		device_noatn();
+	}
+}
+
+/** device poll with ATN asserted (==0) */
+static void device_atn(void) {
+	bool eoi_status;
+	output_float(DIO_PORT, DIO_PORTMASK);
+	output_float(EOI_CP, DAV | EOI);
+	gpio_clear(FLOW_PORT, TE);
+	output_low(NDAC_CP, NDAC);
+	output_high(NRFD_CP, NRFD);
+	// if DAV=1 not valid : return
+	if (gpio_get(DAV_CP, DAV)) {
+		return;
+	}
+	// Get the CMD byte sent by the controller
+	u8 rxb;
+	if (gpib_read_byte(&rxb, &eoi_status)) {
+		//error (timeout ?)
+		return;
+	}
+	if ((rxb & 0xE0) == CMD_TAD) {
+		if (rxb == partnerAddress + CMD_TAD) {
+			device_talk = true;
+			device_listen = 0;
+			DEBUG_PRINTF("Instructed to talk%c", eot_char);
+		} else {
+			//somebody else is addressed to talk
+			device_talk = 0;
+		}
+	} else if (rxb == partnerAddress + CMD_LAD) {
+		device_talk = 0;
+		device_listen = true;
+		DEBUG_PRINTF("Instructed to listen%c", eot_char);
+	} else if (rxb == CMD_UNL) {
+		device_listen = false;
+		DEBUG_PRINTF("Instructed to stop listen%c", eot_char);
+	} else if (rxb == CMD_UNT) {
+		device_talk = false;
+		DEBUG_PRINTF("Instructed to stop talk%c", eot_char);
+	} else if (rxb == CMD_SPE) {
+		device_srq = true;
+		DEBUG_PRINTF("SQR start%c", eot_char);
+	} else if (rxb == CMD_SPD) {
+		device_srq = false;
+		DEBUG_PRINTF("SQR end%c", eot_char);
+	} else if (rxb == CMD_DCL) {
+		eot_printf("DCL");
+		device_listen = false;
+		device_talk = false;
+		device_srq = false;
+		status_byte = 0;
+	} else if ((rxb == CMD_LLO) && (device_listen)) {
+		eot_printf("LLO");
+	} else if ((rxb == CMD_GTL) && (device_listen)) {
+		eot_printf("GTL");
+	} else if ((rxb == CMD_GET) && (device_listen)) {
+		eot_printf("GET");
+	} else if ((rxb == CMD_SDC) && (device_listen)) {
+		eot_printf("SDC");
+		device_listen = false;
+		device_talk = false;
+		device_srq = false;
+		status_byte = 0;
+	}
+	output_high(NDAC_CP, NDAC);
+}
+
+/** device poll with ATN not asserted (==1) */
+static void device_noatn(void) {
+	if (device_listen) {
+		output_float(DIO_PORT, DIO_PORTMASK);
+		output_float(EOI_CP, DAV | EOI);
+		gpio_clear(FLOW_PORT, TE);
+		output_low(NDAC_CP, NDAC);
+		output_high(NRFD_CP, NRFD);
+
+		// if DAV=1 , not valid : return
+		if (gpio_get(DAV_CP, DAV)) {
+			return;
+		}
+		DEBUG_PRINTF("device mode gpib_read\n%c", eot_char);
+		gpib_read(GPIBREAD_EOI, 0, eot_enable);
+	} else if (device_talk) {
+		output_float(NDAC_CP, NDAC | NRFD);
+		gpio_set(FLOW_PORT, TE);
+		output_high(EOI_CP, DAV | EOI);
+		if (device_srq) {
+			gpib_write(&status_byte, 1, 0);
+			output_high(SRQ_CP, SRQ);
+			device_srq = false;
+			status_byte = 0;
 		}
 	}
 }
