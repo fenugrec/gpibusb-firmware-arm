@@ -396,7 +396,7 @@ void do_help(const char *args) {
 }
 void do_nothing(const char *args) {
 	(void) args;
-	DEBUG_PRINTF("Unrecognized command.%c", eot_char);
+	DEBUG_PRINTF("Unrecognized command.\n");
 }
 
 /** Parse command
@@ -441,7 +441,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 		writeError = writeError || gpib_cmd(cmd_buf);
 	}
 	// Send out command to the bus
-	DEBUG_PRINTF("gpib_write: %.*s%c", len, buf_pnt, eot_char);
+	DEBUG_PRINTF("gpib_write: %.*s\n", len, buf_pnt);
 
 	if (controller_mode || device_talk)
 	{
@@ -516,7 +516,7 @@ static void device_atn(void) {
 		if (rxb == partnerAddress + CMD_TAD) {
 			device_talk = true;
 			device_listen = 0;
-			DEBUG_PRINTF("Instructed to talk%c", eot_char);
+			DEBUG_PRINTF("Instructed to talk\n");
 		} else {
 			//somebody else is addressed to talk
 			device_talk = 0;
@@ -524,19 +524,19 @@ static void device_atn(void) {
 	} else if (rxb == partnerAddress + CMD_LAD) {
 		device_talk = 0;
 		device_listen = true;
-		DEBUG_PRINTF("Instructed to listen%c", eot_char);
+		DEBUG_PRINTF("Instructed to listen\n");
 	} else if (rxb == CMD_UNL) {
 		device_listen = false;
-		DEBUG_PRINTF("Instructed to stop listen%c", eot_char);
+		DEBUG_PRINTF("Instructed to stop listen\n");
 	} else if (rxb == CMD_UNT) {
 		device_talk = false;
-		DEBUG_PRINTF("Instructed to stop talk%c", eot_char);
+		DEBUG_PRINTF("Instructed to stop talk\n");
 	} else if (rxb == CMD_SPE) {
 		device_srq = true;
-		DEBUG_PRINTF("SQR start%c", eot_char);
+		DEBUG_PRINTF("SQR start\n");
 	} else if (rxb == CMD_SPD) {
 		device_srq = false;
-		DEBUG_PRINTF("SQR end%c", eot_char);
+		DEBUG_PRINTF("SQR end\n");
 	} else if (rxb == CMD_DCL) {
 		eot_printf("DCL");
 		device_listen = false;
@@ -572,7 +572,7 @@ static void device_noatn(void) {
 		if (gpio_get(DAV_CP, DAV)) {
 			return;
 		}
-		DEBUG_PRINTF("device mode gpib_read\n%c", eot_char);
+		DEBUG_PRINTF("device mode gpib_read\n");
 		gpib_read(GPIBREAD_EOI, 0, eot_enable);
 	} else if (device_talk) {
 		output_float(NDAC_CP, NDAC | NRFD);
