@@ -203,7 +203,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 * Assumes DIO, EOI, DAV, TE ports were setup properly
 *
 * @param byte: Pointer to where the received byte will be stored
-* @param eoi_status: Pointer for storage of EOI line status
+* @param eoi_status: Pointer for storage of EOI status (1 = asserted (low))
 *
 * Returns 0 if everything went fine
 */
@@ -235,7 +235,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 
 	// Read the data on the port, flip the bits, and read in the EOI line
 	*byte = READ_DIO();
-	*eoi_status = gpio_get(EOI_CP, EOI);
+	*eoi_status = !gpio_get(EOI_CP, EOI);
 
 	DEBUG_PRINTF("Got byte: %c (%02X)\n", *byte, *byte);
 
@@ -273,7 +273,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 					uint8_t eos_char,
 					bool eot_enable) {
 	uint8_t byte;
-	bool eoi_status = 1;
+	bool eoi_status = 0;
 	//bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
 	uint8_t cmd_buf[3];
 	uint32_t error_found = 0;
@@ -316,11 +316,11 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 				return 1;
 			}
 			host_tx(byte);
-			if (!eoi_status) {
+			if (eoi_status) {
 				//all done
 				break;
 			}
-		} while (eoi_status);
+		} while (!eoi_status);
 		// TODO : "strip" for last byte ?
 		break;
 	case GPIBREAD_EOS:
