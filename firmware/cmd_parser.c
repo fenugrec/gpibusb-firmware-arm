@@ -499,6 +499,7 @@ static void device_atn(void) {
 	output_float(DIO_PORT, DIO_PORTMASK);
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
+
 	output_low(NDAC_CP, NDAC);
 	output_high(NRFD_CP, NRFD);
 	// if DAV=1 not valid : return

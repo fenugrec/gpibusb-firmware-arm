@@ -200,7 +200,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 }
 
 /** Receive a single byte from the GPIB bus
-* Assumes ports were setup properly
+* Assumes DIO, EOI, DAV, TE ports were setup properly
 *
 * @param byte: Pointer to where the received byte will be stored
 * @param eoi_status: Pointer for storage of EOI line status
@@ -215,8 +215,6 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 
 	// Assert NDAC, informing the talker we have not yet accepted the byte
 	output_low(NDAC_CP, NDAC);
-
-	output_float(DAV_CP, DAV);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
@@ -261,8 +259,6 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
     // Get ready for the next byte by asserting NDAC
     output_low(NDAC_CP, NDAC);
 
-    // TODO: Add in our variable delay here
-
     return 0;
 }
 
@@ -304,10 +300,9 @@ uint32_t gpib_read(enum gpib_readmode readmode,
     // Beginning of GPIB read loop
     DEBUG_PRINTF("gpib_read loop start%c", eot_char);
 
-	// TODO: Make sure modes are set correctly
+	output_float(DIO_PORT, DIO_PORTMASK);
+	output_float(EOI_CP, DAV | EOI);
     gpio_clear(FLOW_PORT, TE);
-    output_float(DAV_CP, DAV);
-    gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, NRFD | NDAC);
 
     // TODO : what happens if device keeps sending data, or never sends EOI/EOS ?
     switch (readmode) {
@@ -432,6 +427,10 @@ uint32_t gpib_serial_poll(int address, u8 *status_byte) {
     cmd_buf[0] = address + CMD_TAD;
     error = error || gpib_cmd(cmd_buf);
     if (error) return -1;
+
+	output_float(DIO_PORT, DIO_PORTMASK);
+	output_float(EOI_CP, DAV | EOI);
+	gpio_clear(FLOW_PORT, TE);
 
     error = gpib_read_byte(status_byte, &eoistat);
     cmd_buf[0] = CMD_SPD; // disable serial poll
