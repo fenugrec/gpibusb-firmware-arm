@@ -142,14 +142,14 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 #endif // WITH_TIMEOUT
 		}
 
-        // Put the byte on the data lines
-        gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
-        WRITE_DIO(byte);
+		// Put the byte on the data lines
+		gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
+		WRITE_DIO(byte);
 
-        // Assert EOI if on last byte and using EOI
-        if((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
+		// Assert EOI if on last byte and using EOI
+		if((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
 
-        // Wait for NRFD to go high, indicating listeners are ready for data
+		// Wait for NRFD to go high, indicating listeners are ready for data
 		t0 = get_ms();
 		while(!gpio_get(NRFD_CP, NRFD)) {
 #ifdef WITH_TIMEOUT
@@ -184,19 +184,19 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 
 		// Release DAV, indicating byte is no longer valid
 		output_high(DAV_CP, DAV);
-    } // Finished outputting all bytes to the listeners
+	} // Finished outputting all bytes to the listeners
 
-    output_float(DIO_PORT, DIO_PORTMASK);
-    gpio_clear(FLOW_PORT, TE); // Disable talking
+	output_float(DIO_PORT, DIO_PORTMASK);
+	gpio_clear(FLOW_PORT, TE); // Disable talking
 
-    // If the byte was a GPIB command byte, release ATN line
-    if(atn) { output_high(ATN_CP, ATN); }
+	// If the byte was a GPIB command byte, release ATN line
+	if(atn) { output_high(ATN_CP, ATN); }
 
-    output_float(EOI_CP, DAV | EOI);
-    output_high(NRFD_CP, NRFD | NDAC);
-    gpio_clear(FLOW_PORT, PE);
+	output_float(EOI_CP, DAV | EOI);
+	output_high(NRFD_CP, NRFD | NDAC);
+	gpio_clear(FLOW_PORT, PE);
 
-    return 0;
+	return 0;
 }
 
 /** Receive a single byte from the GPIB bus
@@ -254,12 +254,12 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 			return 1;
 		}
 #endif // WITH_TIMEOUT
-    }
+	}
 
-    // Get ready for the next byte by asserting NDAC
-    output_low(NDAC_CP, NDAC);
+	// Get ready for the next byte by asserting NDAC
+	output_low(NDAC_CP, NDAC);
 
-    return 0;
+	return 0;
 }
 
 /** Read from the GPIB bus until the specified end condition is met
@@ -272,75 +272,75 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 uint32_t gpib_read(enum gpib_readmode readmode,
 					uint8_t eos_char,
 					bool eot_enable) {
-    uint8_t byte;
-    bool eoi_status = 1;
-    //bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
-    uint8_t cmd_buf[3];
-    uint32_t error_found = 0;
+	uint8_t byte;
+	bool eoi_status = 1;
+	//bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
+	uint8_t cmd_buf[3];
+	uint32_t error_found = 0;
 
-    if(controller_mode) {
-        // Command all talkers and listeners to stop
-        cmd_buf[0] = CMD_UNT;
-        error_found = error_found || gpib_cmd(cmd_buf);
-        cmd_buf[0] = CMD_UNL;
-        error_found = error_found || gpib_cmd(cmd_buf);
-        if(error_found){return 1;}
+	if(controller_mode) {
+		// Command all talkers and listeners to stop
+		cmd_buf[0] = CMD_UNT;
+		error_found = error_found || gpib_cmd(cmd_buf);
+		cmd_buf[0] = CMD_UNL;
+		error_found = error_found || gpib_cmd(cmd_buf);
+		if(error_found){return 1;}
 
-        // Set the controller into listener mode
-        cmd_buf[0] = myAddress + CMD_LAD;
-        error_found = error_found || gpib_cmd(cmd_buf);
-        if(error_found){return 1;}
+		// Set the controller into listener mode
+		cmd_buf[0] = myAddress + CMD_LAD;
+		error_found = error_found || gpib_cmd(cmd_buf);
+		if(error_found){return 1;}
 
-        // Set target device into talker mode
-        cmd_buf[0] = partnerAddress + CMD_TAD;
-        error_found = gpib_cmd(cmd_buf);
-        if(error_found){return 1;}
-    }
+		// Set target device into talker mode
+		cmd_buf[0] = partnerAddress + CMD_TAD;
+		error_found = gpib_cmd(cmd_buf);
+		if(error_found){return 1;}
+	}
 
-    // Beginning of GPIB read loop
-    DEBUG_PRINTF("gpib_read loop start%c", eot_char);
+	// Beginning of GPIB read loop
+	DEBUG_PRINTF("gpib_read loop start%c", eot_char);
 
 	output_float(DIO_PORT, DIO_PORTMASK);
 	output_float(EOI_CP, DAV | EOI);
-    gpio_clear(FLOW_PORT, TE);
+	gpio_clear(FLOW_PORT, TE);
 
-    // TODO : what happens if device keeps sending data, or never sends EOI/EOS ?
-    switch (readmode) {
+	// TODO : what happens if device keeps sending data, or never sends EOI/EOS ?
+	switch (readmode) {
 	case GPIBREAD_EOI:
-        do {
-            if(gpib_read_byte(&byte, &eoi_status)){
-				// Read error
-                if(eot_enable) {
-                    host_tx(eot_char);
-                }
-                return 1;
-            }
-            host_tx(byte);
-            if (!eoi_status) {
-				//all done
-				break;
-            }
-        } while (eoi_status);
-        // TODO : "strip" for last byte ?
-		break;
-    case GPIBREAD_EOS:
 		do {
-            if(gpib_read_byte(&byte, &eoi_status)){
+			if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
-                if(eot_enable) {
-                    host_tx(eot_char);
-                }
-                return 1;
-            }
-            // Check to see if the byte we just read is the specified EOS byte
-            if (byte == eos_char) {
+				if(eot_enable) {
+					host_tx(eot_char);
+				}
+				return 1;
+			}
+			host_tx(byte);
+			if (!eoi_status) {
 				//all done
 				break;
-            }
-            // XXX TODO : is it necessary to strip CR+LF if eos_char is CR (or LF) ?
-            // prologix docs not obvious
+			}
+		} while (eoi_status);
+		// TODO : "strip" for last byte ?
+		break;
+	case GPIBREAD_EOS:
+		do {
+			if(gpib_read_byte(&byte, &eoi_status)){
+				// Read error
+				if(eot_enable) {
+					host_tx(eot_char);
+				}
+				return 1;
+			}
+			// Check to see if the byte we just read is the specified EOS byte
+			if (byte == eos_char) {
+				//all done
+				break;
+			}
+			// XXX TODO : is it necessary to strip CR+LF if eos_char is CR (or LF) ?
+			// prologix docs not obvious
 			host_tx(byte);
-        } while (1);
+		} while (1);
 	case GPIBREAD_TMO:
 		printf("read with timeout not implemented\n");
 		//XXX TODO : implement read with timeout
@@ -348,26 +348,26 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 	default:
 		//XXX assert
 		break;
-    }	//if !use_eoi
+	}	//if !use_eoi
 
-    if(eot_enable) {
+	if(eot_enable) {
 		host_tx(eot_char);
-    }
+	}
 
-    DEBUG_PRINTF("gpib_read loop end%c", eot_char);
+	DEBUG_PRINTF("gpib_read loop end%c", eot_char);
 
-    if (controller_mode) {
-        // Command all talkers and listeners to stop
-        error_found = 0;
-        cmd_buf[0] = CMD_UNT;
-        error_found = error_found || gpib_cmd(cmd_buf);
-        cmd_buf[0] = CMD_UNL;
-        error_found = error_found || gpib_cmd(cmd_buf);
-    }
+	if (controller_mode) {
+		// Command all talkers and listeners to stop
+		error_found = 0;
+		cmd_buf[0] = CMD_UNT;
+		error_found = error_found || gpib_cmd(cmd_buf);
+		cmd_buf[0] = CMD_UNL;
+		error_found = error_found || gpib_cmd(cmd_buf);
+	}
 
 	DEBUG_PRINTF("gpib_read end%c", eot_char);
 
-    return error_found;
+	return error_found;
 }
 
 /** Address the specified GPIB address to listen
@@ -377,15 +377,15 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 uint32_t gpib_address_target(uint32_t address) {
-    uint32_t write_error = 0;
-    uint8_t cmd_buf[3];
-    cmd_buf[0] = CMD_UNT;
-    write_error = write_error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = CMD_UNL; // Everyone stop listening
-    write_error = write_error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = address + CMD_LAD;
-    write_error = write_error || gpib_cmd(cmd_buf);
-    return write_error;
+	uint32_t write_error = 0;
+	uint8_t cmd_buf[3];
+	cmd_buf[0] = CMD_UNT;
+	write_error = write_error || gpib_cmd(cmd_buf);
+	cmd_buf[0] = CMD_UNL; // Everyone stop listening
+	write_error = write_error || gpib_cmd(cmd_buf);
+	cmd_buf[0] = address + CMD_LAD;
+	write_error = write_error || gpib_cmd(cmd_buf);
+	return write_error;
 }
 
 /**
@@ -397,18 +397,18 @@ uint32_t gpib_address_target(uint32_t address) {
 */
 uint32_t gpib_controller_assign(void) {
 
-    uint8_t cmd_buf[3];
-    // Assert interface clear. Resets bus and makes it controller in charge
-    output_low(IFC_CP, IFC);
-    delay_ms(200);
-    output_high(IFC_CP, IFC);
+	uint8_t cmd_buf[3];
+	// Assert interface clear. Resets bus and makes it controller in charge
+	output_low(IFC_CP, IFC);
+	delay_ms(200);
+	output_high(IFC_CP, IFC);
 
-    // Put all connected devices into "remote" mode
-    output_low(REN_CP, REN);
+	// Put all connected devices into "remote" mode
+	output_low(REN_CP, REN);
 
-    // Send GPIB DCL command, which clears all devices on the bus
-    cmd_buf[0] = CMD_DCL;
-    return gpib_cmd(cmd_buf);
+	// Send GPIB DCL command, which clears all devices on the bus
+	cmd_buf[0] = CMD_DCL;
+	return gpib_cmd(cmd_buf);
 }
 
 /** conduct serial poll
@@ -418,23 +418,23 @@ uint32_t gpib_controller_assign(void) {
  * @return 0 if OK
  */
 uint32_t gpib_serial_poll(int address, u8 *status_byte) {
-    char error = 0;
+	char error = 0;
 	u8 cmd_buf[1];
 	bool eoistat = 0;
 
-    cmd_buf[0] = CMD_SPE; // enable serial poll
-    error = error || gpib_cmd(cmd_buf);
-    cmd_buf[0] = address + CMD_TAD;
-    error = error || gpib_cmd(cmd_buf);
-    if (error) return -1;
+	cmd_buf[0] = CMD_SPE; // enable serial poll
+	error = error || gpib_cmd(cmd_buf);
+	cmd_buf[0] = address + CMD_TAD;
+	error = error || gpib_cmd(cmd_buf);
+	if (error) return -1;
 
 	output_float(DIO_PORT, DIO_PORTMASK);
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
 
-    error = gpib_read_byte(status_byte, &eoistat);
-    cmd_buf[0] = CMD_SPD; // disable serial poll
-    gpib_cmd(cmd_buf);
-    if (error) return -1;
-    return 0;
+	error = gpib_read_byte(status_byte, &eoistat);
+	cmd_buf[0] = CMD_SPD; // disable serial poll
+	gpib_cmd(cmd_buf);
+	if (error) return -1;
+	return 0;
 }

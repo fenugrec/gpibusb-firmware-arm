@@ -95,7 +95,7 @@ static void set_eos(enum eos_codes newcode) {
 }
 
 static bool srq_state(void) {
-    return !((bool)gpio_get(SRQ_CP, SRQ));
+	return !((bool)gpio_get(SRQ_CP, SRQ));
 }
 
 /** need this for most responses ?
@@ -103,43 +103,43 @@ static bool srq_state(void) {
  * not sure what original prologix does. This is copied from steve1515's fork
  */
 #define eot_printf(fmt, ...) do {\
-    printf((fmt), ##__VA_ARGS__);\
-    if (eot_enable) printf("%c", eot_char);\
+	printf((fmt), ##__VA_ARGS__);\
+	if (eot_enable) printf("%c", eot_char);\
 } while (0)
 
 
 void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
-    if (read_eeprom(0x00) == VALID_EEPROM_CODE)
-    {
-        controller_mode = read_eeprom(0x01);
-        partnerAddress = read_eeprom(0x02);
-        eot_char = read_eeprom(0x03);
-        eot_enable = read_eeprom(0x04);
-        eos_code = read_eeprom(0x05);
-        set_eos(eos_code);
-        eoiUse = read_eeprom(0x06);
-        autoread = read_eeprom(0x07);
-        listen_only = read_eeprom(0x08);
-        save_cfg = read_eeprom(0x09);
-    }
-    else
-    {
-        write_eeprom(0x00, VALID_EEPROM_CODE);
-        write_eeprom(0x01, 1); // mode
-        write_eeprom(0x02, 1); // partnerAddress
-        write_eeprom(0x03, 13); // eot_char
-        write_eeprom(0x04, 1); // eot_enable
-        write_eeprom(0x05, EOS_NUL); // eos_code
-        write_eeprom(0x06, 1); // eoiUse
-        write_eeprom(0x07, 1); // autoread
-        write_eeprom(0x08, 0); // listen_only
-        write_eeprom(0x09, 1); // save_cfg
-    }
-    if (controller_mode)
-    {
-        gpib_controller_assign();
-    }
+	if (read_eeprom(0x00) == VALID_EEPROM_CODE)
+	{
+		controller_mode = read_eeprom(0x01);
+		partnerAddress = read_eeprom(0x02);
+		eot_char = read_eeprom(0x03);
+		eot_enable = read_eeprom(0x04);
+		eos_code = read_eeprom(0x05);
+		set_eos(eos_code);
+		eoiUse = read_eeprom(0x06);
+		autoread = read_eeprom(0x07);
+		listen_only = read_eeprom(0x08);
+		save_cfg = read_eeprom(0x09);
+	}
+	else
+	{
+		write_eeprom(0x00, VALID_EEPROM_CODE);
+		write_eeprom(0x01, 1); // mode
+		write_eeprom(0x02, 1); // partnerAddress
+		write_eeprom(0x03, 13); // eot_char
+		write_eeprom(0x04, 1); // eot_enable
+		write_eeprom(0x05, EOS_NUL); // eos_code
+		write_eeprom(0x06, 1); // eoiUse
+		write_eeprom(0x07, 1); // autoread
+		write_eeprom(0x08, 0); // listen_only
+		write_eeprom(0x09, 1); // save_cfg
+	}
+	if (controller_mode)
+	{
+		gpib_controller_assign();
+	}
 
 	printf("Command parser ready\n");
 
@@ -410,7 +410,7 @@ static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
 	if (cmd_len == 0) {
 		//can happen if we receive a stray LF from host
 		return;
-    }
+	}
 	if (has_args) {
 		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 1]);
 	} else {
@@ -423,12 +423,12 @@ static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
  */
 static void chunk_data(char *rawdata, unsigned len) {
 	char *buf_pnt = rawdata;
-    char writeError = 0;
+	char writeError = 0;
 
-    if (len == 0) {
+	if (len == 0) {
 		//can happen if we receive a stray LF from host
 		return;
-    }
+	}
 
 	// Not an internal command, send to bus
 	// Command all talkers and listeners to stop
