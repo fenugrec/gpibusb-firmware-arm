@@ -460,18 +460,10 @@ static void chunk_data(char *rawdata, unsigned len) {
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 1);
 		}
 	}
-	// If cmd contains a question mark -> is a query
-	if(autoread && controller_mode)
-	{
-		if ((strchr((char*)buf_pnt, '?') != NULL) && !(writeError))
-		{
-			//XXX TODO : with autoread, does prologix terminate by EOI ?
-			gpib_read(GPIBREAD_EOI, 0, eot_enable);
-		}
-		else if(writeError)
-		{
-			writeError = 0;
-		}
+
+	if(autoread && controller_mode) {
+		//XXX TODO : with autoread, does prologix terminate by EOI ?
+		writeError = writeError || gpib_read(GPIBREAD_EOI, 0, eot_enable);
 	}
 }
 
