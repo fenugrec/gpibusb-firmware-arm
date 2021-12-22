@@ -306,16 +306,38 @@ void reset_dfu(void) {
 	scb_reset_system();
 }
 
-/* could go in struct sys_state, but then wouldn't be cleared with BSS... */
+/* could go in struct sys_state, but then wouldn't be cleared with BSS...
+ * Access needs to be interrupt-safe
+ */
 static struct {
 	unsigned tx_ovf;	//# of bytes dropped due to overflow (to host)
 	unsigned rx_ovf; // (from host)
 } stats = {0};
 
+void sys_incstats(enum stats_type st) {
+	//XXX enter critsection
+	switch (st) {
+	case STATS_TXOVF:
+		stats.tx_ovf++;
+		break;
+	case STATS_RXOVF:
+		stats.rx_ovf++;
+		break;
+	default:
+		break;
+	}
+	//XXX leave critsec
+}
 
 void sys_printstats(void) {
+	unsigned rx_ovf, tx_ovf;
+	//XXX enter crit
+	rx_ovf = stats.rx_ovf;
+	tx_ovf = stats.tx_ovf;
+	//XXX leave crit
+
 	printf("last reset: %c; txovf: %u, rxovf: %u\n", \
-			(char) sys_state.reset_reason, stats.tx_ovf, stats.rx_ovf);
+			(char) sys_state.reset_reason, tx_ovf, rx_ovf);
 	return;
 }
 

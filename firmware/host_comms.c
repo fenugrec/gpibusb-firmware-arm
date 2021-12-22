@@ -123,8 +123,7 @@ void host_comms_rx(uint8_t rxb) {
 
 void host_tx(uint8_t txb) {
 	if (!ecbuff_write(fifo_out, &txb)) {
-		//TODO : overflow
-		return;
+		sys_incstats(STATS_TXOVF);
 	}
 	return;
 }
@@ -137,7 +136,7 @@ void host_tx_m(uint8_t *data, unsigned len) {
 	unsigned idx;
 	for (idx = 0; idx < len; idx++) {
 		if (!ecbuff_write(fifo_out, &data[idx])) {
-			//TODO : overflow
+			sys_incstats(STATS_TXOVF);
 			return;
 		}
 	}

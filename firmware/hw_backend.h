@@ -41,6 +41,18 @@ void prep_gpib_pins(bool controller_mode);
 
 void restart_wdt(void);
 
+
+enum stats_type {
+	STATS_RXOVF,
+	STATS_TXOVF
+};
+
+/** increment stats counter
+ *
+ * TODO : make interrupt-safe
+ */
+void sys_incstats(enum stats_type);
+
 /** print some system info & stats */
 void sys_printstats(void);
 
