@@ -599,9 +599,7 @@ void cmd_poll(void) {
 	static bool wait_guardbyte = 0;
 	static bool has_args = 0;
 
-#ifdef WITH_WDT
 	restart_wdt();
-#endif
 	if (!controller_mode) {
 		device_poll();
 	}

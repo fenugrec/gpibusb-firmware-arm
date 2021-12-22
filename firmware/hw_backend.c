@@ -259,17 +259,19 @@ uint32_t get_ms(void) {
 * we'll use the IWDG module
 */
 
-#ifdef WITH_WDT
+
 /** Start WDT
  *
  * original firmware has WDT set for 4096 * 4ms = ~ 16 seconds timeout.
  */
 static void wdt_setup(void) {
+#ifdef WITH_WDT
 	iwdg_reset();
 	iwdg_set_period_ms(5000);
 	iwdg_start();
+#endif
 }
-#endif // WITH_WDT
+
 
 void restart_wdt(void) {
 	iwdg_reset();
@@ -340,9 +342,8 @@ void hw_setup(void) {
 	/* need this to be able to halt the wdt while debugging */
 	rcc_periph_clock_enable(RCC_DBGMCU);
 
-#ifdef WITH_WDT
 	wdt_setup();
-#endif
+
 	init_timers();
 
 	enable_5v(1);
