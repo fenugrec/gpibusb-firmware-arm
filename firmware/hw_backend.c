@@ -125,7 +125,12 @@ void led_poll(void) {
 
 
 void prep_gpib_pins(bool controller_mode) {
-	/* Flow control pins */
+	/* Flow control pins. 75160:
+	 * If talk enable (TE) is high, these ports have the characteristics of passive-pullup
+	 * outputs when pullup enable (PE) is low and of 3-state outputs when PE is high.
+	 *
+	 * so with TE=0, PE doesn't matter
+	 */
 	gpio_clear(FLOW_PORT, TE | PE);
 	if (controller_mode) {
 #ifdef USE_SN75162
@@ -287,6 +292,7 @@ void reset_cpu(void) {
  */
 static struct {
 	u32 dfu_token;	//alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
+	u8 reset_reason;
 } sys_state  __attribute__ ((section (".svram")));
 
 
@@ -297,6 +303,19 @@ void reset_dfu(void) {
 
 
 void pre_main(void) {
+	// check reset reason. Not sure what we'll get here after DFU
+	u32 csr_tmp = RCC_CSR;
+	if (csr_tmp & RCC_CSR_PORRSTF) {
+		sys_state.reset_reason = 'P';
+	} else if (csr_tmp & RCC_CSR_SFTRSTF) {
+		sys_state.reset_reason = 'S';
+	} else if (csr_tmp & RCC_CSR_IWDGRSTF) {
+		sys_state.reset_reason = 'I';
+	} else {
+		sys_state.reset_reason = 'U';
+	}
+	RCC_CSR |= RCC_CSR_RMVF;	//clear reset reason flags
+
 	if (sys_state.dfu_token != DFU_MAGIC) return;
 	sys_state.dfu_token = 0;
 
