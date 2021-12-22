@@ -41,6 +41,8 @@ void prep_gpib_pins(bool controller_mode);
 
 void restart_wdt(void);
 
+/** print some system info & stats */
+void sys_printstats(void);
 
 /**************** IO
 */

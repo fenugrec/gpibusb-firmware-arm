@@ -29,7 +29,7 @@
 #error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-#line 7 "cmd_hashtable.gen"
+#line 8 "cmd_hashtable.gen"
 
 #include <string.h>
 
@@ -38,7 +38,7 @@
 
 // silly warning for missing prototype
 const struct cmd_entry *cmd_lookup (register const char *str, register size_t len);
-#line 18 "cmd_hashtable.gen"
+#line 19 "cmd_hashtable.gen"
 struct cmd_entry { char *name; void (*handler)(const char *args); };
 
 #define TOTAL_KEYWORDS 25
@@ -90,65 +90,65 @@ cmd_hash (register const char *str, register size_t len)
   return len + asso_values[(unsigned char)str[2]] + asso_values[(unsigned char)str[len - 1]];
 }
 
+static const struct cmd_entry wordlist[] =
+  {
+    {"",do_nothing}, {"",do_nothing}, {"",do_nothing},
+    {"",do_nothing}, {"",do_nothing},
+#line 34 "cmd_hashtable.gen"
+    {"++eos", do_eos2},
+#line 32 "cmd_hashtable.gen"
+    {"++clr", do_clr},
+#line 44 "cmd_hashtable.gen"
+    {"++rst", do_reset},
+#line 48 "cmd_hashtable.gen"
+    {"++status", do_status},
+#line 49 "cmd_hashtable.gen"
+    {"++trg", do_trg},
+#line 36 "cmd_hashtable.gen"
+    {"++eot_char", do_eotChar},
+#line 45 "cmd_hashtable.gen"
+    {"++savecfg", do_savecfg},
+#line 35 "cmd_hashtable.gen"
+    {"++eot_enable", do_eotEnable},
+#line 43 "cmd_hashtable.gen"
+    {"++read_tmo_ms", do_readTimeout},
+#line 39 "cmd_hashtable.gen"
+    {"++loc", do_loc},
+#line 46 "cmd_hashtable.gen"
+    {"++spoll", do_spoll},
+#line 33 "cmd_hashtable.gen"
+    {"++eoi", do_eoi},
+#line 37 "cmd_hashtable.gen"
+    {"++ifc", do_ifc},
+#line 42 "cmd_hashtable.gen"
+    {"++read", do_readCmd2},
+#line 38 "cmd_hashtable.gen"
+    {"++llo", do_llo},
+#line 30 "cmd_hashtable.gen"
+    {"++addr", do_addr},
+#line 27 "cmd_hashtable.gen"
+    {"++debug", do_debug},
+#line 50 "cmd_hashtable.gen"
+    {"++ver", do_version2},
+#line 28 "cmd_hashtable.gen"
+    {"++dfu", do_reset_dfu},
+#line 47 "cmd_hashtable.gen"
+    {"++srq", do_srq},
+#line 26 "cmd_hashtable.gen"
+    {"++strip", do_strip},
+#line 31 "cmd_hashtable.gen"
+    {"++auto", do_autoRead},
+#line 40 "cmd_hashtable.gen"
+    {"++lon", do_lon},
+#line 41 "cmd_hashtable.gen"
+    {"++mode", do_mode},
+#line 51 "cmd_hashtable.gen"
+    {"++help", do_help}
+  };
+
 const struct cmd_entry *
 cmd_lookup (register const char *str, register size_t len)
 {
-  static const struct cmd_entry wordlist[] =
-    {
-      {"",do_nothing}, {"",do_nothing}, {"",do_nothing},
-      {"",do_nothing}, {"",do_nothing},
-#line 33 "cmd_hashtable.gen"
-      {"++eos", do_eos2},
-#line 31 "cmd_hashtable.gen"
-      {"++clr", do_clr},
-#line 43 "cmd_hashtable.gen"
-      {"++rst", do_reset},
-#line 47 "cmd_hashtable.gen"
-      {"++status", do_status},
-#line 48 "cmd_hashtable.gen"
-      {"++trg", do_trg},
-#line 35 "cmd_hashtable.gen"
-      {"++eot_char", do_eotChar},
-#line 44 "cmd_hashtable.gen"
-      {"++savecfg", do_savecfg},
-#line 34 "cmd_hashtable.gen"
-      {"++eot_enable", do_eotEnable},
-#line 42 "cmd_hashtable.gen"
-      {"++read_tmo_ms", do_readTimeout},
-#line 38 "cmd_hashtable.gen"
-      {"++loc", do_loc},
-#line 45 "cmd_hashtable.gen"
-      {"++spoll", do_spoll},
-#line 32 "cmd_hashtable.gen"
-      {"++eoi", do_eoi},
-#line 36 "cmd_hashtable.gen"
-      {"++ifc", do_ifc},
-#line 41 "cmd_hashtable.gen"
-      {"++read", do_readCmd2},
-#line 37 "cmd_hashtable.gen"
-      {"++llo", do_llo},
-#line 29 "cmd_hashtable.gen"
-      {"++addr", do_addr},
-#line 26 "cmd_hashtable.gen"
-      {"++debug", do_debug},
-#line 49 "cmd_hashtable.gen"
-      {"++ver", do_version2},
-#line 27 "cmd_hashtable.gen"
-      {"++dfu", do_reset_dfu},
-#line 46 "cmd_hashtable.gen"
-      {"++srq", do_srq},
-#line 25 "cmd_hashtable.gen"
-      {"++strip", do_strip},
-#line 30 "cmd_hashtable.gen"
-      {"++auto", do_autoRead},
-#line 39 "cmd_hashtable.gen"
-      {"++lon", do_lon},
-#line 40 "cmd_hashtable.gen"
-      {"++mode", do_mode},
-#line 50 "cmd_hashtable.gen"
-      {"++help", do_help}
-    };
-
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
       register unsigned int key = cmd_hash (str, len);
@@ -163,7 +163,7 @@ cmd_lookup (register const char *str, register size_t len)
     }
   return 0;
 }
-#line 51 "cmd_hashtable.gen"
+#line 52 "cmd_hashtable.gen"
 
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 	const struct cmd_entry *cmd;
@@ -173,4 +173,15 @@ void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 		return;
 	}
 	cmd->handler(args);
+}
+
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+void cmd_walk_cmdlist(void (*cb)(const char *cmdname)) {
+	unsigned idx;
+	for (idx=0; idx < ARRAY_SIZE(wordlist); idx++) {
+		if (wordlist[idx].handler == &do_nothing) {
+			continue;
+		}
+		cb(wordlist[idx].name);
+	}
 }

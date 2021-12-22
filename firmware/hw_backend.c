@@ -5,6 +5,9 @@
 
 #include <stdint.h>
 
+#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include <printf/printf.h>
+
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/iwdg.h>
@@ -303,6 +306,18 @@ void reset_dfu(void) {
 	scb_reset_system();
 }
 
+/* could go in struct sys_state, but then wouldn't be cleared with BSS... */
+static struct {
+	unsigned tx_ovf;	//# of bytes dropped due to overflow (to host)
+	unsigned rx_ovf; // (from host)
+} stats = {0};
+
+
+void sys_printstats(void) {
+	printf("last reset: %c; txovf: %u, rxovf: %u\n", \
+			(char) sys_state.reset_reason, stats.tx_ovf, stats.rx_ovf);
+	return;
+}
 
 void pre_main(void) {
 	// check reset reason. Not sure what we'll get here after DFU

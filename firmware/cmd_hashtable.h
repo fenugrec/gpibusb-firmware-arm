@@ -9,4 +9,7 @@
  */
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args);
 
+/** for every known command, run the given callback */
+void cmd_walk_cmdlist(void (*cb)(const char *cmdname));
+
 #endif // _CMD_HASHTABLE_H

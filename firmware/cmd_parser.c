@@ -389,10 +389,19 @@ void do_status(const char *args) {
 		} // else { output_high ??? or assume the transition to device mode already did this}
 	}
 }
+
+/** helper to print list of command names */
+static void print_cmd(const char *cmdname) {
+	printf("%s\n", cmdname);
+	return;
+}
+
 void do_help(const char *args) {
-	//XXX TODO
+	cmd_walk_cmdlist(print_cmd);
+	sys_printstats();
 	(void) args;
 }
+
 void do_nothing(const char *args) {
 	(void) args;
 	DEBUG_PRINTF("Unrecognized command.\n");

@@ -1,4 +1,5 @@
 %readonly-tables
+%global-table
 %compare-strncmp
 %define lookup-function-name cmd_lookup
 %define hash-function-name cmd_hash
@@ -57,4 +58,15 @@ void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 		return;
 	}
 	cmd->handler(args);
+}
+
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+void cmd_walk_cmdlist(void (*cb)(const char *cmdname)) {
+	unsigned idx;
+	for (idx=0; idx < ARRAY_SIZE(wordlist); idx++) {
+		if (wordlist[idx].handler == &do_nothing) {
+			continue;
+		}
+		cb(wordlist[idx].name);
+	}
 }
