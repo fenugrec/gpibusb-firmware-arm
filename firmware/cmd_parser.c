@@ -317,11 +317,10 @@ void do_loc(const char *args) {
 }
 void do_lon(const char *args) {
 	// ++lon {0|1}
-	//TODO : listen mode
-	if (controller_mode) return;
 	if (*args == 0) {
 		eot_printf("%i", listen_only);
 	} else {
+		if (controller_mode) { return; }
 		listen_only = (bool) atoi(args);
 	}
 }
@@ -467,6 +466,30 @@ static void chunk_data(char *rawdata, unsigned len) {
 	}
 }
 
+
+static void listenonly(void) {
+	output_float(DIO_PORT, DIO_PORTMASK);
+	output_float(EOI_CP, DAV | EOI);
+	gpio_clear(FLOW_PORT, TE);
+	output_low(NDAC_CP, NDAC);
+	output_high(NRFD_CP, NRFD);
+
+	// if DAV=1 , not valid : return
+	if (gpio_get(DAV_CP, DAV)) {
+		return;
+	}
+	bool atn_state = !gpio_get(ATN_CP, ATN);
+
+	if (atn_state) {
+		u8 rxb;
+		bool eoi_status;
+		gpib_read_byte(&rxb, &eoi_status);
+		DEBUG_PRINTF("listenonly : CMD %02X\n", rxb);
+	} else {
+		gpib_read(GPIBREAD_EOI, 0, 0);
+	}
+}
+
 //fwd decls for two helper functions
 static void device_atn(void);
 static void device_noatn(void);
@@ -600,7 +623,10 @@ void cmd_poll(void) {
 	static bool has_args = 0;
 
 	restart_wdt();
-	if (!controller_mode) {
+
+	if (listen_only) {
+		listenonly();
+	} else if (!controller_mode) {
 		device_poll();
 	}
 
