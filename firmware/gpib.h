@@ -61,16 +61,24 @@ uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 #define CMD_SPD 0x19
 
 /* Global vars; cmd_parser needs to see this */
-extern bool controller_mode;		//1 if controller mode
-extern bool debug;	// enable or disable read&write error messages
-extern char eot_char;	//char to append to each string sent to host
-extern uint32_t timeout;	//in milliseconds
-extern int partnerAddress;
-extern int myAddress;
-// Variables for device mode
-extern bool device_talk;
-extern bool device_listen;
-extern bool device_srq;
+struct gpib_config {
+	bool controller_mode;		//1 if controller mode
+	bool debug;	// extra messages
 
+	char eot_char;	//char to append to each string sent to host
+	bool eot_enable;
+	char eos_code;
+	bool eoiUse;
+	bool autoread;
+	uint32_t timeout;	//in milliseconds
+	int partnerAddress;
+	int myAddress;
+
+	// Variables for device mode
+	bool device_talk;
+	bool device_listen;
+	bool device_srq;
+};
+extern struct gpib_config gpib_cfg;
 
 #endif // _GPIB_H/*

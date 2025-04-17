@@ -58,18 +58,14 @@
 u8 cmd_buf[1];
 char eos_string[3] = "";
 unsigned eos_len = 0;
-char eos_code = EOS_NUL;
-bool eoiUse = 1; // By default, we are using EOI to signal end of
-// msg from instrument
 bool strip = 0;
-bool autoread = 1;
-bool eot_enable = 1;
 bool listen_only = 0;
 bool save_cfg = 1;
+
 u8 status_byte = 0;
 
 static void set_eos(enum eos_codes newcode) {
-	eos_code = newcode;
+	gpib_cfg.eos_code = newcode;
 	switch (newcode) {
 	case EOS_CRLF:
 		eos_string[0] = 13;
@@ -104,7 +100,7 @@ static bool srq_state(void) {
  */
 #define eot_printf(fmt, ...) do {\
 	printf((fmt), ##__VA_ARGS__);\
-	if (eot_enable) printf("%c", eot_char);\
+	if (gpib_cfg.eot_enable) printf("%c", gpib_cfg.eot_char);\
 } while (0)
 
 
@@ -112,14 +108,14 @@ void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
 	if (read_eeprom(0x00) == VALID_EEPROM_CODE)
 	{
-		controller_mode = read_eeprom(0x01);
-		partnerAddress = read_eeprom(0x02);
-		eot_char = read_eeprom(0x03);
-		eot_enable = read_eeprom(0x04);
-		eos_code = read_eeprom(0x05);
-		set_eos(eos_code);
-		eoiUse = read_eeprom(0x06);
-		autoread = read_eeprom(0x07);
+		gpib_cfg.controller_mode = read_eeprom(0x01);
+		gpib_cfg.partnerAddress = read_eeprom(0x02);
+		gpib_cfg.eot_char = read_eeprom(0x03);
+		gpib_cfg.eot_enable = read_eeprom(0x04);
+		gpib_cfg.eos_code = read_eeprom(0x05);
+		set_eos(gpib_cfg.eos_code);
+		gpib_cfg.eoiUse = read_eeprom(0x06);
+		gpib_cfg.autoread = read_eeprom(0x07);
 		listen_only = read_eeprom(0x08);
 		save_cfg = read_eeprom(0x09);
 	}
@@ -136,7 +132,7 @@ void cmd_parser_init(void) {
 		write_eeprom(0x08, 0); // listen_only
 		write_eeprom(0x09, 1); // save_cfg
 	}
-	if (controller_mode)
+	if (gpib_cfg.controller_mode)
 	{
 		gpib_controller_assign();
 	}
@@ -153,52 +149,52 @@ void do_addr(const char *args) {
 	// ++addr N
 	// TODO : addr [pad [sad]] for secondary address too
 	if (*args == 0) {
-		eot_printf("%i", partnerAddress);
+		eot_printf("%i", gpib_cfg.partnerAddress);
 	} else {
-		partnerAddress = atoi(args);
+		gpib_cfg.partnerAddress = atoi(args);
 	}
 }
 void do_readTimeout(const char *args) {
 	// ++read_tmo_ms N
 	if (*args == 0) {
-		eot_printf("%lu", (unsigned long) timeout);
+		eot_printf("%lu", (unsigned long) gpib_cfg.timeout);
 		return;
 	}
 	u32 temp = (u32) atoi(args);
 
 	/* bounds-check timeout value before saving */
 	if (temp > MAX_TIMEOUT) temp=MAX_TIMEOUT;
-	timeout = temp;
+	gpib_cfg.timeout = temp;
 }
 void do_readCmd2(const char *args) {
 	// ++read [eoi|<char>]
 	//XXX TODO : err msg when read error occurs
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-		gpib_read(GPIBREAD_TMO,0, eot_enable); // read until EOS condition
+		gpib_read(GPIBREAD_TMO,0, gpib_cfg.eot_enable); // read until EOS condition
 	} else if (strncmp(args, "eoi", 3) == 0) {
-		gpib_read(GPIBREAD_EOI, 0, eot_enable); // read until EOI flagged
+		gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable); // read until EOI flagged
 	} else {
 		// read until specified character
 		u8 tmp_eos = htoi(args);
-		gpib_read(GPIBREAD_EOS, tmp_eos, eot_enable);
+		gpib_read(GPIBREAD_EOS, tmp_eos, gpib_cfg.eot_enable);
 	}
 }
 void do_eos2(const char *args) {
 	// ++eos {0|1|2|3}
 	if (*args == 0) {
-		eot_printf("%i", eos_code);
+		eot_printf("%i", gpib_cfg.eos_code);
 	} else {
-		eos_code = atoi(args);
-		set_eos(eos_code);
+		gpib_cfg.eos_code = atoi(args);
+		set_eos(gpib_cfg.eos_code);
 	}
 }
 void do_eoi(const char *args) {
 	// ++eoi {0|1}
 	if (*args == 0) {
-		eot_printf("%i", eoiUse);
+		eot_printf("%i", gpib_cfg.eoiUse);
 	} else {
-		eoiUse = (bool) atoi(args);
+		gpib_cfg.eoiUse = (bool) atoi(args);
 	}
 }
 void do_strip(const char *args) {
@@ -214,9 +210,9 @@ void do_trg(const char *args) {
 	// ++trg [<PAD1> [<SAD1>] <PAD2> [SAD2] … <PAD15> [<SAD15>]]
 	u8 writeError = 0;
 	(void) args;
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-			writeError = writeError || gpib_address_target(partnerAddress);
+			writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 			//XXX TODO : do something with writeError
 			cmd_buf[0] = CMD_GET;
 			gpib_cmd(cmd_buf);
@@ -227,9 +223,9 @@ void do_trg(const char *args) {
 void do_autoRead(const char *args) {
 	// ++auto {0|1}
 	if (*args == 0) {
-		eot_printf("%i", autoread);
+		eot_printf("%i", gpib_cfg.autoread);
 	} else {
-		autoread = (bool) atoi(args);
+		gpib_cfg.autoread = (bool) atoi(args);
 	}
 }
 void do_reset(const char *args) {
@@ -251,45 +247,45 @@ void do_reset_dfu(const char *args) {
 void do_debug(const char *args) {
 	// ++debug {0|1}
 	if (*args == 0) {
-		const char *pfx = debug? "en":"dis";
+		const char *pfx = gpib_cfg.debug? "en":"dis";
 		printf("%sabled\n", pfx);
 		sys_printstats();
 	} else {
-		debug = (bool) atoi(args);
+		gpib_cfg.debug = (bool) atoi(args);
 	}
 }
 void do_clr(const char *args) {
 	// ++clr
 	u8 writeError = 0;
 	(void) args;
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	//XXX TODO : do something with writeError
 	// This command is special in that we must
 	// address a specific instrument.
-	writeError = writeError || gpib_address_target(partnerAddress);
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 	cmd_buf[0] = CMD_SDC;
 	writeError = writeError || gpib_cmd(cmd_buf);
 }
 void do_eotEnable(const char *args) {
 	// ++eot_enable {0|1}
 	if (*args == 0) {
-		eot_printf("%i", eot_enable);
+		eot_printf("%i", gpib_cfg.eot_enable);
 	} else {
-		eot_enable = (bool) atoi(args);
+		gpib_cfg.eot_enable = (bool) atoi(args);
 	}
 }
 void do_eotChar(const char *args) {
 	// ++eot_char N
 	if (*args == 0) {
-		eot_printf("%i", eot_char);
+		eot_printf("%i", gpib_cfg.eot_char);
 	} else {
-		eot_char = atoi(args);
+		gpib_cfg.eot_char = atoi(args);
 	}
 }
 void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	output_low(IFC_CP, IFC);
 	delay_ms(200);
 	output_high(IFC_CP, IFC);	//XXX orig version just tristates IFC ? we're controller, who cares ?
@@ -299,8 +295,8 @@ void do_llo(const char *args) {
 	u8 writeError = 0;
 	(void) args;
 	//XXX TODO : do something with writeError
-	if (!controller_mode) return;
-	writeError = writeError || gpib_address_target(partnerAddress);
+	if (!gpib_cfg.controller_mode) return;
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 	cmd_buf[0] = CMD_LLO;
 	writeError = writeError || gpib_cmd(cmd_buf);
 }
@@ -309,9 +305,9 @@ void do_loc(const char *args) {
 	u8 writeError = 0;
 	(void) args;
 	//XXX TODO : do something with writeError
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 
-	writeError = writeError || gpib_address_target(partnerAddress);
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 	cmd_buf[0] = CMD_GTL;
 	writeError = writeError || gpib_cmd(cmd_buf);
 }
@@ -320,18 +316,18 @@ void do_lon(const char *args) {
 	if (*args == 0) {
 		eot_printf("%i", listen_only);
 	} else {
-		if (controller_mode) { return; }
+		if (gpib_cfg.controller_mode) { return; }
 		listen_only = (bool) atoi(args);
 	}
 }
 void do_mode(const char *args) {
 	// ++mode {0|1}
 	if (*args == 0) {
-		eot_printf("%i", controller_mode);
+		eot_printf("%i", gpib_cfg.controller_mode);
 	} else {
-		controller_mode = (bool) atoi(args);
-		prep_gpib_pins(controller_mode);
-		if (controller_mode) {
+		gpib_cfg.controller_mode = (bool) atoi(args);
+		prep_gpib_pins(gpib_cfg.controller_mode);
+		if (gpib_cfg.controller_mode) {
 			gpib_controller_assign();
 		}
 	}
@@ -343,14 +339,14 @@ void do_savecfg(const char *args) {
 	} else {
 		save_cfg = (bool) atoi(args);
 		if (save_cfg) {
-			write_eeprom(0x01, controller_mode);
-			write_eeprom(0x02, partnerAddress);
-			write_eeprom(0x03, eot_char);
-			write_eeprom(0x04, eot_enable);
-			write_eeprom(0x05, eos_code);
-			write_eeprom(0x06, eoiUse);
-			write_eeprom(0x07, autoread);
-			write_eeprom(0x08, listen_only);
+			write_eeprom(0x01, gpib_cfg.controller_mode);
+			write_eeprom(0x02, gpib_cfg.partnerAddress);
+			write_eeprom(0x03, gpib_cfg.eot_char);
+			write_eeprom(0x04, gpib_cfg.eot_enable);
+			write_eeprom(0x05, gpib_cfg.eos_code);
+			write_eeprom(0x06, gpib_cfg.eoiUse);
+			write_eeprom(0x07, gpib_cfg.autoread);
+			write_eeprom(0x08, gpib_cfg.listen_only);
 			write_eeprom(0x09, save_cfg);
 		}
 	}
@@ -358,15 +354,15 @@ void do_savecfg(const char *args) {
 void do_srq(const char *args) {
 	// ++srq
 	(void) args;
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	eot_printf("%i", srq_state());
 }
 void do_spoll(const char *args) {
 	// ++spoll [pad [sad]]
 	// TODO : support secodnary addr too
-	if (!controller_mode) return;
+	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-		if (!gpib_serial_poll(partnerAddress, &status_byte)) {
+		if (!gpib_serial_poll(gpib_cfg.partnerAddress, &status_byte)) {
 			eot_printf("%u", (unsigned) status_byte);
 		}
 	} else {
@@ -377,7 +373,7 @@ void do_spoll(const char *args) {
 }
 void do_status(const char *args) {
 	// ++status [n]
-	if (controller_mode) return;
+	if (gpib_cfg.controller_mode) return;
 	if (*args == 0) {
 		eot_printf("%u", (unsigned) status_byte);
 	} else {
@@ -442,25 +438,25 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// Not an internal command, send to bus
 	// Command all talkers and listeners to stop
 	// and tell target to listen.
-	if (controller_mode)
+	if (gpib_cfg.controller_mode)
 	{
-		writeError = writeError || gpib_address_target(partnerAddress);
+		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 	// Set the controller into talker mode
-		cmd_buf[0] = myAddress + CMD_TAD;
+		cmd_buf[0] = gpib_cfg.myAddress + CMD_TAD;
 		writeError = writeError || gpib_cmd(cmd_buf);
 	}
 	// Send out command to the bus
 	DEBUG_PRINTF("gpib_write: %.*s\n", len, buf_pnt);
 
-	if (controller_mode || device_talk)
+	if (gpib_cfg.controller_mode || gpib_cfg.device_talk)
 	{
-		if(eos_code != EOS_NUL)   // If have an EOS char, need to output
+		if(gpib_cfg.eos_code != EOS_NUL)   // If have an EOS char, need to output
 		{
 	// termination byte to inst
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
 			if (!writeError) {
 				DEBUG_PRINTF("gpib_write eos[%u] (%02X...)", eos_len, eos_string[0]);
-				writeError = gpib_write((u8 *) eos_string, eos_len, eoiUse);
+				writeError = gpib_write((u8 *) eos_string, eos_len, gpib_cfg.eoiUse);
 			}
 
 		}
@@ -470,9 +466,9 @@ static void chunk_data(char *rawdata, unsigned len) {
 		}
 	}
 
-	if(autoread && controller_mode) {
+	if(gpib_cfg.autoread && gpib_cfg.controller_mode) {
 		//XXX TODO : with autoread, does prologix terminate by EOI ?
-		writeError = writeError || gpib_read(GPIBREAD_EOI, 0, eot_enable);
+		writeError = writeError || gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
 	}
 }
 
@@ -512,9 +508,9 @@ static void device_poll(void) {
 	// but we have t1 (100us) to respond to IFC ?
 
 	if (!gpio_get(IFC_CP, IFC)) {
-		device_talk = 0;
-		device_listen = 0;
-		device_srq = 0;
+		gpib_cfg.device_talk = 0;
+		gpib_cfg.device_listen = 0;
+		gpib_cfg.device_srq = 0;
 		status_byte = 0;
 		return;
 	}
@@ -546,47 +542,47 @@ static void device_atn(void) {
 		return;
 	}
 	if ((rxb & 0xE0) == CMD_TAD) {
-		if (rxb == partnerAddress + CMD_TAD) {
-			device_talk = true;
-			device_listen = 0;
+		if (rxb == gpib_cfg.partnerAddress + CMD_TAD) {
+			gpib_cfg.device_talk = true;
+			gpib_cfg.device_listen = 0;
 			DEBUG_PRINTF("Instructed to talk\n");
 		} else {
 			//somebody else is addressed to talk
-			device_talk = 0;
+			gpib_cfg.device_talk = 0;
 		}
-	} else if (rxb == partnerAddress + CMD_LAD) {
-		device_talk = 0;
-		device_listen = true;
+	} else if (rxb == gpib_cfg.partnerAddress + CMD_LAD) {
+		gpib_cfg.device_talk = 0;
+		gpib_cfg.device_listen = true;
 		DEBUG_PRINTF("Instructed to listen\n");
 	} else if (rxb == CMD_UNL) {
-		device_listen = false;
+		gpib_cfg.device_listen = false;
 		DEBUG_PRINTF("Instructed to stop listen\n");
 	} else if (rxb == CMD_UNT) {
-		device_talk = false;
+		gpib_cfg.device_talk = false;
 		DEBUG_PRINTF("Instructed to stop talk\n");
 	} else if (rxb == CMD_SPE) {
-		device_srq = true;
+		gpib_cfg.device_srq = true;
 		DEBUG_PRINTF("SQR start\n");
 	} else if (rxb == CMD_SPD) {
-		device_srq = false;
+		gpib_cfg.device_srq = false;
 		DEBUG_PRINTF("SQR end\n");
 	} else if (rxb == CMD_DCL) {
 		eot_printf("DCL");
-		device_listen = false;
-		device_talk = false;
-		device_srq = false;
+		gpib_cfg.device_listen = false;
+		gpib_cfg.device_talk = false;
+		gpib_cfg.device_srq = false;
 		status_byte = 0;
-	} else if ((rxb == CMD_LLO) && (device_listen)) {
+	} else if ((rxb == CMD_LLO) && (gpib_cfg.device_listen)) {
 		eot_printf("LLO");
-	} else if ((rxb == CMD_GTL) && (device_listen)) {
+	} else if ((rxb == CMD_GTL) && (gpib_cfg.device_listen)) {
 		eot_printf("GTL");
-	} else if ((rxb == CMD_GET) && (device_listen)) {
+	} else if ((rxb == CMD_GET) && (gpib_cfg.device_listen)) {
 		eot_printf("GET");
-	} else if ((rxb == CMD_SDC) && (device_listen)) {
+	} else if ((rxb == CMD_SDC) && (gpib_cfg.device_listen)) {
 		eot_printf("SDC");
-		device_listen = false;
-		device_talk = false;
-		device_srq = false;
+		gpib_cfg.device_listen = false;
+		gpib_cfg.device_talk = false;
+		gpib_cfg.device_srq = false;
 		status_byte = 0;
 	}
 	output_high(NDAC_CP, NDAC);
@@ -594,7 +590,7 @@ static void device_atn(void) {
 
 /** device poll with ATN not asserted (==1) */
 static void device_noatn(void) {
-	if (device_listen) {
+	if (gpib_cfg.device_listen) {
 		output_float(DIO_PORT, DIO_PORTMASK);
 		output_float(EOI_CP, DAV | EOI);
 		gpio_clear(FLOW_PORT, TE);
@@ -606,15 +602,15 @@ static void device_noatn(void) {
 			return;
 		}
 		DEBUG_PRINTF("device mode gpib_read\n");
-		gpib_read(GPIBREAD_EOI, 0, eot_enable);
-	} else if (device_talk) {
+		gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
+	} else if (gpib_cfg.device_talk) {
 		output_float(NDAC_CP, NDAC | NRFD);
 		gpio_set(FLOW_PORT, TE);
 		output_high(EOI_CP, DAV | EOI);
-		if (device_srq) {
+		if (gpib_cfg.device_srq) {
 			gpib_write(&status_byte, 1, 0);
 			output_high(SRQ_CP, SRQ);
-			device_srq = false;
+			gpib_cfg.device_srq = false;
 			status_byte = 0;
 		}
 	}
@@ -636,7 +632,7 @@ void cmd_poll(void) {
 
 	if (listen_only) {
 		listenonly();
-	} else if (!controller_mode) {
+	} else if (!gpib_cfg.controller_mode) {
 		device_poll();
 	}
 

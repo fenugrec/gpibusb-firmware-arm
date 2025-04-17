@@ -38,18 +38,22 @@
 #include "hw_backend.h"
 #include "stypes.h"
 
-/* global vars */
-int partnerAddress = 1;
-int myAddress = 0;
-bool controller_mode = 1;
-bool debug = 0; // enable or disable read&write error messages
-char eot_char = '\r'; // default CR
-uint32_t timeout = 1000;	//in ms
-// Variables for device mode
-bool device_talk = false;
-bool device_listen = false;
-bool device_srq = false;
-
+/* global vars. Not all of these are saved to EEPROM*/
+struct gpib_config gpib_cfg = {
+	.controller_mode = 1,
+	.debug = 0,
+	.partnerAddress = 1,
+	.myAddress = 0,
+	.eos_code = EOS_NUL,
+	.eoiUse = 1,
+	.eot_char = '\r',
+	.eot_enable = 1,
+	.autoread = 1,
+	.timeout = 1000,
+	.device_talk = false,
+	.device_listen = false,
+	.device_srq = false,
+};
 
 /* Some forward decls that don't need to be in the public gpib.h
 */
@@ -89,7 +93,7 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
-	u32 t0, tdelta = timeout;
+	u32 t0, tdelta = gpib_cfg.timeout;
 
 	// TODO: Set pin modes to output as required for writing, and revert to input on exit/abort
 
@@ -113,9 +117,9 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
-			device_talk = false;
-			device_srq = false;
-			prep_gpib_pins(controller_mode);
+			gpib_cfg.device_talk = false;
+			gpib_cfg.device_srq = false;
+			prep_gpib_pins(gpib_cfg.controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -134,9 +138,9 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: waiting for NDAC-\n");
-				device_talk = false;
-				device_srq = false;
-				prep_gpib_pins(controller_mode);
+				gpib_cfg.device_talk = false;
+				gpib_cfg.device_srq = false;
+				prep_gpib_pins(gpib_cfg.controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -156,9 +160,9 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NRFD+\n");
-				device_talk = false;
-				device_srq = false;
-				prep_gpib_pins(controller_mode);
+				gpib_cfg.device_talk = false;
+				gpib_cfg.device_srq = false;
+				prep_gpib_pins(gpib_cfg.controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -174,9 +178,9 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NDAC+\n");
-				device_talk = false;
-				device_srq = false;
-				prep_gpib_pins(controller_mode);
+				gpib_cfg.device_talk = false;
+				gpib_cfg.device_srq = false;
+				prep_gpib_pins(gpib_cfg.controller_mode);
 				return 1;
 			}
 #endif // WITH_TIMEOUT
@@ -208,7 +212,7 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 * Returns 0 if everything went fine
 */
 uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
-	u32 t0, tdelta = timeout;
+	u32 t0, tdelta = gpib_cfg.timeout;
 
 	// Raise NRFD, informing the talker we are ready for the byte
 	output_high(NRFD_CP, NRFD);
@@ -223,8 +227,8 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV-\n");
-			device_listen = false;
-			prep_gpib_pins(controller_mode);
+			gpib_cfg.device_listen = false;
+			prep_gpib_pins(gpib_cfg.controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -249,8 +253,8 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV+\n");
-			device_listen = false;
-			prep_gpib_pins(controller_mode);
+			gpib_cfg.device_listen = false;
+			prep_gpib_pins(gpib_cfg.controller_mode);
 			return 1;
 		}
 #endif // WITH_TIMEOUT
@@ -278,7 +282,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 	uint8_t cmd_buf[3];
 	uint32_t error_found = 0;
 
-	if(controller_mode) {
+	if(gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
 		cmd_buf[0] = CMD_UNT;
 		error_found = error_found || gpib_cmd(cmd_buf);
@@ -287,12 +291,12 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 		if(error_found){return 1;}
 
 		// Set the controller into listener mode
-		cmd_buf[0] = myAddress + CMD_LAD;
+		cmd_buf[0] = gpib_cfg.myAddress + CMD_LAD;
 		error_found = error_found || gpib_cmd(cmd_buf);
 		if(error_found){return 1;}
 
 		// Set target device into talker mode
-		cmd_buf[0] = partnerAddress + CMD_TAD;
+		cmd_buf[0] = gpib_cfg.partnerAddress + CMD_TAD;
 		error_found = gpib_cmd(cmd_buf);
 		if(error_found){return 1;}
 	}
@@ -311,7 +315,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 			if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
 				if(eot_enable) {
-					host_tx(eot_char);
+					host_tx(gpib_cfg.eot_char);
 				}
 				return 1;
 			}
@@ -328,7 +332,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 			if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
 				if(eot_enable) {
-					host_tx(eot_char);
+					host_tx(gpib_cfg.eot_char);
 				}
 				return 1;
 			}
@@ -351,12 +355,12 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 	}	//if !use_eoi
 
 	if(eot_enable) {
-		host_tx(eot_char);
+		host_tx(gpib_cfg.eot_char);
 	}
 
 	DEBUG_PRINTF("gpib_read loop end\n");
 
-	if (controller_mode) {
+	if (gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
 		error_found = 0;
 		cmd_buf[0] = CMD_UNT;

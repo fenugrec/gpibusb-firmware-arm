@@ -31,7 +31,7 @@
 #ifdef VERBOSE_DEBUG
 //even with verbose debug, still honor debug flag
 #define DEBUG_PRINTF(fmt, ...) \
-	if (!debug) { \
+	if (!gpib_cfg.debug) { \
 	} else printf(fmt, ##__VA_ARGS__)
 #else
 #define DEBUG_PRINTF(fmt, ...) ((void) 0)

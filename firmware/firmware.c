@@ -29,7 +29,7 @@ int main(void)
 	pre_main();
 	hw_setup();
 
-	prep_gpib_pins(controller_mode);
+	prep_gpib_pins(0);
 
 	// TODO: Load settings from EEPROM
 
