@@ -21,6 +21,7 @@
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "stypes.h"
+#include "utils.h"
 
 /****** IO, GPIO */
 
@@ -121,7 +122,7 @@ void led_poll(void) {
 			led_status.state_next = !led_status.state_next;
 			break;
 		default:
-			//XXX assert
+			assert_failed();
 			break;
 	}
 }
@@ -282,6 +283,10 @@ void restart_wdt(void) {
 
 /********** misc
 */
+
+void __attribute__((noreturn)) assert_failed(void) {
+	while (1);
+}
 
 void reset_cpu(void) {
 	scb_reset_system();

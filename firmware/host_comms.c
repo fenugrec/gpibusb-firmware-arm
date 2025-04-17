@@ -20,6 +20,7 @@
 #include "ecbuff.h"
 
 #include "stypes.h"
+#include "utils.h"
 
 
 /**** globals */
@@ -117,7 +118,7 @@ void host_comms_rx(uint8_t rxb) {
 		}
 		break;
 	default:
-		//XXX assert
+		assert_failed();
 		break;
 	}
 }
@@ -133,10 +134,7 @@ void host_tx(uint8_t txb) {
 
 void host_tx_blocking(uint8_t txb) {
 	while (ecbuff_is_full(fifo_out)) {}
-	if (!ecbuff_write(fifo_out, &txb)) {
-		//XXX assert failed here, shouldn't happen
-		sys_incstats(STATS_TXOVF);
-	}
+	assert_basic(!ecbuff_write(fifo_out, &txb));
 	return;
 }
 

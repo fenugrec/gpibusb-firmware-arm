@@ -37,6 +37,7 @@
 #include "host_comms.h"
 #include "hw_backend.h"
 #include "stypes.h"
+#include "utils.h"
 
 /* global vars. Not all of these are saved to EEPROM*/
 struct gpib_config gpib_cfg = {
@@ -350,7 +351,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 		//XXX TODO : implement read with timeout
 		break;
 	default:
-		//XXX assert
+		assert_failed();
 		break;
 	}	//if !use_eoi
 
