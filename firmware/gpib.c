@@ -82,8 +82,7 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 /** Write a string of bytes to the GPIB bus
 *
 * bytes: Array of bytes to be written to the bus
-* length: number of bytes to write to the bus. Leave 0 if not known and
-*   this will then be computed based on C-string length
+* length: number of bytes to write to the bus.
 * atn: Whether the GPIB ATN line should be asserted or not. Set to 1 if byte
 	is a GPIB command byte or 0 otherwise.
 * use_eoi: Set whether the GPIB EOI line should be asserted or not on
@@ -94,14 +93,16 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
-	u32 t0, tdelta = gpib_cfg.timeout;
+	u32 t0;
+	u32 tdelta = gpib_cfg.timeout;
+
+	assert_basic(length);
 
 	// TODO: Set pin modes to output as required for writing, and revert to input on exit/abort
 
 	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
 	if(atn) { output_low(ATN_CP, ATN); }
-	if(!length) { return 0; }
 
 	output_float(NRFD_CP, NRFD | NDAC);
 	gpio_set(FLOW_PORT, TE); // Enable talking
