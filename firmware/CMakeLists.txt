@@ -23,7 +23,7 @@ set (TGTNAME firmware)
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/cmd_hashtable.c
 	COMMENT "Generating command hashtable"
-	COMMAND gperf -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
+	COMMAND gperf -T -m 4 --output-file cmd_hashtable.c cmd_hashtable.gen
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cmd_hashtable.gen
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

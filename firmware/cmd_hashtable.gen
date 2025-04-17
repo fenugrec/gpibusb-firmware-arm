@@ -3,7 +3,7 @@
 %compare-strncmp
 %define lookup-function-name cmd_lookup
 %define hash-function-name cmd_hash
-%define initializer-suffix ,do_nothing
+%define initializer-suffix ,do_nothing,""
 
 %{
 #include <string.h>
@@ -16,39 +16,38 @@ const struct cmd_entry *cmd_lookup (register const char *str, register size_t le
 %}
 
 %struct-type
-struct cmd_entry { char *name; void (*handler)(const char *args); };
-
+struct cmd_entry;
 
 %%
 # gperf control file to generate cmd_hashtable.c
 # the list below must correspond to the function decls in "cmd_handlers.h "
 ##### Non-standard commands
-"++strip", do_strip
-"++debug", do_debug
-"++dfu", do_reset_dfu
+"++strip", do_strip, ""
+"++debug", do_debug, "[0|1] enable debug output"
+"++dfu", do_reset_dfu, ""
 ##### Prologix Compatible Command Set
-"++addr", do_addr
-"++auto", do_autoRead
-"++clr", do_clr
-"++eoi", do_eoi
-"++eos", do_eos2
-"++eot_enable", do_eotEnable
-"++eot_char", do_eotChar
-"++ifc", do_ifc
-"++llo", do_llo
-"++loc", do_loc
-"++lon", do_lon
-"++mode", do_mode
-"++read", do_readCmd2
-"++read_tmo_ms", do_readTimeout
-"++rst", do_reset
-"++savecfg", do_savecfg
-"++spoll", do_spoll
-"++srq", do_srq
-"++status", do_status
-"++trg", do_trg
-"++ver", do_version2
-"++help", do_help
+"++addr", do_addr, ""
+"++auto", do_autoRead, ""
+"++clr", do_clr, "send SDC"
+"++eoi", do_eoi, "[0|1] assert EOI with last char"
+"++eos", do_eos2, "GPIB termination char to append. 0: CRLF, 1: CR, 2: LF, 3:none"
+"++eot_enable", do_eotEnable, ""
+"++eot_char", do_eotChar, "<char_decimal>. USB termination char"
+"++ifc", do_ifc, ""
+"++llo", do_llo, "set lockout"
+"++loc", do_loc, "set local"
+"++lon", do_lon, "[0|1] listen-only (all addresses)"
+"++mode", do_mode, "[0|1] enable Controller mode"
+"++read", do_readCmd2, "[eoi|<char_decimal>]"
+"++read_tmo_ms", do_readTimeout, "inter-char timeout"
+"++rst", do_reset, ""
+"++savecfg", do_savecfg, ""
+"++spoll", do_spoll, "[<PAD> [<SAD>]]"
+"++srq", do_srq, "query SRQ signal"
+"++status", do_status, "specify SPOLL byte"
+"++trg", do_trg, "[<PADn> [<SADn>] ...] send GET"
+"++ver", do_version2, ""
+"++help", do_help, ""
 %%
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 	const struct cmd_entry *cmd;
@@ -61,12 +60,12 @@ void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 }
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
-void cmd_walk_cmdlist(void (*cb)(const char *cmdname)) {
+void cmd_walk_cmdlist(void (*cb)(const struct cmd_entry *cmd)) {
 	unsigned idx;
 	for (idx=0; idx < ARRAY_SIZE(wordlist); idx++) {
 		if (wordlist[idx].handler == &do_nothing) {
 			continue;
 		}
-		cb(wordlist[idx].name);
+		cb(&wordlist[idx]);
 	}
 }

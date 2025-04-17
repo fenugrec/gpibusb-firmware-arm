@@ -251,7 +251,9 @@ void do_reset_dfu(const char *args) {
 void do_debug(const char *args) {
 	// ++debug {0|1}
 	if (*args == 0) {
-		eot_printf("%i", debug);
+		const char *pfx = debug? "en":"dis";
+		printf("%sabled\n", pfx);
+		sys_printstats();
 	} else {
 		debug = (bool) atoi(args);
 	}
@@ -389,12 +391,13 @@ void do_status(const char *args) {
 }
 
 /** helper to print list of command names */
-static void print_cmd(const char *cmdname) {
-	printf("%s\n", cmdname);
+static void print_cmd(const struct cmd_entry *cmd) {
+	printf("%s %s\n", cmd->name, cmd->helpstring);
 	return;
 }
 
 void do_help(const char *args) {
+	printf("some commands and functions not implemented.\n");
 	cmd_walk_cmdlist(print_cmd);
 	sys_printstats();
 	(void) args;
