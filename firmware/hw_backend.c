@@ -297,7 +297,7 @@ void reset_cpu(void) {
  */
 static struct {
 	u32 dfu_token;	//alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
-	u8 reset_reason;
+	char reset_reason;
 } sys_state  __attribute__ ((section (".svram")));
 
 
@@ -342,11 +342,12 @@ void sys_printstats(void) {
 }
 
 void pre_main(void) {
-	// check reset reason. Not sure what we'll get here after DFU
+	// check reset reason.
 	u32 csr_tmp = RCC_CSR;
 	if (csr_tmp & RCC_CSR_PORRSTF) {
 		sys_state.reset_reason = 'P';
 	} else if (csr_tmp & RCC_CSR_SFTRSTF) {
+		// reset into DFU would report this
 		sys_state.reset_reason = 'S';
 	} else if (csr_tmp & RCC_CSR_IWDGRSTF) {
 		sys_state.reset_reason = 'I';
