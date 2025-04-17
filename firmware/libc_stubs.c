@@ -66,7 +66,7 @@ int htoi(const char *buf) {
 
 /** custom printf needs this */
 void putchar_(char character) {
-	host_tx((uint8_t) character);
+	host_tx_blocking((uint8_t) character);
 	return;
 }
 

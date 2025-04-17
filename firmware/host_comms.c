@@ -130,6 +130,16 @@ void host_tx(uint8_t txb) {
 	return;
 }
 
+
+void host_tx_blocking(uint8_t txb) {
+	while (ecbuff_is_full(fifo_out)) {}
+	if (!ecbuff_write(fifo_out, &txb)) {
+		//XXX assert failed here, shouldn't happen
+		sys_incstats(STATS_TXOVF);
+	}
+	return;
+}
+
 void host_tx_m(uint8_t *data, unsigned len) {
 	if (len > 256) {
 		len = 256;

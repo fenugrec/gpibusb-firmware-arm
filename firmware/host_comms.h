@@ -74,6 +74,11 @@ extern ecbuff *fifo_in;
  */
 void host_tx(uint8_t txb);
 
+/** TX to host: queue one byte, infinitely blocking
+ *
+ */
+void host_tx_blocking(uint8_t txb);
+
 /** queue multiple bytes to send to host
 *
 * @param len max 256 bytes. extra data is dropped
