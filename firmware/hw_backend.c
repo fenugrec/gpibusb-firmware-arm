@@ -329,7 +329,7 @@ static struct {
 } stats = {0};
 
 void sys_incstats(enum stats_type st) {
-	//XXX enter critsection
+	bool i = disable_irq();
 	switch (st) {
 	case STATS_TXOVF:
 		stats.tx_ovf++;
@@ -340,15 +340,15 @@ void sys_incstats(enum stats_type st) {
 	default:
 		break;
 	}
-	//XXX leave critsec
+	restore_irq(i);
 }
 
 void sys_printstats(void) {
 	unsigned rx_ovf, tx_ovf;
-	//XXX enter crit
+	bool i = disable_irq();
 	rx_ovf = stats.rx_ovf;
 	tx_ovf = stats.tx_ovf;
-	//XXX leave crit
+	restore_irq(i);
 
 	printf("last reset: %c\nlast error: %i\ntxovf: %u, rxovf: %u\n", \
 			(char) sys_state.reset_reason, sys_state.assert_reason, tx_ovf, rx_ovf);
