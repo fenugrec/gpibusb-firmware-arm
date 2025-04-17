@@ -67,15 +67,15 @@ static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_
 *
 * See _gpib_write for parameter information
 */
-uint32_t gpib_cmd(uint8_t *bytes) {
-	return _gpib_write(bytes, 1, 1, 0);
+enum errcodes gpib_cmd(uint8_t byte) {
+	return _gpib_write(&byte, 1, 1, 0);
 }
 
 /** Write a GPIB data string to the GPIB bus.
 *
 * See _gpib_write for parameter information
 */
-uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
+enum errcodes gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 	return _gpib_write(bytes, length, 0, use_eoi);
 }
 
@@ -88,9 +88,9 @@ uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 * use_eoi: Set whether the GPIB EOI line should be asserted or not on
 	transmission of the last byte
 *
-* Returns 0 if everything went fine, or 1 if there was an error
+* Returns E_OK if complete, or E_TIMEOUT
 */
-static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
+static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
 	u32 t0;
@@ -281,26 +281,23 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 	uint8_t byte;
 	bool eoi_status = 0;
 	//bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
-	uint8_t cmd_buf[3];
 	uint32_t error_found = 0;
 
 	if(gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
-		cmd_buf[0] = CMD_UNT;
-		error_found = error_found || gpib_cmd(cmd_buf);
-		cmd_buf[0] = CMD_UNL;
-		error_found = error_found || gpib_cmd(cmd_buf);
-		if(error_found){return 1;}
+		error_found = error_found || gpib_cmd(CMD_UNT);
+		error_found = error_found || gpib_cmd(CMD_UNL);
+		if(error_found){return E_TIMEOUT;}
 
 		// Set the controller into listener mode
-		cmd_buf[0] = gpib_cfg.myAddress + CMD_LAD;
-		error_found = error_found || gpib_cmd(cmd_buf);
-		if(error_found){return 1;}
+		u8 cmd = gpib_cfg.myAddress + CMD_LAD;
+		error_found = error_found || gpib_cmd(cmd);
+		if(error_found){return E_TIMEOUT;}
 
 		// Set target device into talker mode
-		cmd_buf[0] = gpib_cfg.partnerAddress + CMD_TAD;
-		error_found = gpib_cmd(cmd_buf);
-		if(error_found){return 1;}
+		cmd = gpib_cfg.partnerAddress + CMD_TAD;
+		error_found = gpib_cmd(cmd);
+		if(error_found){return E_TIMEOUT;}
 	}
 
 	// Beginning of GPIB read loop
@@ -365,10 +362,8 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 	if (gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
 		error_found = 0;
-		cmd_buf[0] = CMD_UNT;
-		error_found = error_found || gpib_cmd(cmd_buf);
-		cmd_buf[0] = CMD_UNL;
-		error_found = error_found || gpib_cmd(cmd_buf);
+		error_found = error_found || gpib_cmd(CMD_UNT);
+		error_found = error_found || gpib_cmd(CMD_UNL);
 	}
 
 	DEBUG_PRINTF("gpib_read end\n");
@@ -384,13 +379,10 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 */
 uint32_t gpib_address_target(uint32_t address) {
 	uint32_t write_error = 0;
-	uint8_t cmd_buf[3];
-	cmd_buf[0] = CMD_UNT;
-	write_error = write_error || gpib_cmd(cmd_buf);
-	cmd_buf[0] = CMD_UNL; // Everyone stop listening
-	write_error = write_error || gpib_cmd(cmd_buf);
-	cmd_buf[0] = address + CMD_LAD;
-	write_error = write_error || gpib_cmd(cmd_buf);
+	write_error = write_error || gpib_cmd(CMD_UNT);
+	write_error = write_error || gpib_cmd(CMD_UNL);
+	u8 cmd = address + CMD_LAD;
+	write_error = write_error || gpib_cmd(cmd);
 	return write_error;
 }
 
@@ -402,8 +394,6 @@ uint32_t gpib_address_target(uint32_t address) {
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 uint32_t gpib_controller_assign(void) {
-
-	uint8_t cmd_buf[3];
 	// Assert interface clear. Resets bus and makes it controller in charge
 	output_low(IFC_CP, IFC);
 	delay_ms(200);
@@ -413,8 +403,7 @@ uint32_t gpib_controller_assign(void) {
 	output_low(REN_CP, REN);
 
 	// Send GPIB DCL command, which clears all devices on the bus
-	cmd_buf[0] = CMD_DCL;
-	return gpib_cmd(cmd_buf);
+	return gpib_cmd(CMD_DCL);
 }
 
 /** conduct serial poll
@@ -425,13 +414,12 @@ uint32_t gpib_controller_assign(void) {
  */
 uint32_t gpib_serial_poll(int address, u8 *status_byte) {
 	char error = 0;
-	u8 cmd_buf[1];
+	u8 cmd;
 	bool eoistat = 0;
 
-	cmd_buf[0] = CMD_SPE; // enable serial poll
-	error = error || gpib_cmd(cmd_buf);
-	cmd_buf[0] = address + CMD_TAD;
-	error = error || gpib_cmd(cmd_buf);
+	error = error || gpib_cmd(CMD_SPE);
+	cmd = address + CMD_TAD;
+	error = error || gpib_cmd(cmd);
 	if (error) return -1;
 
 	output_float(DIO_PORT, DIO_PORTMASK);
@@ -439,8 +427,7 @@ uint32_t gpib_serial_poll(int address, u8 *status_byte) {
 	gpio_clear(FLOW_PORT, TE);
 
 	error = gpib_read_byte(status_byte, &eoistat);
-	cmd_buf[0] = CMD_SPD; // disable serial poll
-	gpib_cmd(cmd_buf);
+	gpib_cmd(CMD_SPD);
 	if (error) return -1;
 	return 0;
 }

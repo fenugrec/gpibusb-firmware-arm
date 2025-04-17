@@ -55,7 +55,6 @@
 
 #define VERSION 5
 
-u8 cmd_buf[1];
 char eos_string[3] = "";
 unsigned eos_len = 0;
 bool strip = 0;
@@ -214,8 +213,7 @@ void do_trg(const char *args) {
 	if (*args == 0) {
 			writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 			//XXX TODO : do something with writeError
-			cmd_buf[0] = CMD_GET;
-			gpib_cmd(cmd_buf);
+			gpib_cmd(CMD_GET);
 	} else {
 		//TODO: Add support for specified addresses
 	}
@@ -263,8 +261,7 @@ void do_clr(const char *args) {
 	// This command is special in that we must
 	// address a specific instrument.
 	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
-	cmd_buf[0] = CMD_SDC;
-	writeError = writeError || gpib_cmd(cmd_buf);
+	writeError = writeError || gpib_cmd(CMD_SDC);
 }
 void do_eotEnable(const char *args) {
 	// ++eot_enable {0|1}
@@ -297,8 +294,7 @@ void do_llo(const char *args) {
 	//XXX TODO : do something with writeError
 	if (!gpib_cfg.controller_mode) return;
 	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
-	cmd_buf[0] = CMD_LLO;
-	writeError = writeError || gpib_cmd(cmd_buf);
+	writeError = writeError || gpib_cmd(CMD_LLO);
 }
 void do_loc(const char *args) {
 	// ++loc
@@ -308,8 +304,7 @@ void do_loc(const char *args) {
 	if (!gpib_cfg.controller_mode) return;
 
 	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
-	cmd_buf[0] = CMD_GTL;
-	writeError = writeError || gpib_cmd(cmd_buf);
+	writeError = writeError || gpib_cmd(CMD_GTL);
 }
 void do_lon(const char *args) {
 	// ++lon {0|1}
@@ -442,8 +437,8 @@ static void chunk_data(char *rawdata, unsigned len) {
 	{
 		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 	// Set the controller into talker mode
-		cmd_buf[0] = gpib_cfg.myAddress + CMD_TAD;
-		writeError = writeError || gpib_cmd(cmd_buf);
+		u8 cmd = gpib_cfg.myAddress + CMD_TAD;
+		writeError = writeError || gpib_cmd(cmd);
 	}
 	// Send out command to the bus
 	DEBUG_PRINTF("gpib_write: %.*s\n", len, buf_pnt);
