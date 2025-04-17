@@ -141,8 +141,6 @@ void cmd_parser_init(void) {
 		gpib_controller_assign();
 	}
 
-	printf("Command parser ready\n");
-
 }
 
 /*** command handlers
