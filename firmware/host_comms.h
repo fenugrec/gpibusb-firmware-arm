@@ -45,6 +45,8 @@ void host_comms_init(void);
 *   fifo_in.
 * - cmd_poll() empties fifo_in
 *
+* XXX no mechanism to set EP to NAK if fifo_in full
+*
 *
 * to host:
 * - code (mostly printf) calls host_tx() or host_tx_m()
@@ -55,7 +57,7 @@ void host_comms_init(void);
 
 /** callback for data received from host
  *
- * Probably called from an interrupt
+ * called from interrupt context
  */
 void host_comms_rx(uint8_t rxb);
 

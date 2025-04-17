@@ -74,7 +74,9 @@ void host_comms_rx(uint8_t rxb) {
 
 	if (ecbuff_is_full(fifo_in)) return;
 	if (ecbuff_unused(fifo_in) <= 2) {
-		//overflow
+		//XXX could still catch an impending overflow,
+		// but since this is in an interrupt context, not much we can do except drop data safely
+		sys_incstats(STATS_RXOVF);
 
 		ecbuff_write(fifo_in, &lf);
 		ecbuff_write(fifo_in, &chunkinvalid);
