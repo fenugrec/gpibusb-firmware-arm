@@ -37,4 +37,12 @@
 #define DEBUG_PRINTF(fmt, ...) ((void) 0)
 #endif
 
+/* Error codes
+*/
+
+enum errcodes {
+	E_NONE,	// "ok"
+	E_FIFO,	// buffer inconsistencies etc
+};
+
 #endif // _FIRMWARE_H

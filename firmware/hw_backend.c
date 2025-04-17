@@ -18,6 +18,7 @@
 
 #include <cmsis_compiler.h>	//can't include core_cm0.h because of conflicts with locm's headers
 
+#include "firmware.h"
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "stypes.h"
@@ -284,10 +285,6 @@ void restart_wdt(void) {
 /********** misc
 */
 
-void __attribute__((noreturn)) assert_failed(void) {
-	while (1);
-}
-
 void reset_cpu(void) {
 	scb_reset_system();
 }
@@ -302,6 +299,7 @@ void reset_cpu(void) {
  */
 static struct {
 	u32 dfu_token;	//alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
+	int assert_reason;	//cleared manually on POR
 	char reset_reason;
 } sys_state  __attribute__ ((section (".svram")));
 
@@ -309,6 +307,17 @@ static struct {
 void reset_dfu(void) {
 	sys_state.dfu_token = DFU_MAGIC;
 	scb_reset_system();
+}
+
+void __attribute__((noreturn)) assert_failed(void) {
+	__disable_irq();
+	__BKPT(0);
+	while (1);
+}
+
+void __attribute__((noreturn)) assert_failed_v(int reason) {
+	sys_state.assert_reason = reason;
+	assert_failed();
 }
 
 /* could go in struct sys_state, but then wouldn't be cleared with BSS...
@@ -341,8 +350,8 @@ void sys_printstats(void) {
 	tx_ovf = stats.tx_ovf;
 	//XXX leave crit
 
-	printf("last reset: %c; txovf: %u, rxovf: %u\n", \
-			(char) sys_state.reset_reason, tx_ovf, rx_ovf);
+	printf("last reset: %c\nlast error: %i\ntxovf: %u, rxovf: %u\n", \
+			(char) sys_state.reset_reason, sys_state.assert_reason, tx_ovf, rx_ovf);
 	return;
 }
 
@@ -351,6 +360,7 @@ void pre_main(void) {
 	u32 csr_tmp = RCC_CSR;
 	if (csr_tmp & RCC_CSR_PORRSTF) {
 		sys_state.reset_reason = 'P';
+		sys_state.assert_reason = E_NONE;
 	} else if (csr_tmp & RCC_CSR_SFTRSTF) {
 		// reset into DFU would report this
 		sys_state.reset_reason = 'S';
