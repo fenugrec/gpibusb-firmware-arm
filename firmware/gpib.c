@@ -199,11 +199,11 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	u32 t0;
 	u32 tdelta = gpib_cfg.timeout;
 
-	// Raise NRFD, informing the talker we are ready for the byte
-	output_high(NRFD_CP, NRFD);
-
 	// Assert NDAC, informing the talker we have not yet accepted the byte
 	output_low(NDAC_CP, NDAC);
+
+	// Raise NRFD, informing the talker we are ready for the byte
+	output_high(NRFD_CP, NRFD);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
