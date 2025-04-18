@@ -47,7 +47,7 @@ struct gpib_config gpib_cfg = {
 	.myAddress = 0,
 	.eos_code = EOS_NUL,
 	.eoiUse = 1,
-	.eot_char = '\r',
+	.eot_char = '\n',
 	.eot_enable = 1,
 	.autoread = 1,
 	.timeout = 1000,
@@ -118,10 +118,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
-			gpib_cfg.device_talk = false;
-			gpib_cfg.device_srq = false;
-			prep_gpib_pins(gpib_cfg.controller_mode);
-			return E_TIMEOUT;
+			goto wt_exit;
 		}
 	}
 
@@ -137,10 +134,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: waiting for NDAC-\n");
-				gpib_cfg.device_talk = false;
-				gpib_cfg.device_srq = false;
-				prep_gpib_pins(gpib_cfg.controller_mode);
-				return E_TIMEOUT;
+				goto wt_exit;
 			}
 		}
 
@@ -156,10 +150,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NRFD+\n");
-				gpib_cfg.device_talk = false;
-				gpib_cfg.device_srq = false;
-				prep_gpib_pins(gpib_cfg.controller_mode);
-				return E_TIMEOUT;
+				goto wt_exit;
 			}
 		}
 
@@ -171,10 +162,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NDAC+\n");
-				gpib_cfg.device_talk = false;
-				gpib_cfg.device_srq = false;
-				prep_gpib_pins(gpib_cfg.controller_mode);
-				return E_TIMEOUT;
+				goto wt_exit;
 			}
 		}
 
@@ -193,6 +181,11 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 	gpio_clear(FLOW_PORT, PE);
 
 	return E_OK;
+wt_exit:
+	gpib_cfg.device_talk = false;
+	gpib_cfg.device_srq = false;
+	prep_gpib_pins(gpib_cfg.controller_mode);
+	return E_TIMEOUT;
 }
 
 /** Receive a single byte from the GPIB bus, with timeout
@@ -219,9 +212,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV-\n");
-			gpib_cfg.device_listen = false;
-			prep_gpib_pins(gpib_cfg.controller_mode);
-			return E_TIMEOUT;
+			goto rt_exit;
 		}
 	}
 
@@ -242,9 +233,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV+\n");
-			gpib_cfg.device_listen = false;
-			prep_gpib_pins(gpib_cfg.controller_mode);
-			return E_TIMEOUT;
+			goto rt_exit;
 		}
 	}
 
@@ -252,6 +241,10 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	output_low(NDAC_CP, NDAC);
 
 	return E_OK;
+rt_exit:
+	gpib_cfg.device_listen = false;
+	prep_gpib_pins(gpib_cfg.controller_mode);
+	return E_TIMEOUT;
 }
 
 /** Read from the GPIB bus until the specified end condition is met
