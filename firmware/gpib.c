@@ -332,7 +332,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		break;
 	}
 
-	if(eot_enable & *eoi_status) {
+	if(eot_enable & eoi_status) {
 		host_tx(gpib_cfg.eot_char);
 	}
 
