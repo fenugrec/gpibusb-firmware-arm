@@ -291,9 +291,6 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		do {
 			if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
-				if(eot_enable) {
-					host_tx(gpib_cfg.eot_char);
-				}
 				return E_TIMEOUT;
 			}
 			host_tx(byte);
@@ -307,10 +304,6 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 	case GPIBREAD_EOS:
 		do {
 			if(gpib_read_byte(&byte, &eoi_status)){
-				// Read error
-				if(eot_enable) {
-					host_tx(gpib_cfg.eot_char);
-				}
 				return E_TIMEOUT;
 			}
 			// Check to see if the byte we just read is the specified EOS byte
@@ -339,7 +332,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		break;
 	}
 
-	if(eot_enable) {
+	if(eot_enable & *eoi_status) {
 		host_tx(gpib_cfg.eot_char);
 	}
 
