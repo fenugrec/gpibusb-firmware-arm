@@ -77,8 +77,8 @@ target_link_libraries(${TGTNAME} opencm3_stm32f0)
 
 #report size post-build
 string(REPLACE "objcopy" "size" CMAKE_OBJSIZE "${CMAKE_OBJCOPY}")
-add_custom_command(
-	TARGET ${TGTNAME} POST_BUILD
+add_custom_target(tgt_size ALL
+	DEPENDS ${TGTNAME}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 	COMMAND ${CMAKE_OBJSIZE} ${TGTNAME}
 )
