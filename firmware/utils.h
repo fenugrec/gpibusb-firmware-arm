@@ -101,3 +101,6 @@ static inline void restore_irq(bool was_enabled)
 void assert_failed(void);
 void assert_failed_v(int);
 
+
+/** helper macro to compare freerunning timestamps for timer expiry checks*/
+#define TS_ELAPSED(cur, last, period) ((typeof(last))((cur) - (last)) >= (period))

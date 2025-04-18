@@ -116,7 +116,8 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 	t0 = get_ms();
 	while(!gpio_get(NRFD_CP, NRFD)) {
 		restart_wdt();
-		if ((get_ms() - t0) >= tdelta) {
+		u32 now = get_ms();
+		if (TS_ELAPSED(now,t0,tdelta)) {
 			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
 			goto wt_exit;
 		}
@@ -132,7 +133,8 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		t0 = get_ms(); // inter-byte timeout
 		while(gpio_get(NDAC_CP, NDAC)) {
 			restart_wdt();
-			if ((get_ms() - t0) >= tdelta) {
+			u32 now = get_ms();
+			if (TS_ELAPSED(now,t0,tdelta)) {
 				DEBUG_PRINTF("write timeout: waiting for NDAC-\n");
 				goto wt_exit;
 			}
@@ -147,7 +149,8 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		// Wait for NRFD to go high, indicating listeners are ready for data
 		while(!gpio_get(NRFD_CP, NRFD)) {
 			restart_wdt();
-			if ((get_ms() - t0) >= tdelta) {
+			u32 now = get_ms();
+			if (TS_ELAPSED(now,t0,tdelta)) {
 				DEBUG_PRINTF("write timeout: Waiting for NRFD+\n");
 				goto wt_exit;
 			}
@@ -159,7 +162,8 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		// Wait for NDAC to go high, all listeners have accepted the byte
 		while(!gpio_get(NDAC_CP, NDAC)) {
 			restart_wdt();
-			if ((get_ms() - t0) >= tdelta) {
+			u32 now = get_ms();
+			if (TS_ELAPSED(now,t0,tdelta)) {
 				DEBUG_PRINTF("write timeout: Waiting for NDAC+\n");
 				goto wt_exit;
 			}
@@ -209,7 +213,8 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	t0 = get_ms();
 	while(gpio_get(DAV_CP, DAV)) {
 		restart_wdt();
-		if ((get_ms() - t0) >= tdelta) {
+		u32 now = get_ms();
+		if (TS_ELAPSED(now,t0,tdelta)) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV-\n");
 			goto rt_exit;
 		}
@@ -230,7 +235,8 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	// Wait for DAV to go high; the talkers knows that we have read the byte
 	while(!gpio_get(DAV_CP, DAV)) {
 		restart_wdt();
-		if ((get_ms() - t0) >= tdelta) {
+		u32 now = get_ms();
+		if (TS_ELAPSED(now,t0,tdelta)) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV+\n");
 			goto rt_exit;
 		}
