@@ -67,7 +67,7 @@ struct gpib_config {
 	bool controller_mode;		//1 if controller mode
 	bool debug;	// extra messages
 
-	char eot_char;	//char to append to each string sent to host
+	char eot_char;	//char to append when EOI is detected during read
 	bool eot_enable;
 	char eos_code;
 	bool eoiUse;

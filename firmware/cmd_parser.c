@@ -93,15 +93,6 @@ static bool srq_state(void) {
 	return !((bool)gpio_get(SRQ_CP, SRQ));
 }
 
-/** need this for most responses ?
- * as it is, we'll append the EOT char only if eot_enable = 1.
- * not sure what original prologix does. This is copied from steve1515's fork
- */
-#define eot_printf(fmt, ...) do {\
-	printf((fmt), ##__VA_ARGS__);\
-	if (gpib_cfg.eot_enable) printf("%c", gpib_cfg.eot_char);\
-} while (0)
-
 
 void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
@@ -148,7 +139,7 @@ void do_addr(const char *args) {
 	// ++addr N
 	// TODO : addr [pad [sad]] for secondary address too
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.partnerAddress);
+		printf("%i\n", gpib_cfg.partnerAddress);
 	} else {
 		gpib_cfg.partnerAddress = atoi(args);
 	}
@@ -156,7 +147,7 @@ void do_addr(const char *args) {
 void do_readTimeout(const char *args) {
 	// ++read_tmo_ms N
 	if (*args == 0) {
-		eot_printf("%lu", (unsigned long) gpib_cfg.timeout);
+		printf("%lu\n", (unsigned long) gpib_cfg.timeout);
 		return;
 	}
 	u32 temp = (u32) atoi(args);
@@ -182,7 +173,7 @@ void do_readCmd2(const char *args) {
 void do_eos2(const char *args) {
 	// ++eos {0|1|2|3}
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.eos_code);
+		printf("%i\n", gpib_cfg.eos_code);
 	} else {
 		gpib_cfg.eos_code = atoi(args);
 		set_eos(gpib_cfg.eos_code);
@@ -191,7 +182,7 @@ void do_eos2(const char *args) {
 void do_eoi(const char *args) {
 	// ++eoi {0|1}
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.eoiUse);
+		printf("%i\n", gpib_cfg.eoiUse);
 	} else {
 		gpib_cfg.eoiUse = (bool) atoi(args);
 	}
@@ -203,7 +194,7 @@ void do_strip(const char *args) {
 void do_version2(const char *args) {
 	// ++ver
 	(void) args;
-	eot_printf("Version %i.0", VERSION);
+	printf("Version %i.0\n", VERSION);
 }
 void do_trg(const char *args) {
 	// ++trg [<PAD1> [<SAD1>] <PAD2> [SAD2] … <PAD15> [<SAD15>]]
@@ -221,7 +212,7 @@ void do_trg(const char *args) {
 void do_autoRead(const char *args) {
 	// ++auto {0|1}
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.autoread);
+		printf("%i\n", gpib_cfg.autoread);
 	} else {
 		gpib_cfg.autoread = (bool) atoi(args);
 	}
@@ -266,7 +257,7 @@ void do_clr(const char *args) {
 void do_eotEnable(const char *args) {
 	// ++eot_enable {0|1}
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.eot_enable);
+		printf("%i\n", gpib_cfg.eot_enable);
 	} else {
 		gpib_cfg.eot_enable = (bool) atoi(args);
 	}
@@ -274,7 +265,7 @@ void do_eotEnable(const char *args) {
 void do_eotChar(const char *args) {
 	// ++eot_char N
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.eot_char);
+		printf("%i\n", gpib_cfg.eot_char);
 	} else {
 		gpib_cfg.eot_char = atoi(args);
 	}
@@ -309,7 +300,7 @@ void do_loc(const char *args) {
 void do_lon(const char *args) {
 	// ++lon {0|1}
 	if (*args == 0) {
-		eot_printf("%i", listen_only);
+		printf("%i\n", listen_only);
 	} else {
 		if (gpib_cfg.controller_mode) { return; }
 		listen_only = (bool) atoi(args);
@@ -318,7 +309,7 @@ void do_lon(const char *args) {
 void do_mode(const char *args) {
 	// ++mode {0|1}
 	if (*args == 0) {
-		eot_printf("%i", gpib_cfg.controller_mode);
+		printf("%i\n", gpib_cfg.controller_mode);
 	} else {
 		gpib_cfg.controller_mode = (bool) atoi(args);
 		prep_gpib_pins(gpib_cfg.controller_mode);
@@ -330,7 +321,7 @@ void do_mode(const char *args) {
 void do_savecfg(const char *args) {
 	// ++savecfg {0|1}
 	if (*args == 0) {
-		eot_printf("%i", save_cfg);
+		printf("%i\n", save_cfg);
 	} else {
 		save_cfg = (bool) atoi(args);
 		if (save_cfg) {
@@ -350,7 +341,7 @@ void do_srq(const char *args) {
 	// ++srq
 	(void) args;
 	if (!gpib_cfg.controller_mode) return;
-	eot_printf("%i", srq_state());
+	printf("%i\n", srq_state());
 }
 void do_spoll(const char *args) {
 	// ++spoll [pad [sad]]
@@ -358,11 +349,11 @@ void do_spoll(const char *args) {
 	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
 		if (!gpib_serial_poll(gpib_cfg.partnerAddress, &status_byte)) {
-			eot_printf("%u", (unsigned) status_byte);
+			printf("%u\n", (unsigned) status_byte);
 		}
 	} else {
 		if (!gpib_serial_poll(atoi(args), &status_byte)) {
-			eot_printf("%u", (unsigned) status_byte);
+			printf("%u\n", (unsigned) status_byte);
 		}
 	}
 }
@@ -370,7 +361,7 @@ void do_status(const char *args) {
 	// ++status [n]
 	if (gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-		eot_printf("%u", (unsigned) status_byte);
+		printf("%u\n", (unsigned) status_byte);
 	} else {
 		status_byte = (u8) atoi(args);
 		if (status_byte & 0x40) {
@@ -562,19 +553,19 @@ static void device_atn(void) {
 		gpib_cfg.device_srq = false;
 		DEBUG_PRINTF("SQR end\n");
 	} else if (rxb == CMD_DCL) {
-		eot_printf("DCL");
+		DEBUG_PRINTF("DCL\n");
 		gpib_cfg.device_listen = false;
 		gpib_cfg.device_talk = false;
 		gpib_cfg.device_srq = false;
 		status_byte = 0;
 	} else if ((rxb == CMD_LLO) && (gpib_cfg.device_listen)) {
-		eot_printf("LLO");
+		DEBUG_PRINTF("LLO\n");
 	} else if ((rxb == CMD_GTL) && (gpib_cfg.device_listen)) {
-		eot_printf("GTL");
+		DEBUG_PRINTF("GTL\n");
 	} else if ((rxb == CMD_GET) && (gpib_cfg.device_listen)) {
-		eot_printf("GET");
+		DEBUG_PRINTF("GET\n");
 	} else if ((rxb == CMD_SDC) && (gpib_cfg.device_listen)) {
-		eot_printf("SDC");
+		DEBUG_PRINTF("SDC\n");
 		gpib_cfg.device_listen = false;
 		gpib_cfg.device_talk = false;
 		gpib_cfg.device_srq = false;
