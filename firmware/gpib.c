@@ -58,7 +58,7 @@ struct gpib_config gpib_cfg = {
 
 /* Some forward decls that don't need to be in the public gpib.h
 */
-static uint32_t _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi);
+static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi);
 
 
 /** Write a GPIB command byte
@@ -115,16 +115,14 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 
 	t0 = get_ms();
 	while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)) {
-#ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
 			gpib_cfg.device_talk = false;
 			gpib_cfg.device_srq = false;
 			prep_gpib_pins(gpib_cfg.controller_mode);
-			return 1;
+			return E_TIMEOUT;
 		}
-#endif // WITH_TIMEOUT
 	}
 
 	// Loop through each byte and write it to the GPIB bus
@@ -134,18 +132,16 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		DEBUG_PRINTF("Writing byte: %c (%02X)\n", byte, byte);
 
 		// Wait for NDAC to go low, indicating previous bit is now done with
-		t0 = get_ms();
+		t0 = get_ms(); // inter-byte timeout
 		while(gpio_get(NDAC_CP, NDAC)) {
-#ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: waiting for NDAC-\n");
 				gpib_cfg.device_talk = false;
 				gpib_cfg.device_srq = false;
 				prep_gpib_pins(gpib_cfg.controller_mode);
-				return 1;
+				return E_TIMEOUT;
 			}
-#endif // WITH_TIMEOUT
 		}
 
 		// Put the byte on the data lines
@@ -156,36 +152,30 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		if((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
 
 		// Wait for NRFD to go high, indicating listeners are ready for data
-		t0 = get_ms();
 		while(!gpio_get(NRFD_CP, NRFD)) {
-#ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NRFD+\n");
 				gpib_cfg.device_talk = false;
 				gpib_cfg.device_srq = false;
 				prep_gpib_pins(gpib_cfg.controller_mode);
-				return 1;
+				return E_TIMEOUT;
 			}
-#endif // WITH_TIMEOUT
 		}
 
 		// Assert DAV, informing listeners that the data is ready to be read
 		output_low(DAV_CP, DAV);
 
 		// Wait for NDAC to go high, all listeners have accepted the byte
-		t0 = get_ms();
 		while(!gpio_get(NDAC_CP, NDAC)) {
-#ifdef WITH_TIMEOUT
 			restart_wdt();
 			if ((get_ms() - t0) >= tdelta) {
 				DEBUG_PRINTF("write timeout: Waiting for NDAC+\n");
 				gpib_cfg.device_talk = false;
 				gpib_cfg.device_srq = false;
 				prep_gpib_pins(gpib_cfg.controller_mode);
-				return 1;
+				return E_TIMEOUT;
 			}
-#endif // WITH_TIMEOUT
 		}
 
 		// Release DAV, indicating byte is no longer valid
@@ -202,19 +192,20 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 	output_high(NRFD_CP, NRFD | NDAC);
 	gpio_clear(FLOW_PORT, PE);
 
-	return 0;
+	return E_OK;
 }
 
-/** Receive a single byte from the GPIB bus
+/** Receive a single byte from the GPIB bus, with timeout
 * Assumes DIO, EOI, DAV, TE ports were setup properly
 *
 * @param byte: Pointer to where the received byte will be stored
 * @param eoi_status: Pointer for storage of EOI status (1 = asserted (low))
 *
-* Returns 0 if everything went fine
+* Returns E_OK or E_TIMEOUT
 */
-uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
-	u32 t0, tdelta = gpib_cfg.timeout;
+enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
+	u32 t0;
+	u32 tdelta = gpib_cfg.timeout;
 
 	// Raise NRFD, informing the talker we are ready for the byte
 	output_high(NRFD_CP, NRFD);
@@ -225,15 +216,13 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
 	while(gpio_get(DAV_CP, DAV)) {
-#ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV-\n");
 			gpib_cfg.device_listen = false;
 			prep_gpib_pins(gpib_cfg.controller_mode);
-			return 1;
+			return E_TIMEOUT;
 		}
-#endif // WITH_TIMEOUT
 	}
 
 	// Assert NRFD, informing the talker to not change the data lines
@@ -249,23 +238,20 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	output_float(NDAC_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
-	t0 = get_ms();
 	while(!gpio_get(DAV_CP, DAV)) {
-#ifdef WITH_TIMEOUT
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("readbyte timeout: Waiting for DAV+\n");
 			gpib_cfg.device_listen = false;
 			prep_gpib_pins(gpib_cfg.controller_mode);
-			return 1;
+			return E_TIMEOUT;
 		}
-#endif // WITH_TIMEOUT
 	}
 
 	// Get ready for the next byte by asserting NDAC
 	output_low(NDAC_CP, NDAC);
 
-	return 0;
+	return E_OK;
 }
 
 /** Read from the GPIB bus until the specified end condition is met
@@ -275,7 +261,7 @@ uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 *
 * Returns 0 if everything went fine, or 1 if there was an error
 */
-uint32_t gpib_read(enum gpib_readmode readmode,
+enum errcodes gpib_read(enum gpib_readmode readmode,
 					uint8_t eos_char,
 					bool eot_enable) {
 	uint8_t byte;
@@ -316,7 +302,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 				if(eot_enable) {
 					host_tx(gpib_cfg.eot_char);
 				}
-				return 1;
+				return E_TIMEOUT;
 			}
 			host_tx(byte);
 			if (eoi_status) {
@@ -333,7 +319,7 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 				if(eot_enable) {
 					host_tx(gpib_cfg.eot_char);
 				}
-				return 1;
+				return E_TIMEOUT;
 			}
 			// Check to see if the byte we just read is the specified EOS byte
 			if (byte == eos_char) {
@@ -345,13 +331,21 @@ uint32_t gpib_read(enum gpib_readmode readmode,
 			host_tx(byte);
 		} while (1);
 	case GPIBREAD_TMO:
-		printf("read with timeout not implemented\n");
-		//XXX TODO : implement read with timeout
+		// TODO : large timeout incase device never stops writing ? do we care ?
+		do {
+			enum errcodes rv = gpib_read_byte(&byte, &eoi_status);
+			if (rv == E_OK) {
+				host_tx(byte);
+				continue;
+			}
+			// E_TIMEOUT or other errors (no such thing yet)
+			break;
+		} while (1);
 		break;
 	default:
 		assert_failed();
 		break;
-	}	//if !use_eoi
+	}
 
 	if(eot_enable) {
 		host_tx(gpib_cfg.eot_char);

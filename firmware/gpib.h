@@ -23,6 +23,8 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "firmware.h"
+
 enum eos_codes {
 	EOS_CRLF = 0,
 	EOS_LF = 1,
@@ -32,9 +34,9 @@ enum eos_codes {
 	};
 
 
-uint32_t gpib_cmd(uint8_t *bytes);
-uint32_t gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
-uint32_t gpib_read_byte(uint8_t *byte, bool *eoi_status);
+enum errcodes gpib_cmd(uint8_t byte);
+enum errcodes gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
+enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status);
 
 /** method of GPIB read termination */
 enum gpib_readmode {
@@ -42,7 +44,7 @@ enum gpib_readmode {
 	GPIBREAD_EOS,	//after specified char
 	GPIBREAD_TMO,	//after timeout
 };
-uint32_t gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
+enum errcodes gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
 
 uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);

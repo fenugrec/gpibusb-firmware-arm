@@ -24,7 +24,6 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define WITH_TIMEOUT
 #define WITH_WDT
 #define VERBOSE_DEBUG
 
@@ -41,7 +40,8 @@
 */
 
 enum errcodes {
-	E_NONE,	// "ok"
+	E_OK,	// "no error"
+	E_TIMEOUT,
 	E_FIFO,	// buffer inconsistencies etc
 };
 

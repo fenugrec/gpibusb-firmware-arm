@@ -362,7 +362,7 @@ void pre_main(void) {
 	u32 csr_tmp = RCC_CSR;
 	if (csr_tmp & RCC_CSR_PORRSTF) {
 		sys_state.reset_reason = 'P';
-		sys_state.assert_reason = E_NONE;
+		sys_state.assert_reason = E_OK;
 	} else if (csr_tmp & RCC_CSR_SFTRSTF) {
 		// reset into/out of DFU would report this
 		sys_state.reset_reason = 'S';
