@@ -41,7 +41,7 @@
 
 /* global vars. Not all of these are saved to EEPROM*/
 struct gpib_config gpib_cfg = {
-	.controller_mode = 1,
+	.controller_mode = 0,
 	.debug = 0,
 	.partnerAddress = 1,
 	.myAddress = 0,
