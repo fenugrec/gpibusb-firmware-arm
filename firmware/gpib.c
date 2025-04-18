@@ -291,6 +291,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		do {
 			if(gpib_read_byte(&byte, &eoi_status)){
 				// Read error
+				DEBUG_PRINTF("gpr EOI:E\n");
 				return E_TIMEOUT;
 			}
 			host_tx(byte);
@@ -304,6 +305,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 	case GPIBREAD_EOS:
 		do {
 			if(gpib_read_byte(&byte, &eoi_status)){
+				DEBUG_PRINTF("gpr EOS:E\n");
 				return E_TIMEOUT;
 			}
 			// Check to see if the byte we just read is the specified EOS byte
@@ -324,6 +326,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 				host_tx(byte);
 				continue;
 			}
+			DEBUG_PRINTF("gpr TMO:E\n");
 			// E_TIMEOUT or other errors (no such thing yet)
 			break;
 		} while (1);
