@@ -109,12 +109,12 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 	output_high(EOI_CP, EOI);
 	output_high(DAV_CP, DAV);
 
+	gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
 
-	// Before we start transfering, we have to make sure that NRFD is high
-	// and NDAC is low
+	// wait NRFD high
 
 	t0 = get_ms();
-	while(gpio_get(NDAC_CP, NDAC) || !gpio_get(NRFD_CP, NRFD)) {
+	while(!gpio_get(NRFD_CP, NRFD)) {
 		restart_wdt();
 		if ((get_ms() - t0) >= tdelta) {
 			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
@@ -139,7 +139,6 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		}
 
 		// Put the byte on the data lines
-		gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
 		WRITE_DIO(byte);
 
 		// Assert EOI if on last byte and using EOI
