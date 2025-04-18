@@ -58,7 +58,7 @@ struct gpib_config gpib_cfg = {
 
 /* Some forward decls that don't need to be in the public gpib.h
 */
-static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi);
+static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn, bool use_eoi);
 
 
 /** Write a GPIB command byte
@@ -75,7 +75,7 @@ enum errcodes gpib_cmd(uint8_t byte) {
 *
 * See _gpib_write for parameter information
 */
-enum errcodes gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
+enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi) {
 	return _gpib_write(bytes, length, 0, use_eoi);
 }
 
@@ -90,7 +90,7 @@ enum errcodes gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi) {
 *
 * Returns E_OK if complete, or E_TIMEOUT
 */
-static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
+static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
 	u32 t0;
@@ -118,7 +118,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
-			DEBUG_PRINTF("write: timeout: waiting for NRFD+ && NDAC-\n");
+			DEBUG_PRINTF("write: timeout: waiting for NRFD+\n");
 			goto wt_exit;
 		}
 	}
@@ -129,7 +129,7 @@ static enum errcodes _gpib_write(uint8_t *bytes, uint32_t length, bool atn, bool
 
 		DEBUG_PRINTF("Writing byte: %c (%02X)\n", byte, byte);
 
-		// Wait for NDAC to go low, indicating previous bit is now done with
+		// Wait for NDAC to go low, indicating previous byte is done
 		t0 = get_ms(); // inter-byte timeout
 		while(gpio_get(NDAC_CP, NDAC)) {
 			restart_wdt();
@@ -227,7 +227,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	*byte = READ_DIO();
 	*eoi_status = !gpio_get(EOI_CP, EOI);
 
-	DEBUG_PRINTF("Got byte: %c (%02X)\n", *byte, *byte);
+	DEBUG_PRINTF("Got byte: (%02X)\n", *byte);
 
 	// Un-assert NDAC, informing talker that we have accepted the byte
 	output_float(NDAC_CP, NDAC);
@@ -295,7 +295,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 	switch (readmode) {
 	case GPIBREAD_EOI:
 		do {
-			if(gpib_read_byte(&byte, &eoi_status)){
+			if (gpib_read_byte(&byte, &eoi_status)) {
 				// Read error
 				DEBUG_PRINTF("gpr EOI:E\n");
 				return E_TIMEOUT;
@@ -305,12 +305,12 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 				//all done
 				break;
 			}
-		} while (!eoi_status);
+		} while (1);
 		// TODO : "strip" for last byte ?
 		break;
 	case GPIBREAD_EOS:
 		do {
-			if(gpib_read_byte(&byte, &eoi_status)){
+			if (gpib_read_byte(&byte, &eoi_status)) {
 				DEBUG_PRINTF("gpr EOS:E\n");
 				return E_TIMEOUT;
 			}

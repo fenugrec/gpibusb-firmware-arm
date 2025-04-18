@@ -35,7 +35,7 @@ enum eos_codes {
 
 
 enum errcodes gpib_cmd(uint8_t byte);
-enum errcodes gpib_write(uint8_t *bytes, uint32_t length, bool use_eoi);
+enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi);
 enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status);
 
 /** method of GPIB read termination */

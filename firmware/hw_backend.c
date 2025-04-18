@@ -33,8 +33,10 @@
  * when USB is suspended. TODO
  */
 static void enable_5v(bool enable) {
-	bool set = enable;
-#if EN5V_ACTIVEHIGH==0
+	bool set;
+#if EN5V_ACTIVEHIGH
+	set = enable
+#else
 	//if active-low : reverse polarity
 	set = !enable;
 #endif // EN5V_ACTIVEHIGH
