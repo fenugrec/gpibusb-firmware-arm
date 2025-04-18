@@ -8,6 +8,7 @@
 #include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
+#include <libopencm3/stm32/dbgmcu.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/iwdg.h>
@@ -270,6 +271,7 @@ uint32_t get_ms(void) {
  * original firmware has WDT set for 4096 * 4ms = ~ 16 seconds timeout.
  */
 static void wdt_setup(void) {
+	DBGMCU_CR  |= DBGMCU_CR_IWDG_STOP;
 #ifdef WITH_WDT
 	iwdg_reset();
 	iwdg_set_period_ms(5000);
@@ -362,12 +364,13 @@ void pre_main(void) {
 		sys_state.reset_reason = 'P';
 		sys_state.assert_reason = E_NONE;
 	} else if (csr_tmp & RCC_CSR_SFTRSTF) {
-		// reset into DFU would report this
+		// reset into/out of DFU would report this
 		sys_state.reset_reason = 'S';
 	} else if (csr_tmp & RCC_CSR_IWDGRSTF) {
 		sys_state.reset_reason = 'I';
 	} else {
-		sys_state.reset_reason = 'U';
+		// nRST toggled
+		sys_state.reset_reason = 'N';
 	}
 	RCC_CSR |= RCC_CSR_RMVF;	//clear reset reason flags
 
