@@ -315,6 +315,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 			// prologix docs not obvious
 			host_tx(byte);
 		} while (1);
+		break;
 	case GPIBREAD_TMO:
 		// TODO : large timeout incase device never stops writing ? do we care ?
 		do {
