@@ -134,7 +134,7 @@ void host_tx(uint8_t txb) {
 
 void host_tx_blocking(uint8_t txb) {
 	while (ecbuff_is_full(fifo_out)) {}
-	assert_basic(!ecbuff_write(fifo_out, &txb));
+	assert_basic(ecbuff_write(fifo_out, &txb));
 	return;
 }
 
