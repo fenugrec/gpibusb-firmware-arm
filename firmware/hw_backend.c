@@ -79,7 +79,7 @@ void led_poll(void) {
 	u32 tcur = get_ms();
 
 	// check if due for a state change
-	if (TS_ELAPSED(tcur, led_status.ts_last, led_status.ts_delta)) {
+	if (!TS_ELAPSED(tcur, led_status.ts_last, led_status.ts_delta)) {
 		return;
 	}
 	led_status.ts_last = tcur;
