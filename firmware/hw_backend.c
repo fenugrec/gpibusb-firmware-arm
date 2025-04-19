@@ -313,16 +313,6 @@ void reset_dfu(void) {
 	scb_reset_system();
 }
 
-void __attribute__((noreturn)) assert_failed(void) {
-	__disable_irq();
-	__BKPT(0);
-	while (1);
-}
-
-void __attribute__((noreturn)) assert_failed_v(int reason) {
-	sys_state.assert_reason = reason;
-	assert_failed();
-}
 
 /* could go in struct sys_state, but then wouldn't be cleared with BSS...
  * Access needs to be interrupt-safe
@@ -358,6 +348,20 @@ void sys_printstats(void) {
 			(char) sys_state.reset_reason, sys_state.assert_reason, tx_ovf, rx_ovf);
 	return;
 }
+
+/********** assert stuff **********/
+void  assert_failed(void) {
+	__disable_irq();
+	__BKPT(0);
+	while (1);
+}
+
+void assert_failed_v(int reason) {
+	sys_state.assert_reason = reason;
+	assert_failed();
+}
+
+
 
 void pre_main(void) {
 	// check reset reason.

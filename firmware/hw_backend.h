@@ -41,6 +41,13 @@ void prep_gpib_pins(bool controller_mode);
 
 void restart_wdt(void);
 
+/* why does gcc not have a builtin for this ? */
+static __inline__ uint32_t get_pc(void)  {
+    uint32_t pc;
+    asm ("mov %0, pc" : "=r"(pc));
+    return pc;
+}
+
 
 enum stats_type {
 	STATS_RXOVF,
