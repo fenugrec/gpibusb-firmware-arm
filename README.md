@@ -1,7 +1,7 @@
 USB-GPIB interface
 
-This is a fork of gpib-usb-firmware-arm, initially published by Galvant  S. Casagrande).
-In the current state, only the GPIB layer and the command implementations were kept, but the rest was restructured and rewritten to run as a USB-CDC device on a single mcu.
+This is a fork of gpib-usb-firmware-arm, initially published by Galvant  S. Casagrande), but has diverged quite a bit.
+This implements a USB-CDC serial port on a single mcu.
 
 ## status
 Most of the functionality appears to work :
@@ -19,7 +19,7 @@ When things become more reasonable, I would probably go with an stm32f042 that c
 
 This should run on many ARM mcus supported by libopencm3 with :
  - basic timers
- - USB devic driver
+ - USB device driver
  - 5V-tolerant pins (at least 8 consecutive pins for DIO signals, and a few control signals as well. See firmware/hw_conf.h )
 
 In addition, I've tried to write the code in a portable way as much as possible ; this is not perfect but most of the device-specific code is split out in different files.
