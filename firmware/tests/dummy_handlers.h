@@ -1,6 +1,7 @@
 #ifndef _DUMMY_HANDLERS_H
 #define _DUMMY_HANDLERS_H
 
+// *INDENT-OFF*
 void do_nothing(const char *args) {(void) args;}
 void do_address(const char *args) {(void) args;}
 void do_timeout(const char *args) {(void) args;}
@@ -35,5 +36,6 @@ void do_srq(const char *args) {(void) args;}
 void do_status(const char *args) {(void) args;}
 void do_trg(const char *args) {(void) args;}
 void do_help(const char *args) {(void) args;}
+// *INDENT-ON*
 
 #endif
