@@ -70,30 +70,34 @@ static const struct usb_device_descriptor dev = {
  * optional, but its absence causes a NULL pointer dereference in the
  * Linux cdc_acm driver.
  */
-static const struct usb_endpoint_descriptor comm_endp[] = {{
-	.bLength = USB_DT_ENDPOINT_SIZE,
-	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = COMM_IN_EP,
-	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
-	.wMaxPacketSize = 16,
-	.bInterval = 255,
-} };
+static const struct usb_endpoint_descriptor comm_endp[] = {
+	{
+		.bLength = USB_DT_ENDPOINT_SIZE,
+		.bDescriptorType = USB_DT_ENDPOINT,
+		.bEndpointAddress = COMM_IN_EP,
+		.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
+		.wMaxPacketSize = 16,
+		.bInterval = 255,
+	}
+};
 
-static const struct usb_endpoint_descriptor data_endp[] = {{
-	.bLength = USB_DT_ENDPOINT_SIZE,
-	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = DATA_OUT_EP,
-	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
-	.wMaxPacketSize = BULK_EP_MAXSIZE,
-	.bInterval = 1,
-}, {
-	.bLength = USB_DT_ENDPOINT_SIZE,
-	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = DATA_IN_EP,
-	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
-	.wMaxPacketSize = BULK_EP_MAXSIZE,
-	.bInterval = 1,
-} };
+static const struct usb_endpoint_descriptor data_endp[] = {
+	{
+		.bLength = USB_DT_ENDPOINT_SIZE,
+		.bDescriptorType = USB_DT_ENDPOINT,
+		.bEndpointAddress = DATA_OUT_EP,
+		.bmAttributes = USB_ENDPOINT_ATTR_BULK,
+		.wMaxPacketSize = BULK_EP_MAXSIZE,
+		.bInterval = 1,
+	}, {
+		.bLength = USB_DT_ENDPOINT_SIZE,
+		.bDescriptorType = USB_DT_ENDPOINT,
+		.bEndpointAddress = DATA_IN_EP,
+		.bmAttributes = USB_ENDPOINT_ATTR_BULK,
+		.wMaxPacketSize = BULK_EP_MAXSIZE,
+		.bInterval = 1,
+	}
+};
 
 static const struct {
 	struct usb_cdc_header_descriptor header;
@@ -127,47 +131,53 @@ static const struct {
 		.bDescriptorSubtype = USB_CDC_TYPE_UNION,
 		.bControlInterface = 0,
 		.bSubordinateInterface0 = 1,
-	 }
+	}
 };
 
-static const struct usb_interface_descriptor comm_iface[] = {{
-	.bLength = USB_DT_INTERFACE_SIZE,
-	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 0,
-	.bAlternateSetting = 0,
-	.bNumEndpoints = 1,
-	.bInterfaceClass = USB_CLASS_CDC,
-	.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM,
-	.bInterfaceProtocol = USB_CDC_PROTOCOL_AT,
-	.iInterface = 0,
+static const struct usb_interface_descriptor comm_iface[] = {
+	{
+		.bLength = USB_DT_INTERFACE_SIZE,
+		.bDescriptorType = USB_DT_INTERFACE,
+		.bInterfaceNumber = 0,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = USB_CLASS_CDC,
+		.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM,
+		.bInterfaceProtocol = USB_CDC_PROTOCOL_AT,
+		.iInterface = 0,
 
-	.endpoint = comm_endp,
+		.endpoint = comm_endp,
 
-	.extra = &cdcacm_functional_descriptors,
-	.extralen = sizeof(cdcacm_functional_descriptors)
-} };
+		.extra = &cdcacm_functional_descriptors,
+		.extralen = sizeof(cdcacm_functional_descriptors)
+	}
+};
 
-static const struct usb_interface_descriptor data_iface[] = {{
-	.bLength = USB_DT_INTERFACE_SIZE,
-	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 1,
-	.bAlternateSetting = 0,
-	.bNumEndpoints = 2,
-	.bInterfaceClass = USB_CLASS_DATA,
-	.bInterfaceSubClass = 0,
-	.bInterfaceProtocol = 0,
-	.iInterface = 0,
+static const struct usb_interface_descriptor data_iface[] = {
+	{
+		.bLength = USB_DT_INTERFACE_SIZE,
+		.bDescriptorType = USB_DT_INTERFACE,
+		.bInterfaceNumber = 1,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = USB_CLASS_DATA,
+		.bInterfaceSubClass = 0,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
 
-	.endpoint = data_endp,
-} };
+		.endpoint = data_endp,
+	}
+};
 
-static const struct usb_interface ifaces[] = {{
-	.num_altsetting = 1,
-	.altsetting = comm_iface,
-}, {
-	.num_altsetting = 1,
-	.altsetting = data_iface,
-} };
+static const struct usb_interface ifaces[] = {
+	{
+		.num_altsetting = 1,
+		.altsetting = comm_iface,
+	}, {
+		.num_altsetting = 1,
+		.altsetting = data_iface,
+	}
+};
 
 static const struct usb_config_descriptor config = {
 	.bLength = USB_DT_CONFIGURATION_SIZE,
