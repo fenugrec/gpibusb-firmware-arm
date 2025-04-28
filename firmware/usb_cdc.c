@@ -45,8 +45,8 @@ static struct {
 #define DATA_OUT_EP	0x01
 #define BULK_EP_MAXSIZE 64
 
-#define USB_VID 0x1d50	//openmoko
-#define USB_PID 0x0448	//unused PID so far. 488 as in "ISO 488" !
+#define USB_VID 0x1d50 //openmoko
+#define USB_PID 0x0488 //unused PID so far. 488 as in "ISO 488" !
 
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
