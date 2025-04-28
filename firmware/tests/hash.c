@@ -30,22 +30,23 @@ static const char *invalid_chunks[] = {
 	"+",
 	"++",
 	"+a",
-	"+a 3",	//no ':'
-	"a",	//no '+', short => data
-	"asdf",	//data
+	"+a 3", //no ':'
+	"a",    //no '+', short => data
+	"asdf", //data
 	NULL
-	};
+};
 
 static const char *valid_chunks[] = {
 	"+a:3",
 	"++addr 3",
-	"++addr 5 8",	//2 args
-	"++addr",	//no arg : query
+	"++addr 5 8",   //2 args
+	"++addr",   //no arg : query
 	NULL
-	};
+};
 
 static const struct cmd_entry null_cmd = {
-	"", NULL};
+	"", NULL
+};
 
 /** test fixed array of inputs
  *
@@ -62,7 +63,7 @@ static void test_array(const char **chunklist, const char *seriesname, bool expe
 		cmde = cmd_lookup(entry, strlen(entry));
 
 		if (cmde == NULL) {
-			cmde = &null_cmd;	//just to make it printable
+			cmde = &null_cmd;   //just to make it printable
 		}
 
 		if ((expect_valid && (cmde == &null_cmd)) ||

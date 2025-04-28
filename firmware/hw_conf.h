@@ -38,27 +38,27 @@
 
 #undef USE_SN75162
 
-#define EN5V_PORT GPIOA
-#define EN5V_PIN GPIO0
-#define EN5V_ACTIVEHIGH 0	//= active low
+#define EN5V_PORT		GPIOA
+#define EN5V_PIN		GPIO0
+#define EN5V_ACTIVEHIGH 0   //= active low
 
 
-#define LED_PORT GPIOA
-#define LED_ERROR GPIO2
-#define LED_STATUS GPIO2
-#define LED_ACTIVEHIGH 0	//=active low
+#define LED_PORT	   GPIOA
+#define LED_ERROR	   GPIO2
+#define LED_STATUS	   GPIO2
+#define LED_ACTIVEHIGH 0    //=active low
 
 
 /* GPIB data lines DIO1-DIO8 on PB8-15 */
-#define DIO_PORT GPIOB
+#define DIO_PORT	  GPIOB
 #define DIO_PORTSHIFT 8
-#define DIO_PORTMASK (0xFF << DIO_PORTSHIFT)
+#define DIO_PORTMASK  (0xFF << DIO_PORTSHIFT)
 
 /** write DIO, takes care of inversion.
  * also need to mask other bits because some control signals are also on GPIOB
  */
 #define WRITE_DIO(x) gpio_port_write(DIO_PORT, \
-						(GPIO_ODR(DIO_PORT) & ~DIO_PORTMASK) | (~(x) << DIO_PORTSHIFT))
+									 (GPIO_ODR(DIO_PORT) & ~DIO_PORTMASK) | (~(x) << DIO_PORTSHIFT))
 
 /** read DIO lines, takes care of inversion */
 #define READ_DIO(x) ((~gpio_port_read(DIO_PORT) >> DIO_PORTSHIFT) & 0xFF)
@@ -67,15 +67,15 @@
  * super messy
  *
  */
-#define DAV_CP GPIOA
+#define DAV_CP	GPIOA
 #define NRFD_CP GPIOA
-#define NDAC_CP GPIOA	//NRFD and NDAC must be on the same port
-#define EOI_CP GPIOA	//EOI and DAV must be on the same port
+#define NDAC_CP GPIOA   //NRFD and NDAC must be on the same port
+#define EOI_CP	GPIOA   //EOI and DAV must be on the same port
 
-#define DAV GPIO8
+#define DAV	 GPIO8
 #define NRFD GPIO9
 #define NDAC GPIO10
-#define EOI GPIO15
+#define EOI	 GPIO15
 
 #define REN_CP GPIOB
 #define IFC_CP GPIOB
@@ -98,8 +98,8 @@
 #define DC GPIO6
 
 // timing
-#define APB_FREQ_MHZ	(48)	//we're going to be running off USB
-#define APB_FREQ_HZ	(APB_FREQ_MHZ*1000*1000UL)
+#define APB_FREQ_MHZ (48)       //we're going to be running off USB
+#define APB_FREQ_HZ	 (APB_FREQ_MHZ*1000*1000UL)
 
 
 
@@ -133,13 +133,13 @@
 #define USE_SN75162
 
 
-#define LED_PORT GPIOC
-#define LED_ERROR GPIO6
+#define LED_PORT   GPIOC
+#define LED_ERROR  GPIO6
 #define LED_STATUS GPIO7
 
 
 /* GPIB data lines DIO1-DIO8 on PB2-PB9 */
-#define DIO_PORT GPIOB
+#define DIO_PORT	  GPIOB
 #define DIO_PORTSHIFT 2
 /** write DIO, takes care of inversion */
 #define WRITE_DIO(x) gpio_port_write(DIO_PORT, ~(x) << DIO_PORTSHIFT)
@@ -150,22 +150,22 @@
  * super messy, in order to work on the f072 disco board..
  *
  */
-#define DAV_CP GPIOA
+#define DAV_CP	GPIOA
 #define NRFD_CP GPIOA
-#define NDAC_CP GPIOA	//NRFD and NDAC must be on the same port
-#define EOI_CP GPIOA	//EOI and DAV must be on the same port
+#define NDAC_CP GPIOA   //NRFD and NDAC must be on the same port
+#define EOI_CP	GPIOA   //EOI and DAV must be on the same port
 
-#define DAV GPIO8
+#define DAV	 GPIO8
 #define NRFD GPIO9
 #define NDAC GPIO10
-#define EOI GPIO15
+#define EOI	 GPIO15
 
 #define REN_CP GPIOC
 #define IFC_CP GPIOC
 #define ATN_CP GPIOC
 #define SRQ_CP GPIOC
 
-#define REN GPIO8	//will also drive an LED, incidentally...
+#define REN GPIO8     //will also drive an LED, incidentally...
 #define IFC GPIO10
 #define ATN GPIO11
 #define SRQ GPIO12
@@ -184,10 +184,10 @@
 #define DC GPIO6
 
 /********** TIMING */
-#define APB_FREQ_MHZ	(48)	//we're going to be running off USB
-#define APB_FREQ_HZ	(APB_FREQ_MHZ*1000*1000UL)
+#define APB_FREQ_MHZ (48)       //we're going to be running off USB
+#define APB_FREQ_HZ	 (APB_FREQ_MHZ*1000*1000UL)
 
-#endif	//f072disco settings
+#endif  //f072disco settings
 
 /** free-running 16-bit microsecond counter
  *

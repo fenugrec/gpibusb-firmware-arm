@@ -9,7 +9,7 @@
 //#define USE_STDLIB
 
 #ifdef USE_STDLIB
-	#include <stdlib.h>	//atoi
+	#include <stdlib.h> //atoi
 #endif // USE_STDLIB
 
 #define atoi(x) htoi(x)

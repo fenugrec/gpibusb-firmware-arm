@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include "printf_config.h"  //hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include <libopencm3/stm32/gpio.h>
@@ -51,7 +51,7 @@
 
 
 #define VALID_EEPROM_CODE 0xAA
-#define MAX_TIMEOUT 10*1000	//10 seconds, is there any reason to allow more than this
+#define MAX_TIMEOUT		  10*1000 //10 seconds, is there any reason to allow more than this
 
 #define VERSION 5
 
@@ -202,9 +202,9 @@ void do_trg(const char *args) {
 	(void) args;
 	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-			writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
-			//XXX TODO : do something with writeError
-			gpib_cmd(CMD_GET);
+		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+		//XXX TODO : do something with writeError
+		gpib_cmd(CMD_GET);
 	} else {
 		//TODO: Add support for specified addresses
 	}
@@ -276,7 +276,7 @@ void do_ifc(const char *args) {
 	if (!gpib_cfg.controller_mode) return;
 	output_low(IFC_CP, IFC);
 	delay_ms(200);
-	output_high(IFC_CP, IFC);	//XXX orig version just tristates IFC ? we're controller, who cares ?
+	output_high(IFC_CP, IFC);   //XXX orig version just tristates IFC ? we're controller, who cares ?
 }
 void do_llo(const char *args) {
 	// ++llo
@@ -405,7 +405,7 @@ static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
 	if (has_args) {
 		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 1]);
 	} else {
-		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 0]);	//trailing 0 of command
+		cmd_find_run(cmd, cmd_len, &cmd[cmd_len + 0]);  //trailing 0 of command
 	}
 }
 
@@ -427,7 +427,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	if (gpib_cfg.controller_mode)
 	{
 		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
-	// Set the controller into talker mode
+		// Set the controller into talker mode
 		u8 cmd = gpib_cfg.myAddress + CMD_TAD;
 		writeError = writeError || gpib_cmd(cmd);
 	}
@@ -436,9 +436,9 @@ static void chunk_data(char *rawdata, unsigned len) {
 
 	if (gpib_cfg.controller_mode || gpib_cfg.device_talk)
 	{
-		if(gpib_cfg.eos_code != EOS_NUL)   // If have an EOS char, need to output
+		if (gpib_cfg.eos_code != EOS_NUL)   // If have an EOS char, need to output
 		{
-	// termination byte to inst
+			// termination byte to inst
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
 			if (!writeError) {
 				DEBUG_PRINTF("gpib_write eos[%u] (%02X...)", eos_len, eos_string[0]);
@@ -452,7 +452,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 		}
 	}
 
-	if(gpib_cfg.autoread && gpib_cfg.controller_mode) {
+	if (gpib_cfg.autoread && gpib_cfg.controller_mode) {
 		//XXX TODO : with autoread, does prologix terminate by EOI ?
 		writeError = writeError || gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
 	}
@@ -607,7 +607,7 @@ void cmd_poll(void) {
 	u8 rxb;
 	static u8 input_buf[HOST_IN_BUFSIZE];
 	static unsigned in_len = 0;
-	static unsigned cmd_len = 0;	//length of command token, excluding 0 termination.
+	static unsigned cmd_len = 0;    //length of command token, excluding 0 termination.
 	static unsigned arg_pos = 0;
 	static bool in_cmd = 0;
 	static bool escape_next = 0;

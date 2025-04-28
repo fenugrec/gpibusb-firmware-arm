@@ -6,9 +6,9 @@
  */
 
 
-#include <ctype.h>	//toupper
+#include <ctype.h>  //toupper
 
-#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include "printf_config.h"  //hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include "host_comms.h"
@@ -22,7 +22,7 @@ int htoi(const char *buf) {
 	/* Hex text to int */
 	int rv = 0;
 	int base = 10;
-	int sign=0;	//1 = positive; 0 =neg
+	int sign=0; //1 = positive; 0 =neg
 
 	if (*buf != '-') {
 		//change sign
@@ -61,7 +61,7 @@ int htoi(const char *buf) {
 
 		buf++;
 	}
-	return sign? rv:-rv ;
+	return sign? rv:-rv;
 }
 
 /** custom printf needs this */

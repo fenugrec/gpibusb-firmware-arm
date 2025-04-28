@@ -43,9 +43,9 @@ void restart_wdt(void);
 
 /* why does gcc not have a builtin for this ? */
 static __inline__ uint32_t get_pc(void)  {
-    uint32_t pc;
-    asm ("mov %0, pc" : "=r"(pc));
-    return pc;
+	uint32_t pc;
+	asm ("mov %0, pc" : "=r" (pc));
+	return pc;
 }
 
 
@@ -66,10 +66,10 @@ void sys_printstats(void);
 /**************** IO
 */
 enum LED_PATTERN {
-	LEDPATTERN_OFF,	// all off
+	LEDPATTERN_OFF, // all off
 	LEDPATTERN_ERROR,
-	LEDPATTERN_IDLE,	//normal ops
-	LEDPATTERN_ACT,	//traffic / activity
+	LEDPATTERN_IDLE,    //normal ops
+	LEDPATTERN_ACT, //traffic / activity
 };
 
 /** set LEDs to given pattern

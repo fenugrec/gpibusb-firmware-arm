@@ -19,7 +19,7 @@
  * ignoring the data up to then.
  */
 
-#define HOST_IN_BUFSIZE 256
+#define HOST_IN_BUFSIZE	 256
 #define HOST_OUT_BUFSIZE 256
 
 /* at the end of each \n-terminated chunk in the
@@ -27,7 +27,7 @@
  * to INVALID if we detect read errors
  */
 #define CHUNK_INVALID 0
-#define CHUNK_VALID	1
+#define CHUNK_VALID	  1
 
 
 /** initialize host comms workers

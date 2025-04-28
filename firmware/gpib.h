@@ -31,7 +31,7 @@ enum eos_codes {
 	EOS_CR = 2,
 	EOS_NUL = 3,
 	EOS_CUSTOM = 4
-	};
+};
 
 
 enum errcodes gpib_cmd(uint8_t byte);
@@ -41,8 +41,8 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status);
 /** method of GPIB read termination */
 enum gpib_readmode {
 	GPIBREAD_EOI,
-	GPIBREAD_EOS,	//after specified char
-	GPIBREAD_TMO,	//after timeout
+	GPIBREAD_EOS,   //after specified char
+	GPIBREAD_TMO,   //after timeout
 };
 enum errcodes gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
 
@@ -64,15 +64,15 @@ uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 
 /* Global vars; cmd_parser needs to see this */
 struct gpib_config {
-	bool controller_mode;		//1 if controller mode
-	bool debug;	// extra messages
+	bool controller_mode;       //1 if controller mode
+	bool debug; // extra messages
 
-	char eot_char;	//char to append when EOI is detected during read
+	char eot_char;  //char to append when EOI is detected during read
 	bool eot_enable;
 	char eos_code;
 	bool eoiUse;
 	bool autoread;
-	uint32_t timeout;	//in milliseconds
+	uint32_t timeout;   //in milliseconds
 	int partnerAddress;
 	int myAddress;
 

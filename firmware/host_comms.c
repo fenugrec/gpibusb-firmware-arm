@@ -40,9 +40,9 @@ ecbuff *fifo_out = (ecbuff *) fifo_out_buf;
 
 /** Host RX state machine */
 enum e_hrx_state {
-	HRX_RX,	// while building a chunk
-	HRX_ESCAPE,	// pass next byte without ending chunk
-	HRX_RESYNC,	//after a buffer overflow : wait for CR/LF
+	HRX_RX, // while building a chunk
+	HRX_ESCAPE, // pass next byte without ending chunk
+	HRX_RESYNC, //after a buffer overflow : wait for CR/LF
 };
 
 static enum e_hrx_state hrx_state = HRX_RX;
@@ -70,8 +70,8 @@ void host_comms_init(void) {
  */
 void host_comms_rx(uint8_t rxb) {
 	const u8 lf = '\n';
-	const u8 chunkvalid = CHUNK_VALID;	//gross
-	const u8 chunkinvalid = CHUNK_INVALID;	//gross
+	const u8 chunkvalid = CHUNK_VALID;  //gross
+	const u8 chunkinvalid = CHUNK_INVALID;  //gross
 
 	if (ecbuff_is_full(fifo_in)) return;
 	if (ecbuff_unused(fifo_in) <= 2) {
@@ -89,8 +89,8 @@ void host_comms_rx(uint8_t rxb) {
 	case HRX_RX:
 		switch (rxb) {
 		case '\r':
-			//CR : replace with LF
-			//fallthru
+		//CR : replace with LF
+		//fallthru
 		case '\n':
 			//terminate chunk normally
 			ecbuff_write(fifo_in, &lf);
@@ -99,7 +99,7 @@ void host_comms_rx(uint8_t rxb) {
 		case 27:
 			//if it was an escape, it needs to be passed on
 			hrx_state = HRX_ESCAPE;
-			//fallthru
+		//fallthru
 		default:
 			ecbuff_write(fifo_in, &rxb);
 			break;

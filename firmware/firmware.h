@@ -30,8 +30,8 @@
 #ifdef VERBOSE_DEBUG
 //even with verbose debug, still honor debug flag
 #define DEBUG_PRINTF(fmt, ...) \
-	if (!gpib_cfg.debug) { \
-	} else printf(fmt, ##__VA_ARGS__)
+		if (!gpib_cfg.debug) { \
+		} else printf(fmt, ## __VA_ARGS__)
 #else
 #define DEBUG_PRINTF(fmt, ...) ((void) 0)
 #endif
@@ -40,9 +40,9 @@
 */
 
 enum errcodes {
-	E_OK,	// "no error"
+	E_OK,   // "no error"
 	E_TIMEOUT,
-	E_FIFO,	// buffer inconsistencies etc
+	E_FIFO, // buffer inconsistencies etc
 };
 
 #endif // _FIRMWARE_H

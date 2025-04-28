@@ -103,7 +103,7 @@ void assert_failed_v(int reason)  __attribute__((noreturn));
 
 /** special case, save current PC before halting */
 #define ASSERT_IMPL \
-	assert_failed_v(get_pc())
+		assert_failed_v(get_pc())
 
 /** helper macro to compare freerunning timestamps for timer expiry checks*/
 #define TS_ELAPSED(cur, last, period) ((typeof(last))((cur) - (last)) >= (period))

@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 
-#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include "printf_config.h"  //hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include <string.h>
@@ -102,7 +102,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
-	if(atn) { output_low(ATN_CP, ATN); }
+	if (atn) { output_low(ATN_CP, ATN); }
 
 	output_float(NRFD_CP, NRFD | NDAC);
 	gpio_set(FLOW_PORT, TE); // Enable talking
@@ -114,7 +114,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 	// wait NRFD high
 
 	t0 = get_ms();
-	while(!gpio_get(NRFD_CP, NRFD)) {
+	while (!gpio_get(NRFD_CP, NRFD)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -124,14 +124,14 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 	}
 
 	// Loop through each byte and write it to the GPIB bus
-	for(i=0;i<length;i++) {
+	for (i=0; i<length; i++) {
 		byte = bytes[i];
 
 		DEBUG_PRINTF("Writing byte: %c (%02X)\n", byte, byte);
 
 		// Wait for NDAC to go low, indicating previous byte is done
 		t0 = get_ms(); // inter-byte timeout
-		while(gpio_get(NDAC_CP, NDAC)) {
+		while (gpio_get(NDAC_CP, NDAC)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -144,10 +144,10 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 		WRITE_DIO(byte);
 
 		// Assert EOI if on last byte and using EOI
-		if((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
+		if ((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
 
 		// Wait for NRFD to go high, indicating listeners are ready for data
-		while(!gpio_get(NRFD_CP, NRFD)) {
+		while (!gpio_get(NRFD_CP, NRFD)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -160,7 +160,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 		output_low(DAV_CP, DAV);
 
 		// Wait for NDAC to go high, all listeners have accepted the byte
-		while(!gpio_get(NDAC_CP, NDAC)) {
+		while (!gpio_get(NDAC_CP, NDAC)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -177,7 +177,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 	gpio_clear(FLOW_PORT, TE); // Disable talking
 
 	// If the byte was a GPIB command byte, release ATN line
-	if(atn) { output_high(ATN_CP, ATN); }
+	if (atn) { output_high(ATN_CP, ATN); }
 
 	output_float(EOI_CP, DAV | EOI);
 	output_high(NRFD_CP, NRFD | NDAC);
@@ -211,7 +211,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
-	while(gpio_get(DAV_CP, DAV)) {
+	while (gpio_get(DAV_CP, DAV)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -233,7 +233,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	output_float(NDAC_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
-	while(!gpio_get(DAV_CP, DAV)) {
+	while (!gpio_get(DAV_CP, DAV)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -260,28 +260,28 @@ rt_exit:
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 enum errcodes gpib_read(enum gpib_readmode readmode,
-					uint8_t eos_char,
-					bool eot_enable) {
+						uint8_t eos_char,
+						bool eot_enable) {
 	uint8_t byte;
 	bool eoi_status = 0;
 	//bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
 	uint32_t error_found = 0;
 
-	if(gpib_cfg.controller_mode) {
+	if (gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
 		error_found = error_found || gpib_cmd(CMD_UNT);
 		error_found = error_found || gpib_cmd(CMD_UNL);
-		if(error_found){return E_TIMEOUT;}
+		if (error_found){return E_TIMEOUT;}
 
 		// Set the controller into listener mode
 		u8 cmd = gpib_cfg.myAddress + CMD_LAD;
 		error_found = error_found || gpib_cmd(cmd);
-		if(error_found){return E_TIMEOUT;}
+		if (error_found){return E_TIMEOUT;}
 
 		// Set target device into talker mode
 		cmd = gpib_cfg.partnerAddress + CMD_TAD;
 		error_found = gpib_cmd(cmd);
-		if(error_found){return E_TIMEOUT;}
+		if (error_found){return E_TIMEOUT;}
 	}
 
 	// Beginning of GPIB read loop
@@ -342,7 +342,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		break;
 	}
 
-	if(eot_enable & eoi_status) {
+	if (eot_enable & eoi_status) {
 		host_tx(gpib_cfg.eot_char);
 	}
 

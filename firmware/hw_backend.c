@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include "printf_config.h"	//hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
+#include "printf_config.h"  //hax, just to get PRINTF_ALIAS_STANDARD_FUNCTION_NAMES...
 #include <printf/printf.h>
 
 #include <libopencm3/stm32/dbgmcu.h>
@@ -17,7 +17,7 @@
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/systick.h>
 
-#include <cmsis_compiler.h>	//can't include core_cm0.h because of conflicts with locm's headers
+#include <cmsis_compiler.h> //can't include core_cm0.h because of conflicts with locm's headers
 
 #include "firmware.h"
 #include "hw_conf.h"
@@ -48,8 +48,8 @@ static void enable_5v(bool enable) {
 }
 
 static struct {
-	u32 ts_last;	//last toggle
-	u32 ts_delta;	//interval to next toggle
+	u32 ts_last;    //last toggle
+	u32 ts_delta;   //interval to next toggle
 	enum LED_PATTERN pattern;
 	bool state_next;
 } led_status = {0};
@@ -70,7 +70,7 @@ void led_update(enum LED_PATTERN np) {
 
 	//different pattern : call poll now to take effect before next tdelta
 	led_status.pattern = np;
-	led_status.ts_delta = 0;	//force
+	led_status.ts_delta = 0;    //force
 	led_poll();
 	return;
 }
@@ -99,35 +99,35 @@ void led_poll(void) {
 
 	//decide next state and delta according to pattern
 	switch (led_status.pattern) {
-		case LEDPATTERN_OFF:
-			//stay off at least 500ms
-			led_status.state_next = 0;
-			led_status.ts_delta = 500;
-			break;
-		case LEDPATTERN_ERROR:
-			//solid on at least 500ms
-			led_status.state_next = 1;
-			led_status.ts_delta = 500;
-			break;
-		case LEDPATTERN_IDLE:
-			//slow pulse
-			if (led_status.state_next) {
-				//ON for 900ms
-				led_status.ts_delta = 900;
-			} else {
-				//then off for 100ms
-				led_status.ts_delta = 100;
-			}
-			led_status.state_next = !led_status.state_next;
-			break;
-		case LEDPATTERN_ACT:
-			//fast blink
+	case LEDPATTERN_OFF:
+		//stay off at least 500ms
+		led_status.state_next = 0;
+		led_status.ts_delta = 500;
+		break;
+	case LEDPATTERN_ERROR:
+		//solid on at least 500ms
+		led_status.state_next = 1;
+		led_status.ts_delta = 500;
+		break;
+	case LEDPATTERN_IDLE:
+		//slow pulse
+		if (led_status.state_next) {
+			//ON for 900ms
+			led_status.ts_delta = 900;
+		} else {
+			//then off for 100ms
 			led_status.ts_delta = 100;
-			led_status.state_next = !led_status.state_next;
-			break;
-		default:
-			assert_failed();
-			break;
+		}
+		led_status.state_next = !led_status.state_next;
+		break;
+	case LEDPATTERN_ACT:
+		//fast blink
+		led_status.ts_delta = 100;
+		led_status.state_next = !led_status.state_next;
+		break;
+	default:
+		assert_failed();
+		break;
 	}
 }
 
@@ -226,7 +226,7 @@ static void init_timers(void) {
 
 	/* free-running microsecond counter */
 	rcc_periph_reset_pulse(RST_TIM14);
-	TIM_CR1(TMR_FREERUN) = 0;	//defaults : upcount, no reload, etc
+	TIM_CR1(TMR_FREERUN) = 0;   //defaults : upcount, no reload, etc
 	TIM_PSC(TMR_FREERUN) = APB_FREQ_MHZ - 1;
 	timer_enable_counter(TMR_FREERUN);
 
@@ -296,14 +296,14 @@ void reset_cpu(void) {
 #define DFU_MAGIC 0x5555AAAA
 /* these are very device-specific, and not in any locm3/CMSIS/ST headers ? */
 //#define SYSMEM_BASE 0x1fffc400	//good for F070x6
-#define SYSMEM_BASE 0x1fffc800	// F070xB
+#define SYSMEM_BASE 0x1fffc800  // F070xB
 
 /* special struct stored in a RAM area not cleared at reset
  *
  */
 static struct {
-	u32 dfu_token;	//alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
-	int assert_reason;	//cleared manually on POR
+	u32 dfu_token;  //alternately, if pre_main() runs before BSS is cleared, dfu_token can be in regular ram.
+	int assert_reason;  //cleared manually on POR
 	char reset_reason;
 } sys_state  __attribute__ ((section (".svram")));
 
@@ -318,7 +318,7 @@ void reset_dfu(void) {
  * Access needs to be interrupt-safe
  */
 static struct {
-	unsigned tx_ovf;	//# of bytes dropped due to overflow (to host)
+	unsigned tx_ovf;    //# of bytes dropped due to overflow (to host)
 	unsigned rx_ovf; // (from host)
 } stats = {0};
 
@@ -345,7 +345,7 @@ void sys_printstats(void) {
 	restore_irq(i);
 
 	printf("last reset: %c\nlast error: %i\ntxovf: %u, rxovf: %u\n", \
-			(char) sys_state.reset_reason, sys_state.assert_reason, tx_ovf, rx_ovf);
+		   (char) sys_state.reset_reason, sys_state.assert_reason, tx_ovf, rx_ovf);
 	return;
 }
 
@@ -378,7 +378,7 @@ void pre_main(void) {
 		// nRST toggled
 		sys_state.reset_reason = 'N';
 	}
-	RCC_CSR |= RCC_CSR_RMVF;	//clear reset reason flags
+	RCC_CSR |= RCC_CSR_RMVF;    //clear reset reason flags
 
 	if (sys_state.dfu_token != DFU_MAGIC) return;
 	sys_state.dfu_token = 0;

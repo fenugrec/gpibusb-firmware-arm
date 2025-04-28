@@ -35,14 +35,14 @@
 /** manage some internal state
 */
 static struct {
-	bool vcp_avail;	//don't send BULK_OUT packets until enumerated and host is doing ACM/VCP stuff
-	bool usbwrite_busy;	//set to 1 after writing a packet to the EP, cleared in callback
+	bool vcp_avail; //don't send BULK_OUT packets until enumerated and host is doing ACM/VCP stuff
+	bool usbwrite_busy; //set to 1 after writing a packet to the EP, cleared in callback
 } usb_stuff = {0};
 
 
-#define COMM_IN_EP	0x83
-#define DATA_IN_EP	0x82
-#define DATA_OUT_EP	0x01
+#define COMM_IN_EP		0x83
+#define DATA_IN_EP		0x82
+#define DATA_OUT_EP		0x01
 #define BULK_EP_MAXSIZE 64
 
 #define USB_VID 0x1d50 //openmoko
@@ -203,8 +203,8 @@ static const char * usb_strings[USB_NUM_STRINGS] = {
 uint8_t usbd_control_buffer[128];
 
 static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev,
-	struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
-	void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
+															 struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
+															 void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
 {
 	(void)complete;
 	(void)buf;
@@ -218,7 +218,7 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 		 * advertise it in the ACM functional descriptor.
 		 */
 		return USBD_REQ_HANDLED;
-		}
+	}
 	case USB_CDC_REQ_SET_LINE_CODING:
 		usb_stuff.vcp_avail = 1;
 		if (*len < sizeof(struct usb_cdc_line_coding)) {
@@ -256,16 +256,16 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 	(void)wValue;
 
 	usbd_ep_setup(usbd_dev, DATA_OUT_EP, USB_ENDPOINT_ATTR_BULK, BULK_EP_MAXSIZE,
-			cdcacm_data_rx_cb);
+				  cdcacm_data_rx_cb);
 	usbd_ep_setup(usbd_dev, DATA_IN_EP, USB_ENDPOINT_ATTR_BULK, BULK_EP_MAXSIZE,
-			cdcacm_data_tx_cb);
+				  cdcacm_data_tx_cb);
 	usbd_ep_setup(usbd_dev, COMM_IN_EP, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 
 	usbd_register_control_callback(
-				usbd_dev,
-				USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
-				USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
-				cdcacm_control_request);
+		usbd_dev,
+		USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
+		USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
+		cdcacm_control_request);
 }
 
 /**** private */
@@ -291,7 +291,7 @@ static void usbsof_cb(void) {
 		return;
 	}
 
-	for (len = 0;len < BULK_EP_MAXSIZE; len++) {
+	for (len = 0; len < BULK_EP_MAXSIZE; len++) {
 		//copy while counting bytes
 		if (!ecbuff_read(fifo_out, &buf[len])) {
 			//no more
@@ -320,8 +320,8 @@ void usb_isr (void) {
 /**** public funcs */
 void fwusb_init(void) {
 	usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
-			usb_strings, USB_NUM_STRINGS,
-			usbd_control_buffer, sizeof(usbd_control_buffer));
+						 usb_strings, USB_NUM_STRINGS,
+						 usbd_control_buffer, sizeof(usbd_control_buffer));
 
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 	usbd_register_sof_callback(usbd_dev, usbsof_cb);
