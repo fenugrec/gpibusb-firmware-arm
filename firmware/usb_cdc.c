@@ -293,7 +293,7 @@ static void usbsof_cb(void) {
 		return;
 	}
 
-	if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {;
+	if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {
 		usb_stuff.usbwrite_busy = 1;
 	} else {
 		// ep_write failed for no reason ??
