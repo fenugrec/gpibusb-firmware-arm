@@ -102,19 +102,16 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
-	if (atn) { output_low(ATN_CP, ATN); }
+	if (atn) { output_low(HCTRL2_CP, ATN); }
 
-	output_float(NRFD_CP, NRFD | NDAC);
+	output_setmodes(TM_SEND);
 	gpio_set(FLOW_PORT, TE); // Enable talking
-	output_high(EOI_CP, EOI);
-	output_high(DAV_CP, DAV);
-
 	gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
 
 	// wait NRFD high
 
 	t0 = get_ms();
-	while (!gpio_get(NRFD_CP, NRFD)) {
+	while (!gpio_get(HCTRL1_CP, NRFD)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -131,7 +128,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 		// Wait for NDAC to go low, indicating previous byte is done
 		t0 = get_ms(); // inter-byte timeout
-		while (gpio_get(NDAC_CP, NDAC)) {
+		while (gpio_get(HCTRL1_CP, NDAC)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -144,10 +141,10 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 		WRITE_DIO(byte);
 
 		// Assert EOI if on last byte and using EOI
-		if ((i==length-1) && (use_eoi)) {output_low(EOI_CP, EOI);}
+		if ((i==length-1) && (use_eoi)) {assert_signal(EOI_CP, EOI);}
 
 		// Wait for NRFD to go high, indicating listeners are ready for data
-		while (!gpio_get(NRFD_CP, NRFD)) {
+		while (!gpio_get(HCTRL1_CP, NRFD)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -157,10 +154,10 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 		}
 
 		// Assert DAV, informing listeners that the data is ready to be read
-		output_low(DAV_CP, DAV);
+		assert_signal(HCTRL1_CP, DAV);
 
 		// Wait for NDAC to go high, all listeners have accepted the byte
-		while (!gpio_get(NDAC_CP, NDAC)) {
+		while (!gpio_get(HCTRL1_CP, NDAC)) {
 			restart_wdt();
 			u32 now = get_ms();
 			if (TS_ELAPSED(now,t0,tdelta)) {
@@ -169,18 +166,17 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 			}
 		}
 
-		// Release DAV, indicating byte is no longer valid
-		output_high(DAV_CP, DAV);
+		// byte is no longer valid
+		unassert_signal(HCTRL1_CP, DAV);
 	} // Finished outputting all bytes to the listeners
 
 	output_float(DIO_PORT, DIO_PORTMASK);
 	gpio_clear(FLOW_PORT, TE); // Disable talking
 
 	// If the byte was a GPIB command byte, release ATN line
-	if (atn) { output_high(ATN_CP, ATN); }
+	if (atn) { output_high(HCTRL2_CP, ATN); }
 
-	output_float(EOI_CP, DAV | EOI);
-	output_high(NRFD_CP, NRFD | NDAC);
+	output_setmodes(TM_IDLE);
 	gpio_clear(FLOW_PORT, PE);
 
 	return E_OK;
@@ -204,14 +200,14 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	u32 tdelta = gpib_cfg.timeout;
 
 	// Assert NDAC, informing the talker we have not yet accepted the byte
-	output_low(NDAC_CP, NDAC);
+	output_low(HCTRL1_CP, NDAC);
 
 	// Raise NRFD, informing the talker we are ready for the byte
-	output_high(NRFD_CP, NRFD);
+	output_high(HCTRL1_CP, NRFD);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
-	while (gpio_get(DAV_CP, DAV)) {
+	while (gpio_get(HCTRL1_CP, DAV)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -221,7 +217,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	}
 
 	// Assert NRFD, informing the talker to not change the data lines
-	output_low(NRFD_CP, NRFD);
+	output_low(HCTRL1_CP, NRFD);
 
 	// Read the data on the port, flip the bits, and read in the EOI line
 	*byte = READ_DIO();
@@ -230,10 +226,10 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	DEBUG_PRINTF("Got byte: (%02X)\n", *byte);
 
 	// Un-assert NDAC, informing talker that we have accepted the byte
-	output_float(NDAC_CP, NDAC);
+	output_float(HCTRL1_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
-	while (!gpio_get(DAV_CP, DAV)) {
+	while (!gpio_get(HCTRL1_CP, DAV)) {
 		restart_wdt();
 		u32 now = get_ms();
 		if (TS_ELAPSED(now,t0,tdelta)) {
@@ -243,7 +239,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	}
 
 	// Get ready for the next byte by asserting NDAC
-	output_low(NDAC_CP, NDAC);
+	output_low(HCTRL1_CP, NDAC);
 
 	return E_OK;
 rt_exit:
@@ -384,12 +380,12 @@ uint32_t gpib_address_target(uint32_t address) {
 */
 uint32_t gpib_controller_assign(void) {
 	// Assert interface clear. Resets bus and makes it controller in charge
-	output_low(IFC_CP, IFC);
+	output_low(HCTRL2_CP, IFC);
 	delay_ms(200);
-	output_high(IFC_CP, IFC);
+	output_high(HCTRL2_CP, IFC);
 
 	// Put all connected devices into "remote" mode
-	output_low(REN_CP, REN);
+	output_low(HCTRL2_CP, REN);
 
 	// Send GPIB DCL command, which clears all devices on the bus
 	return gpib_cmd(CMD_DCL);

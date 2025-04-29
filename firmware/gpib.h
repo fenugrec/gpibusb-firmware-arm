@@ -5,6 +5,7 @@
 * gpib.h
 **
 * © 2014 Steven Casagrande (scasagrande@galvant.ca).
+* 2019-2025 fenugrec
 *
 * This file is a part of the GPIBUSB Adapter project.
 * Licensed under the AGPL version 3.
@@ -24,6 +25,12 @@
 */
 
 #include "firmware.h"
+
+enum transmitModes {
+	TM_IDLE,
+	TM_RECV,
+	TM_SEND
+};
 
 enum eos_codes {
 	EOS_CRLF = 0,

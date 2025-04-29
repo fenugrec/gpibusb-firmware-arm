@@ -90,7 +90,7 @@ static void set_eos(enum eos_codes newcode) {
 }
 
 static bool srq_state(void) {
-	return !((bool)gpio_get(SRQ_CP, SRQ));
+	return !((bool)gpio_get(HCTRL2_CP, SRQ));
 }
 
 
@@ -274,9 +274,9 @@ void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
 	if (!gpib_cfg.controller_mode) return;
-	output_low(IFC_CP, IFC);
+	output_low(HCTRL2_CP, IFC);
 	delay_ms(200);
-	output_high(IFC_CP, IFC);   //XXX orig version just tristates IFC ? we're controller, who cares ?
+	output_high(HCTRL2_CP, IFC);   //XXX orig version just tristates IFC ? we're controller, who cares ?
 }
 void do_llo(const char *args) {
 	// ++llo
@@ -367,7 +367,7 @@ void do_status(const char *args) {
 		if (status_byte & 0x40) {
 			// prologix: " If the RQS bit (bit #6) of the status byte is set then the SRQ signal is asserted (low)
 			// After a serial poll, SRQ line is de-asserted and status byte is set to 0 "
-			output_low(SRQ_CP, SRQ);
+			output_low(HCTRL2_CP, SRQ);
 		} // else { output_high ??? or assume the transition to device mode already did this}
 	}
 }
@@ -463,14 +463,14 @@ static void listenonly(void) {
 	output_float(DIO_PORT, DIO_PORTMASK);
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
-	output_low(NDAC_CP, NDAC);
-	output_high(NRFD_CP, NRFD);
+	output_low(HCTRL1_CP, NDAC);
+	output_high(HCTRL1_CP, NRFD);
 
 	// if DAV=1 , not valid : return
-	if (gpio_get(DAV_CP, DAV)) {
+	if (gpio_get(HCTRL1_CP, DAV)) {
 		return;
 	}
-	bool atn_state = !gpio_get(ATN_CP, ATN);
+	bool atn_state = !gpio_get(HCTRL2_CP, ATN);
 
 	if (atn_state) {
 		u8 rxb;
@@ -493,7 +493,7 @@ static void device_poll(void) {
 	// but we certainly don't respect t2 <= 200ns for responding to ATN...
 	// but we have t1 (100us) to respond to IFC ?
 
-	if (!gpio_get(IFC_CP, IFC)) {
+	if (!gpio_get(HCTRL2_CP, IFC)) {
 		gpib_cfg.device_talk = 0;
 		gpib_cfg.device_listen = 0;
 		gpib_cfg.device_srq = 0;
@@ -501,7 +501,7 @@ static void device_poll(void) {
 		return;
 	}
 
-	if (!gpio_get(ATN_CP, ATN)) {
+	if (!gpio_get(HCTRL2_CP, ATN)) {
 		device_atn();
 	} else {
 		device_noatn();
@@ -515,10 +515,10 @@ static void device_atn(void) {
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
 
-	output_low(NDAC_CP, NDAC);
-	output_high(NRFD_CP, NRFD);
+	output_low(HCTRL1_CP, NDAC);
+	output_high(HCTRL1_CP, NRFD);
 	// if DAV=1 not valid : return
-	if (gpio_get(DAV_CP, DAV)) {
+	if (gpio_get(HCTRL1_CP, DAV)) {
 		return;
 	}
 	// Get the CMD byte sent by the controller
@@ -571,7 +571,7 @@ static void device_atn(void) {
 		gpib_cfg.device_srq = false;
 		status_byte = 0;
 	}
-	output_high(NDAC_CP, NDAC);
+	output_high(HCTRL1_CP, NDAC);
 }
 
 /** device poll with ATN not asserted (==1) */
@@ -580,22 +580,22 @@ static void device_noatn(void) {
 		output_float(DIO_PORT, DIO_PORTMASK);
 		output_float(EOI_CP, DAV | EOI);
 		gpio_clear(FLOW_PORT, TE);
-		output_low(NDAC_CP, NDAC);
-		output_high(NRFD_CP, NRFD);
+		output_low(HCTRL1_CP, NDAC);
+		output_high(HCTRL1_CP, NRFD);
 
 		// if DAV=1 , not valid : return
-		if (gpio_get(DAV_CP, DAV)) {
+		if (gpio_get(HCTRL1_CP, DAV)) {
 			return;
 		}
 		DEBUG_PRINTF("device mode gpib_read\n");
 		gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
 	} else if (gpib_cfg.device_talk) {
-		output_float(NDAC_CP, NDAC | NRFD);
+		output_float(HCTRL1_CP, NDAC | NRFD);
 		gpio_set(FLOW_PORT, TE);
 		output_high(EOI_CP, DAV | EOI);
 		if (gpib_cfg.device_srq) {
 			gpib_write(&status_byte, 1, 0);
-			output_high(SRQ_CP, SRQ);
+			output_high(HCTRL2_CP, SRQ);
 			gpib_cfg.device_srq = false;
 			status_byte = 0;
 		}

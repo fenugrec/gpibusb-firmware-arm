@@ -20,6 +20,7 @@
 #include <cmsis_compiler.h> //can't include core_cm0.h because of conflicts with locm's headers
 
 #include "firmware.h"
+#include "gpib.h"   //for statemach states
 #include "hw_conf.h"
 #include "hw_backend.h"
 #include "stypes.h"
@@ -40,7 +41,7 @@ static void enable_5v(bool enable) {
 	//if active-low : reverse polarity
 	set = !enable;
 #endif // EN5V_ACTIVEHIGH
-	if (set) {
+		  if (set) {
 		gpio_set(EN5V_PORT, EN5V_PIN);
 	} else {
 		gpio_clear(EN5V_PORT, EN5V_PIN);
@@ -131,6 +132,19 @@ void led_poll(void) {
 	}
 }
 
+#if (EOI_CP != HCTRL1_CP)
+#error hardcoded garbage
+#endif
+/* set gpib pin modes (run once at startup) */
+static void output_init(void) {
+	output_setmodes(TM_IDLE);
+	// open-drain when GPIO drives bus directly ? probably not very correct
+	gpio_set_output_options(HCTRL1_CP, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, NRFD | NDAC);
+	gpio_set_output_options(HCTRL1_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DAV | EOI);
+	gpio_set_output_options(HCTRL2_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, REN | IFC | ATN | SRQ);
+	gpio_set_output_options(DIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DIO_PORTMASK);
+}
+
 
 void prep_gpib_pins(bool controller_mode) {
 	/* Flow control pins. 75160:
@@ -167,16 +181,16 @@ void prep_gpib_pins(bool controller_mode) {
 	// Set mode and pin state for all GPIB control lines
 	if (controller_mode) {
 		output_float(EOI_CP, EOI | DAV);
-		output_float(SRQ_CP, SRQ);
-		gpio_set(ATN_CP, ATN | IFC);
-		gpio_clear(NRFD_CP, NRFD | NDAC);
-		gpio_clear(REN_CP, REN);
-		gpio_mode_setup(REN_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+		output_float(HCTRL2_CP, SRQ);
+		gpio_set(HCTRL2_CP, ATN | IFC);
+		gpio_clear(HCTRL1_CP, NRFD | NDAC);
+		gpio_clear(HCTRL2_CP, REN);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
 						ATN | IFC | REN);
-		gpio_mode_setup(NRFD_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
 						NRFD | NDAC);
 	} else {
-		output_float(REN_CP, ATN | IFC | SRQ | REN);
+		output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
 		output_float(EOI_CP, EOI | DAV | NRFD | NDAC);
 	}
 
@@ -201,6 +215,39 @@ void output_float(uint32_t gpioport, uint16_t gpios) {
 	gpio_mode_setup(gpioport, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, gpios);
 }
 
+/***** Set the transmission mode *****/
+void output_setmodes(enum transmitModes mode) {
+	static enum transmitModes txmode_current = TM_IDLE;
+	if (mode == txmode_current) {
+		return;
+	}
+	txmode_current = mode;
+	switch (mode) {
+	case TM_IDLE:
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, EOI | DAV | NRFD | NDAC);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, REN | IFC | ATN | SRQ);
+		break;
+	case TM_RECV:
+		gpio_clear(HCTRL1_CP, NRFD | NDAC);
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, EOI | DAV);
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, NRFD | NDAC);
+		break;
+	case TM_SEND:
+		gpio_set(HCTRL1_CP, EOI | DAV);
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, NRFD | NDAC);
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, EOI | DAV);
+		break;
+	}
+}
+
+
+void assert_signal(uint32_t gpioport, uint16_t gpios) {
+	gpio_clear(gpioport, gpios);
+}
+
+void unassert_signal(uint32_t gpioport, uint16_t gpios) {
+	gpio_set(gpioport, gpios);
+}
 
 /********* TIMERS
  *
@@ -408,6 +455,7 @@ void hw_setup(void) {
 
 	init_timers();
 
+	output_init();
 	enable_5v(1);
 	led_setup();
 }

@@ -64,23 +64,22 @@
 #define READ_DIO(x) ((~gpio_port_read(DIO_PORT) >> DIO_PORTSHIFT) & 0xFF)
 
 /* GPIB control lines
- * super messy
+ * super messy. Some hardcoded stuff in hw_backend.c
  *
+ * NRFD and NDAC must be on the same port;
+ * EOI and DAV must be on the same port;
+ * REN,IFC,ATN,SRQ must be on same port
  */
-#define DAV_CP	GPIOA
-#define NRFD_CP GPIOA
-#define NDAC_CP GPIOA   //NRFD and NDAC must be on the same port
-#define EOI_CP	GPIOA   //EOI and DAV must be on the same port
+#define HCTRL1_CP GPIOA     //handshake + EOI
+#define EOI_CP	  HCTRL1_CP
 
 #define DAV	 GPIO8
 #define NRFD GPIO9
 #define NDAC GPIO10
 #define EOI	 GPIO15
 
-#define REN_CP GPIOB
-#define IFC_CP GPIOB
-#define ATN_CP GPIOB
-#define SRQ_CP GPIOB
+
+#define HCTRL2_CP GPIOB
 
 #define REN GPIO2
 #define IFC GPIO3
@@ -150,20 +149,17 @@
  * super messy, in order to work on the f072 disco board..
  *
  */
-#define DAV_CP	GPIOA
-#define NRFD_CP GPIOA
-#define NDAC_CP GPIOA   //NRFD and NDAC must be on the same port
-#define EOI_CP	GPIOA   //EOI and DAV must be on the same port
+#define HCTRL1_CP GPIOA
+#define HCTRL1_CP GPIOA
+#define HCTRL1_CP GPIOA   //NRFD and NDAC must be on the same port
+#define EOI_CP	  GPIOA //EOI and DAV must be on the same port
 
 #define DAV	 GPIO8
 #define NRFD GPIO9
 #define NDAC GPIO10
 #define EOI	 GPIO15
 
-#define REN_CP GPIOC
-#define IFC_CP GPIOC
-#define ATN_CP GPIOC
-#define SRQ_CP GPIOC
+#define HCTRL2_CP GPIOC
 
 #define REN GPIO8     //will also drive an LED, incidentally...
 #define IFC GPIO10

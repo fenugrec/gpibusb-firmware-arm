@@ -87,6 +87,9 @@ void led_poll(void);
  * (PE, TC, DC etc)
  */
 
+enum transmitModes; //in gpib.h
+void output_setmodes(enum transmitModes mode);
+
 /** set pin output HIGH
  *
  * @param gpioport
@@ -107,6 +110,16 @@ void output_low(uint32_t gpioport, uint16_t gpios);
  * @param gpios : bitmask, can be multiple pins OR'ed
  */
 void output_float(uint32_t gpioport, uint16_t gpios);
+
+/** assert (in the GPIB sense) one signal
+ * assumes port direction already OK
+ */
+void assert_signal(uint32_t gpioport, uint16_t gpios);
+
+/** assert (in the GPIB sense) one signal
+ * assumes port direction already OK
+ */
+void unassert_signal(uint32_t gpioport, uint16_t gpios);
 
 /**************** EEPROM
 * TODO ? these could be replaced by "EEPROM emulation", see ST AN2594
