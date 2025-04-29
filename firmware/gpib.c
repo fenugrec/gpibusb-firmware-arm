@@ -199,11 +199,12 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	u32 t0;
 	u32 tdelta = gpib_cfg.timeout;
 
-	// Assert NDAC, informing the talker we have not yet accepted the byte
-	output_low(HCTRL1_CP, NDAC);
+	output_setmodes(TM_RECV);
+
+	assert_signal(HCTRL1_CP, NDAC);
 
 	// Raise NRFD, informing the talker we are ready for the byte
-	output_high(HCTRL1_CP, NRFD);
+	unassert_signal(HCTRL1_CP, NRFD);
 
 	// Wait for DAV to go low, informing us the byte is read to be read
 	t0 = get_ms();
@@ -216,17 +217,17 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 		}
 	}
 
-	// Assert NRFD, informing the talker to not change the data lines
-	output_low(HCTRL1_CP, NRFD);
+	// informing the talker to not change the data lines
+	assert_signal(HCTRL1_CP, NRFD);
 
-	// Read the data on the port, flip the bits, and read in the EOI line
+	// Read the data on the port and read in the EOI line
 	*byte = READ_DIO();
 	*eoi_status = !gpio_get(EOI_CP, EOI);
 
 	DEBUG_PRINTF("Got byte: (%02X)\n", *byte);
 
-	// Un-assert NDAC, informing talker that we have accepted the byte
-	output_float(HCTRL1_CP, NDAC);
+	// informing talker that we have accepted the byte
+	unassert_signal(HCTRL1_CP, NDAC);
 
 	// Wait for DAV to go high; the talkers knows that we have read the byte
 	while (!gpio_get(HCTRL1_CP, DAV)) {
@@ -239,7 +240,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	}
 
 	// Get ready for the next byte by asserting NDAC
-	output_low(HCTRL1_CP, NDAC);
+	assert_signal(HCTRL1_CP, NDAC);
 
 	return E_OK;
 rt_exit:
