@@ -28,13 +28,24 @@ add_custom_command(
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-### build source file lists (useful later)
+### build source file lists
+
+# files that make sense to indent with uncrustify etc
+set (FORMATTED_SRCS
+	gpib.c
+	cmd_parser.c
+	hw_backend.c
+	host_comms.c
+	libc_stubs.c
+	usb_cdc.c
+	firmware.c
+)
+
 set (FW_SRCS
 	${CMAKE_SOURCE_DIR}/printf/src/printf/printf.c
 	${CMAKE_SOURCE_DIR}/etools/ecbuff.c
-	gpib.c cmd_parser.c hw_backend.c host_comms.c
-	libc_stubs.c cmd_hashtable.c usb_cdc.c
-	firmware.c
+	cmd_hashtable.c
+	${FORMATTED_SRCS}
 )
 
 ## make sure printf.c uses our printf_config.h
