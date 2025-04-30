@@ -202,6 +202,8 @@ static const char * usb_strings[USB_NUM_STRINGS] = {
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];
 
+static usbd_device *usbd_dev_private;
+
 static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev,
 															 struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
 															 void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
@@ -243,12 +245,36 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 	}
 }
 
+/** drain fifo and send usb packet. return #bytes copied
+ * called in ISR context
+ */
+static void prep_upstream_packet(usbd_device *usbd_dev) {
+	unsigned len;
+	u8 buf[BULK_EP_MAXSIZE];
+	for (len = 0; len < BULK_EP_MAXSIZE; len++) {
+		//copy while counting bytes
+		if (!ecbuff_read(fifo_out, &buf[len])) {
+			//no more
+			break;
+		}
+	}
+	if (!len) {
+		return;
+	}
+	if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {
+		usb_stuff.usbwrite_busy = 1;
+	} else {
+		// ep_write failed for no reason ??
+	}
+}
+
 /* should be called after a CTR condition "correct transfer received"
  */
 static void cdcacm_data_tx_cb(usbd_device *usbd_dev, uint8_t ep) {
 	(void) usbd_dev;
 	(void) ep;
 	usb_stuff.usbwrite_busy = 0;
+	prep_upstream_packet(usbd_dev);
 }
 
 static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
@@ -268,8 +294,6 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 		cdcacm_control_request);
 }
 
-/**** private */
-static usbd_device *usbd_dev;
 
 /** called every SOF (1ms)
  *
@@ -277,54 +301,32 @@ static usbd_device *usbd_dev;
  * check if we have any data to send to host.
 */
 static void usbsof_cb(void) {
-
-	unsigned len;
-	u8 buf[BULK_EP_MAXSIZE];
-
 	if (!usb_stuff.vcp_avail) {
 		//if not enumerated yet, don't send stuff
 		return;
 	}
 
-	// send any pending data if possible
 	if (usb_stuff.usbwrite_busy) {
 		return;
 	}
 
-	for (len = 0; len < BULK_EP_MAXSIZE; len++) {
-		//copy while counting bytes
-		if (!ecbuff_read(fifo_out, &buf[len])) {
-			//no more
-			break;
-		}
-	}
-
-	if (len == 0) {
-		return;
-	}
-
-	if (usbd_ep_write_packet(usbd_dev, DATA_IN_EP, buf, len) == len) {
-		usb_stuff.usbwrite_busy = 1;
-	} else {
-		// ep_write failed for no reason ??
-	}
-
+	prep_upstream_packet(usbd_dev_private);
 }
 
 
 void usb_isr (void) {
-	usbd_poll(usbd_dev);
+	usbd_poll(usbd_dev_private);
 }
 
 
 /**** public funcs */
 void fwusb_init(void) {
-	usbd_dev = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
+	usbd_dev_private = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
 						 usb_strings, USB_NUM_STRINGS,
 						 usbd_control_buffer, sizeof(usbd_control_buffer));
 
-	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
-	usbd_register_sof_callback(usbd_dev, usbsof_cb);
+	usbd_register_set_config_callback(usbd_dev_private, cdcacm_set_config);
+	usbd_register_sof_callback(usbd_dev_private, usbsof_cb);
 
 	nvic_enable_irq(NVIC_USB_IRQ);
 }
