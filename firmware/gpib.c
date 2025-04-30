@@ -302,6 +302,10 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 				//all done
 				break;
 			}
+			if (host_rx_datapresent()) {
+				DEBUG_PRINTF("gpr interrupted\n");
+				break;
+			}
 		} while (1);
 		// TODO : "strip" for last byte ?
 		break;
@@ -314,6 +318,10 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 			// Check to see if the byte we just read is the specified EOS byte
 			if (byte == eos_char) {
 				//all done
+				break;
+			}
+			if (host_rx_datapresent()) {
+				DEBUG_PRINTF("gpr interrupted\n");
 				break;
 			}
 			// XXX TODO : is it necessary to strip CR+LF if eos_char is CR (or LF) ?
@@ -330,6 +338,10 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 				continue;
 			}
 			DEBUG_PRINTF("gpr TMO:E\n");
+			if (host_rx_datapresent()) {
+				DEBUG_PRINTF("gpr interrupted\n");
+				break;
+			}
 			// E_TIMEOUT or other errors (no such thing yet)
 			break;
 		} while (1);

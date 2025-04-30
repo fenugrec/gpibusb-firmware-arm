@@ -139,9 +139,8 @@ void host_tx_blocking(uint8_t txb) {
 }
 
 void host_tx_m(uint8_t *data, unsigned len) {
-	if (len > 256) {
-		len = 256;
-	}
+	assert_basic(len <= HOST_IN_BUFSIZE);
+
 	//fugly, loop write
 	unsigned idx;
 	for (idx = 0; idx < len; idx++) {
@@ -152,3 +151,8 @@ void host_tx_m(uint8_t *data, unsigned len) {
 	}
 	return;
 }
+
+bool host_rx_datapresent(void) {
+	return !ecbuff_is_empty(fifo_in);
+}
+

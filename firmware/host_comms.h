@@ -20,7 +20,7 @@
  */
 
 #define HOST_IN_BUFSIZE	 256
-#define HOST_OUT_BUFSIZE 256
+#define HOST_OUT_BUFSIZE 512
 
 /* at the end of each \n-terminated chunk in the
  * FIFO, we place a guard byte. This might be set
@@ -81,9 +81,14 @@ void host_tx_blocking(uint8_t txb);
 
 /** queue multiple bytes to send to host
 *
-* @param len max 256 bytes. extra data is dropped
+* @param len max HOST_IN_BUFSIZE bytes. extra data is dropped
 * overflow : TODO
 */
 void host_tx_m(uint8_t *data, unsigned len);
+
+
+/** check if pending data from host.
+ * use to abort read loops etc */
+bool host_rx_datapresent(void);
 
 #endif // _HOST_COMMS_H
