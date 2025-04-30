@@ -31,6 +31,7 @@
 
 #line 8 "cmd_hashtable.gen"
 
+// *INDENT-OFF //
 #include <string.h>
 
 #include "cmd_hashtable.h"
@@ -93,55 +94,55 @@ static const struct cmd_entry wordlist[] =
     {"",do_nothing,""}, {"",do_nothing,""},
     {"",do_nothing,""}, {"",do_nothing,""},
     {"",do_nothing,""},
-#line 33 "cmd_hashtable.gen"
-    {"++eos", do_eos2, "GPIB termination char to append. 0: CRLF, 1: CR, 2: LF, 3:none"},
-#line 31 "cmd_hashtable.gen"
-    {"++clr", do_clr, "send SDC"},
-#line 43 "cmd_hashtable.gen"
-    {"++rst", do_reset, ""},
-#line 47 "cmd_hashtable.gen"
-    {"++status", do_status, "specify SPOLL byte"},
-#line 48 "cmd_hashtable.gen"
-    {"++trg", do_trg, "[<PADn> [<SADn>] ...] send GET"},
-#line 35 "cmd_hashtable.gen"
-    {"++eot_char", do_eotChar, "<char_decimal>. USB termination char"},
-#line 44 "cmd_hashtable.gen"
-    {"++savecfg", do_savecfg, ""},
 #line 34 "cmd_hashtable.gen"
-    {"++eot_enable", do_eotEnable, ""},
-#line 42 "cmd_hashtable.gen"
-    {"++read_tmo_ms", do_readTimeout, "inter-char timeout"},
-#line 38 "cmd_hashtable.gen"
-    {"++loc", do_loc, "set local"},
-#line 45 "cmd_hashtable.gen"
-    {"++spoll", do_spoll, "[<PAD> [<SAD>]]"},
+    {"++eos", do_eos2, "GPIB termination char to append. 0: CRLF, 1: CR, 2: LF, 3:none"},
 #line 32 "cmd_hashtable.gen"
-    {"++eoi", do_eoi, "[0|1] assert EOI with last char"},
-#line 36 "cmd_hashtable.gen"
-    {"++ifc", do_ifc, ""},
-#line 41 "cmd_hashtable.gen"
-    {"++read", do_readCmd2, "[eoi|<char_decimal>]"},
-#line 37 "cmd_hashtable.gen"
-    {"++llo", do_llo, "set lockout"},
-#line 29 "cmd_hashtable.gen"
-    {"++addr", do_addr, ""},
-#line 26 "cmd_hashtable.gen"
-    {"++debug", do_debug, "[0|1] enable debug output"},
+    {"++clr", do_clr, "send SDC"},
+#line 44 "cmd_hashtable.gen"
+    {"++rst", do_reset, ""},
+#line 48 "cmd_hashtable.gen"
+    {"++status", do_status, "specify SPOLL byte"},
 #line 49 "cmd_hashtable.gen"
-    {"++ver", do_version2, ""},
-#line 27 "cmd_hashtable.gen"
-    {"++dfu", do_reset_dfu, ""},
-#line 46 "cmd_hashtable.gen"
-    {"++srq", do_srq, "query SRQ signal"},
-#line 25 "cmd_hashtable.gen"
-    {"++strip", do_strip, ""},
-#line 30 "cmd_hashtable.gen"
-    {"++auto", do_autoRead, ""},
+    {"++trg", do_trg, "[<PADn> [<SADn>] ...] send GET"},
+#line 36 "cmd_hashtable.gen"
+    {"++eot_char", do_eotChar, "<char_decimal>. USB termination char"},
+#line 45 "cmd_hashtable.gen"
+    {"++savecfg", do_savecfg, ""},
+#line 35 "cmd_hashtable.gen"
+    {"++eot_enable", do_eotEnable, ""},
+#line 43 "cmd_hashtable.gen"
+    {"++read_tmo_ms", do_readTimeout, "inter-char timeout"},
 #line 39 "cmd_hashtable.gen"
-    {"++lon", do_lon, "[0|1] listen-only (all addresses)"},
-#line 40 "cmd_hashtable.gen"
-    {"++mode", do_mode, "[0|1] enable Controller mode"},
+    {"++loc", do_loc, "set local"},
+#line 46 "cmd_hashtable.gen"
+    {"++spoll", do_spoll, "[<PAD> [<SAD>]]"},
+#line 33 "cmd_hashtable.gen"
+    {"++eoi", do_eoi, "[0|1] assert EOI with last char"},
+#line 37 "cmd_hashtable.gen"
+    {"++ifc", do_ifc, ""},
+#line 42 "cmd_hashtable.gen"
+    {"++read", do_readCmd2, "[eoi|<char_decimal>]"},
+#line 38 "cmd_hashtable.gen"
+    {"++llo", do_llo, "set lockout"},
+#line 30 "cmd_hashtable.gen"
+    {"++addr", do_addr, ""},
+#line 27 "cmd_hashtable.gen"
+    {"++debug", do_debug, "[0|1] enable debug output"},
 #line 50 "cmd_hashtable.gen"
+    {"++ver", do_version2, ""},
+#line 28 "cmd_hashtable.gen"
+    {"++dfu", do_reset_dfu, ""},
+#line 47 "cmd_hashtable.gen"
+    {"++srq", do_srq, "query SRQ signal"},
+#line 26 "cmd_hashtable.gen"
+    {"++strip", do_strip, ""},
+#line 31 "cmd_hashtable.gen"
+    {"++auto", do_autoRead, ""},
+#line 40 "cmd_hashtable.gen"
+    {"++lon", do_lon, "[0|1] listen-only (all addresses)"},
+#line 41 "cmd_hashtable.gen"
+    {"++mode", do_mode, "[0|1] enable Controller mode"},
+#line 51 "cmd_hashtable.gen"
     {"++help", do_help, ""}
   };
 
@@ -162,7 +163,7 @@ cmd_lookup (register const char *str, register size_t len)
     }
   return 0;
 }
-#line 51 "cmd_hashtable.gen"
+#line 52 "cmd_hashtable.gen"
 
 void cmd_find_run(const char *cmdstr, unsigned cmdlen, const char *args) {
 	const struct cmd_entry *cmd;
