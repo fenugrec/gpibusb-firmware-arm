@@ -225,7 +225,6 @@ void output_setmodes(enum transmitModes mode) {
 	switch (mode) {
 	case TM_IDLE:
 		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, EOI | DAV | NRFD | NDAC);
-		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, REN | IFC | ATN | SRQ);
 		break;
 	case TM_RECV:
 		gpio_clear(HCTRL1_CP, NRFD | NDAC);
