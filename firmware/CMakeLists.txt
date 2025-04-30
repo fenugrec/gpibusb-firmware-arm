@@ -61,6 +61,13 @@ file (GLOB FW_HEADERS *.h)
 
 ### Now define targets.
 
+add_custom_target(format
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/firmware
+	COMMAND uncrustify --replace --no-backup
+	-c ${CMAKE_SOURCE_DIR}/uncrustify.cfg
+	${FORMATTED_SRCS} ${FW_HEADERS}
+)
+
 add_executable(${TGTNAME} ${FW_SRCS} ${FW_HEADERS})
 
 #make sure libopencm3 builds first

@@ -322,8 +322,8 @@ void usb_isr (void) {
 /**** public funcs */
 void fwusb_init(void) {
 	usbd_dev_private = usbd_init(&st_usbfs_v2_usb_driver, &dev, &config,
-						 usb_strings, USB_NUM_STRINGS,
-						 usbd_control_buffer, sizeof(usbd_control_buffer));
+								 usb_strings, USB_NUM_STRINGS,
+								 usbd_control_buffer, sizeof(usbd_control_buffer));
 
 	usbd_register_set_config_callback(usbd_dev_private, cdcacm_set_config);
 	usbd_register_sof_callback(usbd_dev_private, usbsof_cb);
