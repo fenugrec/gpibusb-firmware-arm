@@ -461,10 +461,10 @@ static void chunk_data(char *rawdata, unsigned len) {
 
 static void listenonly(void) {
 	output_float(DIO_PORT, DIO_PORTMASK);
-	output_float(EOI_CP, DAV | EOI);
+	output_setmodes(TM_RECV);
 	gpio_clear(FLOW_PORT, TE);
-	output_low(HCTRL1_CP, NDAC);
-	output_high(HCTRL1_CP, NRFD);
+
+	assert_signal(HCTRL1_CP, NRFD);
 
 	// if DAV=1 , not valid : return
 	if (gpio_get(HCTRL1_CP, DAV)) {
