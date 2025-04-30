@@ -460,7 +460,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 
 
 static void listenonly(void) {
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 	output_setmodes(TM_RECV);
 	gpio_clear(FLOW_PORT, TE);
 
@@ -511,7 +511,7 @@ static void device_poll(void) {
 /** device poll with ATN asserted (==0) */
 static void device_atn(void) {
 	bool eoi_status;
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
 
@@ -577,7 +577,7 @@ static void device_atn(void) {
 /** device poll with ATN not asserted (==1) */
 static void device_noatn(void) {
 	if (gpib_cfg.device_listen) {
-		output_float(DIO_PORT, DIO_PORTMASK);
+		dio_float();
 		output_float(EOI_CP, DAV | EOI);
 		gpio_clear(FLOW_PORT, TE);
 		output_low(HCTRL1_CP, NDAC);

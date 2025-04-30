@@ -170,7 +170,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 		unassert_signal(HCTRL1_CP, DAV);
 	} // Finished outputting all bytes to the listeners
 
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 	gpio_clear(FLOW_PORT, TE); // Disable talking
 
 	// If the byte was a GPIB command byte, release ATN line
@@ -284,7 +284,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 	// Beginning of GPIB read loop
 	DEBUG_PRINTF("gpib_read loop start\n");
 
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
 
@@ -420,7 +420,7 @@ uint32_t gpib_serial_poll(int address, u8 *status_byte) {
 	error = error || gpib_cmd(cmd);
 	if (error) return -1;
 
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 	output_float(EOI_CP, DAV | EOI);
 	gpio_clear(FLOW_PORT, TE);
 

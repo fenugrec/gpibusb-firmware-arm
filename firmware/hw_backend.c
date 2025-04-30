@@ -174,9 +174,7 @@ void prep_gpib_pins(bool controller_mode) {
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE | PE | DC);
 #endif
 
-
-	// Float all DIO lines
-	output_float(DIO_PORT, DIO_PORTMASK);
+	dio_float();
 
 	// Set mode and pin state for all GPIB control lines
 	if (controller_mode) {
@@ -213,6 +211,12 @@ void output_low(uint32_t gpioport, uint16_t gpios) {
 
 void output_float(uint32_t gpioport, uint16_t gpios) {
 	gpio_mode_setup(gpioport, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, gpios);
+}
+
+/* set DIO pins to input */
+void dio_float(void) {
+	// clearing MODER bits (2 bits per GPIO) configures as inputs
+	GPIO_MODER(DIO_PORT) &= ~(u32) DIO_MODEMASK;
 }
 
 /***** Set the transmission mode *****/
