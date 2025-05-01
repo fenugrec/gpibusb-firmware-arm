@@ -10,6 +10,16 @@
  * control lines. Undefine USE_SN75162 if using a 75161; the
  * only relevant difference is the presence of the SC line on the '162.
  *
+ * PE on the 75160 changes behavior of the DIO port wrt pull-up / open-collector output;
+ * apparently to facilitate parallel poll. Commercial devices have different strategies for this:
+ * - tie PE to 0 : Advantest MS2601, Fluke 2640, Keithley 199, 236, 705; HP 6060, HP 3478
+ * - tie PE to 1 : Fluke PM6680, HP 34970,34401, 8590*
+ * - PE = (ATN | EOI) i.e. parallel poll: Keithley 7001, Tek 744, HP 864x
+ * - PE controlled by 7210/9914 controller IC: Marconi 2023, Anritsu MS2601, Xitron 2000
+ * As for controllers, I have less info, but
+ * - PE tied to 1 in the reverse-engineered 82357B clone
+ * - PE controlled by 7210 on old NI PCIIA ISA card
+ *
  * Warning : DIO_PORT and CONTROL_PORT need 5V tolerant pins !
  * FLOW_PORT can be regular 3.3V IO since it's output-only.
  *
