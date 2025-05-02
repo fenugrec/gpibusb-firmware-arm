@@ -453,7 +453,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	}
 
 	if (gpib_cfg.autoread && gpib_cfg.controller_mode) {
-		//XXX TODO : with autoread, does prologix terminate by EOI ?
+		gpib_address_target(gpib_cfg.partnerAddress, DEV_TALK);
 		rv = gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
 	}
 }
