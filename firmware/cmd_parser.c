@@ -136,9 +136,14 @@ void do_addr(const char *args) {
 	// TODO : addr [pad [sad]] for secondary address too
 	if (*args == 0) {
 		printf("%i\n", gpib_cfg.partnerAddress);
-	} else {
-		gpib_cfg.partnerAddress = atoi(args);
+		return;
 	}
+	int a = atoi(args);
+	if ((a < 0) || (a > 30)) {
+		return;
+	}
+	gpib_cfg.partnerAddress = a;
+
 }
 void do_readTimeout(const char *args) {
 	// ++read_tmo_ms N
