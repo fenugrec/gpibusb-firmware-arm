@@ -359,13 +359,6 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		host_tx(gpib_cfg.eot_char);
 	}
 
-	if (gpib_cfg.controller_mode) {
-		// Command all talkers and listeners to stop
-		error_found = 0;
-		error_found = error_found || gpib_cmd(CMD_UNT);
-		error_found = error_found || gpib_cmd(CMD_UNL);
-	}
-
 	DEBUG_PRINTF("gpib_read end\n");
 
 	setControls(next_state);
