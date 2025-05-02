@@ -44,6 +44,11 @@ enum gpib_states {
 extern const char *gpib_states_s[GPIBSTATE_MAX];    //indexed by enum gpib_states
 
 
+enum addr_dir {
+	CTRL_TALK,
+	DEV_TALK
+};
+
 enum eos_codes {
 	EOS_CRLF = 0,
 	EOS_LF = 1,
@@ -69,7 +74,7 @@ enum errcodes gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
 /** assumes states are correct */
 void pulse_ifc(void);
 
-enum errcodes gpib_address_target(uint32_t address);
+enum errcodes gpib_address_target(uint32_t address, enum addr_dir dir);
 
 // Untalk and Unlisten all
 void gpib_unaddress(void);

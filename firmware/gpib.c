@@ -378,11 +378,17 @@ void gpib_unaddress(void) {
 /** Address the specified GPIB address to listen
 *
 */
-enum errcodes gpib_address_target(uint32_t address) {
-	const u8 cmdbuf[] = {
+enum errcodes gpib_address_target(uint32_t address, enum addr_dir dir) {
+	u8 base;
+	if (dir == CTRL_TALK) {
+		base = CMD_LAD;
+	} else {
+		base = CMD_TAD;
+	}
+	u8 cmdbuf[] = {
 		CMD_UNT,
 		CMD_UNL,
-		address + CMD_LAD,
+		address + base,
 	};
 	return gpib_cmd_m(cmdbuf, sizeof(cmdbuf));
 }

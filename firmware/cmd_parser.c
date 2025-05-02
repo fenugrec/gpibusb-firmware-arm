@@ -161,6 +161,7 @@ void do_readCmd2(const char *args) {
 	// ++read [eoi|<char>]
 	//XXX TODO : err msg when read error occurs
 	if (!gpib_cfg.controller_mode) return;
+	gpib_address_target(gpib_cfg.partnerAddress, DEV_TALK);
 	if (*args == 0) {
 		gpib_read(GPIBREAD_TMO,0, gpib_cfg.eot_enable); // read until EOS condition
 	} else if (strncmp(args, "eoi", 3) == 0) {
@@ -203,7 +204,7 @@ void do_trg(const char *args) {
 	(void) args;
 	if (!gpib_cfg.controller_mode) return;
 	if (*args == 0) {
-		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress, CTRL_TALK);
 		//XXX TODO : do something with writeError
 		gpib_cmd(CMD_GET);
 	} else {
@@ -252,7 +253,7 @@ void do_clr(const char *args) {
 	//XXX TODO : do something with writeError
 	// This command is special in that we must
 	// address a specific instrument.
-	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress, CTRL_TALK);
 	writeError = writeError || gpib_cmd(CMD_SDC);
 }
 void do_eotEnable(const char *args) {
@@ -283,7 +284,7 @@ void do_llo(const char *args) {
 	(void) args;
 	//XXX TODO : do something with writeError
 	if (!gpib_cfg.controller_mode) return;
-	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress, CTRL_TALK);
 	writeError = writeError || gpib_cmd(CMD_LLO);
 }
 void do_loc(const char *args) {
@@ -293,7 +294,7 @@ void do_loc(const char *args) {
 	//XXX TODO : do something with writeError
 	if (!gpib_cfg.controller_mode) return;
 
-	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+	writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress, CTRL_TALK);
 	writeError = writeError || gpib_cmd(CMD_GTL);
 }
 void do_lon(const char *args) {
@@ -417,7 +418,7 @@ static void chunk_cmd(char *cmd, unsigned cmd_len, bool has_args) {
  */
 static void chunk_data(char *rawdata, unsigned len) {
 	char *buf_pnt = rawdata;
-	char writeError = 0;
+	enum errcodes rv;
 
 	if (len == 0) {
 		//can happen if we receive a stray LF from host
@@ -428,10 +429,12 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// Command all talkers and listeners to stop
 	// and tell target to listen.
 	if (gpib_cfg.controller_mode) {
-		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
+		rv = gpib_address_target(gpib_cfg.partnerAddress, CTRL_TALK);
+		if (rv) return;
 		// Set the controller into talker mode
 		u8 cmd = gpib_cfg.myAddress + CMD_TAD;
-		writeError = writeError || gpib_cmd(cmd);
+		rv = gpib_cmd(cmd);
+		if (rv) return;
 	}
 	// Send out command to the bus
 	DEBUG_PRINTF("gpib_write: %.*s\n", len, buf_pnt);
@@ -439,20 +442,19 @@ static void chunk_data(char *rawdata, unsigned len) {
 	if (gpib_cfg.controller_mode || gpib_cfg.device_talk) {
 		if (gpib_cfg.eos_code != EOS_NUL) {  // If have an EOS char, need to output
 			// termination byte to inst
-			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
-			if (!writeError) {
-				DEBUG_PRINTF("gpib_write eos[%u] (%02X...)", eos_len, eos_string[0]);
-				writeError = gpib_write((u8 *) eos_string, eos_len, gpib_cfg.eoiUse);
-			}
-
+			rv = gpib_write((u8 *)buf_pnt, len, 0);
+			if (rv) return;
+			DEBUG_PRINTF("gpib_write eos[%u] (%02X...)", eos_len, eos_string[0]);
+			rv = gpib_write((u8 *) eos_string, eos_len, gpib_cfg.eoiUse);
 		} else {
-			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 1);
+			rv = gpib_write((u8 *)buf_pnt, len, 1);
 		}
+		if (rv) return;
 	}
 
 	if (gpib_cfg.autoread && gpib_cfg.controller_mode) {
 		//XXX TODO : with autoread, does prologix terminate by EOI ?
-		writeError = writeError || gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
+		rv = gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
 	}
 }
 
