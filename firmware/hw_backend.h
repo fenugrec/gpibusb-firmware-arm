@@ -79,11 +79,7 @@ void led_update(enum LED_PATTERN np);
 void led_poll(void);
 
 
-/* Some IO helpers. Original code used these implementations from CCS that
- * implicitly set port direction !
- * These don't need to be used for stuff like LED or the 7516xx driver control signals
- * (PE, TC, DC etc)
- */
+/**************** GPIB / IO stuff */
 
 enum transmitModes; //in gpib.h
 enum operatingModes;
@@ -92,8 +88,6 @@ enum gpib_states;
 
 /** sets transceiver pins etc */
 void setControls(enum gpib_states gs);
-
-
 
 /** set DIO pins to input */
 void dio_float(void);
