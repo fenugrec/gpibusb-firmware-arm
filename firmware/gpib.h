@@ -66,8 +66,8 @@ enum eos_codes {
 };
 
 
-enum errcodes gpib_cmd(uint8_t byte);
-enum errcodes gpib_cmd_m(uint8_t *byte, unsigned len);
+enum errcodes gpib_cmd(const uint8_t byte);
+enum errcodes gpib_cmd_m(const uint8_t *byte, unsigned len);
 enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi);
 enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status);
 

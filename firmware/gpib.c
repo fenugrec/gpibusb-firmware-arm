@@ -80,12 +80,12 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use
 * This will assert the GPIB ATN line.
 *
 */
-enum errcodes gpib_cmd(uint8_t x) {
-	uint8_t b = x;
+enum errcodes gpib_cmd(const uint8_t x) {
+	const uint8_t b = x;
 	return gpib_cmd_m(&b, 1);
 }
 
-enum errcodes gpib_cmd_m(uint8_t *byte, unsigned len) {
+enum errcodes gpib_cmd_m(const uint8_t *byte, unsigned len) {
 	enum errcodes rv;
 	setControls(CCMS);
 	rv = _gpib_write(byte, len, 0);
@@ -372,7 +372,7 @@ e_timeout:
 
 
 void gpib_unaddress(void) {
-	uint8_t cmdbuf[] = { CMD_UNT, CMD_UNL };
+	const uint8_t cmdbuf[] = { CMD_UNT, CMD_UNL };
 	(void) gpib_cmd_m(cmdbuf, sizeof(cmdbuf));
 }
 
@@ -380,7 +380,7 @@ void gpib_unaddress(void) {
 *
 */
 enum errcodes gpib_address_target(uint32_t address) {
-	u8 cmdbuf[] = {
+	const u8 cmdbuf[] = {
 		CMD_UNT,
 		CMD_UNL,
 		address + CMD_LAD,
