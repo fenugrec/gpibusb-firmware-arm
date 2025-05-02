@@ -98,9 +98,6 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 	assert_basic(length);
 
-	// TODO: Set pin modes to output as required for writing, and revert to input on exit/abort
-
-	gpio_set(FLOW_PORT, PE); // Enable power on the bus driver ICs
 
 	if (atn) { output_low(HCTRL2_CP, ATN); }
 
@@ -177,7 +174,6 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 	if (atn) { output_high(HCTRL2_CP, ATN); }
 
 	output_setmodes(TM_IDLE);
-	gpio_clear(FLOW_PORT, PE);
 
 	return E_OK;
 wt_exit:

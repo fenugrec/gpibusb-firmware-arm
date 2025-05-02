@@ -143,6 +143,7 @@ static void output_init(void) {
 	gpio_set_output_options(HCTRL1_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DAV | EOI);
 	gpio_set_output_options(HCTRL2_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, REN | IFC | ATN | SRQ);
 	gpio_set_output_options(DIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DIO_PORTMASK);
+	gpio_set(FLOW_PORT, PE);
 }
 
 
