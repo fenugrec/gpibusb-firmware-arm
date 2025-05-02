@@ -123,6 +123,7 @@ enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi) {
 */
 static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
+	enum errcodes rv;
 	uint32_t i;
 	u32 t0;
 	u32 tdelta = gpib_cfg.timeout;
@@ -194,13 +195,16 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use
 		unassert_signal(HCTRL1_CP, DAV);
 	} // Finished outputting all bytes to the listeners
 
-	dio_float();
-
-	return E_OK;
+	rv = E_OK;
+	goto w_common;
 wt_exit:
 	gpib_cfg.device_talk = false;
 	gpib_cfg.device_srq = false;
-	return E_TIMEOUT;
+	rv = E_TIMEOUT;
+w_common:
+	unassert_signal(EOI_CP, EOI);
+	dio_float();
+	return rv;
 }
 
 /** Receive a single byte from the GPIB bus, with timeout
