@@ -1,0 +1,5 @@
+# Note, by design git will not honor this .gitconfig files;
+# one must run this from the repo worktree:
+# git config --local include.path ../.gitconfig
+[commit]
+  template = .gitmessage
