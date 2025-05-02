@@ -26,12 +26,6 @@
 
 #include "firmware.h"
 
-enum transmitModes {
-	TM_IDLE,
-	TM_RECV,
-	TM_SEND
-};
-
 /* not a 1:1 match to the 488 state diagrams
  */
 enum gpib_states {

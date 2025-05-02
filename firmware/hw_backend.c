@@ -35,6 +35,12 @@ enum operatingModes {
 	OP_DEVI
 };
 
+enum transmitModes {
+	TM_IDLE,
+	TM_RECV,
+	TM_SEND
+};
+
 
 static void output_float(uint32_t gpioport, uint16_t gpios);
 static void output_setmodes(enum transmitModes mode);
