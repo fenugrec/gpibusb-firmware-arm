@@ -39,6 +39,20 @@
 #include "stypes.h"
 #include "utils.h"
 
+
+
+const char *gpib_states_s[GPIBSTATE_MAX] = {
+	[CINI] = "CINI",
+	[CIDS] = "CIDS,",
+	[CCMS] = "CCMS,",
+	[CTAS] = "CTAS,",
+	[CLAS] = "CLAS,",
+	[DINI] = "DINI,",
+	[DIDS] = "DIDS,",
+	[DLAS] = "DLAS,",
+	[DTAS] = "DTAS,",
+};
+
 /* global vars. Not all of these are saved to EEPROM*/
 struct gpib_config gpib_cfg = {
 	.controller_mode = 0,
@@ -58,17 +72,25 @@ struct gpib_config gpib_cfg = {
 
 /* Some forward decls that don't need to be in the public gpib.h
 */
-static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn, bool use_eoi);
+static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi);
 
 
 /** Write a GPIB command byte
 *
 * This will assert the GPIB ATN line.
 *
-* See _gpib_write for parameter information
 */
-enum errcodes gpib_cmd(uint8_t byte) {
-	return _gpib_write(&byte, 1, 1, 0);
+enum errcodes gpib_cmd(uint8_t x) {
+	uint8_t b = x;
+	return gpib_cmd_m(&b, 1);
+}
+
+enum errcodes gpib_cmd_m(uint8_t *byte, unsigned len) {
+	enum errcodes rv;
+	setControls(CCMS);
+	rv = _gpib_write(byte, len, 0);
+	setControls(CIDS);
+	return rv;
 }
 
 /** Write a GPIB data string to the GPIB bus.
@@ -76,21 +98,31 @@ enum errcodes gpib_cmd(uint8_t byte) {
 * See _gpib_write for parameter information
 */
 enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi) {
-	return _gpib_write(bytes, length, 0, use_eoi);
+	enum errcodes rv;
+	enum gpib_states ws, next_state;
+	if (gpib_cfg.controller_mode) {
+		ws = CTAS;
+		next_state= CIDS;
+	} else {
+		ws = DTAS;
+		next_state = DIDS;
+	}
+	setControls(ws);
+	rv = _gpib_write(bytes, length, use_eoi);
+	setControls(next_state);
+	return rv;
 }
 
 /** Write a string of bytes to the GPIB bus
 *
 * bytes: Array of bytes to be written to the bus
 * length: number of bytes to write to the bus.
-* atn: Whether the GPIB ATN line should be asserted or not. Set to 1 if byte
-	is a GPIB command byte or 0 otherwise.
 * use_eoi: Set whether the GPIB EOI line should be asserted or not on
 	transmission of the last byte
 *
 * Returns E_OK if complete, or E_TIMEOUT
 */
-static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn, bool use_eoi) {
+static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi) {
 	uint8_t byte; // Storage variable for the current character
 	uint32_t i;
 	u32 t0;
@@ -98,15 +130,9 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 	assert_basic(length);
 
-
-	if (atn) { output_low(HCTRL2_CP, ATN); }
-
-	output_setmodes(TM_SEND);
-	gpio_set(FLOW_PORT, TE); // Enable talking
 	dio_output();
 
 	// wait NRFD high
-
 	t0 = get_ms();
 	while (!gpio_get(HCTRL1_CP, NRFD)) {
 		restart_wdt();
@@ -168,18 +194,11 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 	} // Finished outputting all bytes to the listeners
 
 	dio_float();
-	gpio_clear(FLOW_PORT, TE); // Disable talking
-
-	// If the byte was a GPIB command byte, release ATN line
-	if (atn) { output_high(HCTRL2_CP, ATN); }
-
-	output_setmodes(TM_IDLE);
 
 	return E_OK;
 wt_exit:
 	gpib_cfg.device_talk = false;
 	gpib_cfg.device_srq = false;
-	prep_gpib_pins(gpib_cfg.controller_mode);
 	return E_TIMEOUT;
 }
 
@@ -194,8 +213,6 @@ wt_exit:
 enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	u32 t0;
 	u32 tdelta = gpib_cfg.timeout;
-
-	output_setmodes(TM_RECV);
 
 	assert_signal(HCTRL1_CP, NDAC);
 
@@ -241,7 +258,7 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	return E_OK;
 rt_exit:
 	gpib_cfg.device_listen = false;
-	prep_gpib_pins(gpib_cfg.controller_mode);
+	output_setmodes(TM_IDLE);
 	return E_TIMEOUT;
 }
 
@@ -259,30 +276,20 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 	bool eoi_status = 0;
 	//bool eos_checknext = 0;	//used to strip CR+LF eos (avoid sending the CR to host)
 	uint32_t error_found = 0;
+	enum gpib_states next_state;
 
 	if (gpib_cfg.controller_mode) {
-		// Command all talkers and listeners to stop
-		error_found = error_found || gpib_cmd(CMD_UNT);
-		error_found = error_found || gpib_cmd(CMD_UNL);
-		if (error_found){return E_TIMEOUT;}
-
-		// Set the controller into listener mode
-		u8 cmd = gpib_cfg.myAddress + CMD_LAD;
-		error_found = error_found || gpib_cmd(cmd);
-		if (error_found){return E_TIMEOUT;}
-
-		// Set target device into talker mode
-		cmd = gpib_cfg.partnerAddress + CMD_TAD;
-		error_found = gpib_cmd(cmd);
-		if (error_found){return E_TIMEOUT;}
+		setControls(CLAS);
+		next_state = CIDS;
+	} else {
+		setControls(DLAS);
+		next_state = DIDS;
 	}
 
 	// Beginning of GPIB read loop
 	DEBUG_PRINTF("gpib_read loop start\n");
 
 	dio_float();
-	output_float(EOI_CP, DAV | EOI);
-	gpio_clear(FLOW_PORT, TE);
 
 	// TODO : what happens if device keeps sending data, or never sends EOI/EOS ?
 	switch (readmode) {
@@ -291,7 +298,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 			if (gpib_read_byte(&byte, &eoi_status)) {
 				// Read error
 				DEBUG_PRINTF("gpr EOI:E\n");
-				return E_TIMEOUT;
+				goto e_timeout;
 			}
 			host_tx(byte);
 			if (eoi_status) {
@@ -309,7 +316,7 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		do {
 			if (gpib_read_byte(&byte, &eoi_status)) {
 				DEBUG_PRINTF("gpr EOS:E\n");
-				return E_TIMEOUT;
+				goto e_timeout;
 			}
 			// Check to see if the byte we just read is the specified EOS byte
 			if (byte == eos_char) {
@@ -351,8 +358,6 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 		host_tx(gpib_cfg.eot_char);
 	}
 
-	DEBUG_PRINTF("gpib_read loop end\n");
-
 	if (gpib_cfg.controller_mode) {
 		// Command all talkers and listeners to stop
 		error_found = 0;
@@ -362,7 +367,12 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 
 	DEBUG_PRINTF("gpib_read end\n");
 
+	setControls(next_state);
 	return error_found;
+
+e_timeout:
+	setControls(next_state);
+	return E_TIMEOUT;
 }
 
 /** Address the specified GPIB address to listen
@@ -372,13 +382,21 @@ enum errcodes gpib_read(enum gpib_readmode readmode,
 * Returns 0 if everything went fine, or 1 if there was an error
 */
 uint32_t gpib_address_target(uint32_t address) {
-	uint32_t write_error = 0;
-	write_error = write_error || gpib_cmd(CMD_UNT);
-	write_error = write_error || gpib_cmd(CMD_UNL);
-	u8 cmd = address + CMD_LAD;
-	write_error = write_error || gpib_cmd(cmd);
-	return write_error;
+	u8 cmdbuf[] = {
+		CMD_UNT,
+		CMD_UNL,
+		address + CMD_LAD,
+	};
+	return gpib_cmd_m(cmdbuf, sizeof(cmdbuf));
 }
+
+
+void pulse_ifc(void) {
+	assert_signal(HCTRL2_CP, IFC);
+	delay_ms(200);
+	unassert_signal(HCTRL2_CP, IFC);
+}
+
 
 /**
 * Assigns our controller as the GPIB bus controller.
@@ -389,12 +407,10 @@ uint32_t gpib_address_target(uint32_t address) {
 */
 uint32_t gpib_controller_assign(void) {
 	// Assert interface clear. Resets bus and makes it controller in charge
-	output_low(HCTRL2_CP, IFC);
-	delay_ms(200);
-	output_high(HCTRL2_CP, IFC);
+	setControls(CINI);
 
 	// Put all connected devices into "remote" mode
-	output_low(HCTRL2_CP, REN);
+	assert_signal(HCTRL2_CP, REN);
 
 	// Send GPIB DCL command, which clears all devices on the bus
 	return gpib_cmd(CMD_DCL);
@@ -417,10 +433,10 @@ uint32_t gpib_serial_poll(int address, u8 *status_byte) {
 	if (error) return -1;
 
 	dio_float();
-	output_float(EOI_CP, DAV | EOI);
-	gpio_clear(FLOW_PORT, TE);
+	setControls(CLAS);
 
 	error = gpib_read_byte(status_byte, &eoistat);
+	setControls(CTAS);
 	gpib_cmd(CMD_SPD);
 	if (error) return -1;
 	return 0;

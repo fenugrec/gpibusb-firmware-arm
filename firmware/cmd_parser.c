@@ -274,9 +274,7 @@ void do_ifc(const char *args) {
 	// ++ifc
 	(void) args;
 	if (!gpib_cfg.controller_mode) return;
-	output_low(HCTRL2_CP, IFC);
-	delay_ms(200);
-	output_high(HCTRL2_CP, IFC);   //XXX orig version just tristates IFC ? we're controller, who cares ?
+	pulse_ifc();
 }
 void do_llo(const char *args) {
 	// ++llo
@@ -310,12 +308,14 @@ void do_mode(const char *args) {
 	// ++mode {0|1}
 	if (*args == 0) {
 		printf("%i\n", gpib_cfg.controller_mode);
+		return;
+	}
+	gpib_cfg.controller_mode = (bool) atoi(args);
+	if (gpib_cfg.controller_mode) {
+		setControls(CINI);
+		gpib_controller_assign();
 	} else {
-		gpib_cfg.controller_mode = (bool) atoi(args);
-		prep_gpib_pins(gpib_cfg.controller_mode);
-		if (gpib_cfg.controller_mode) {
-			gpib_controller_assign();
-		}
+		setControls(DINI);
 	}
 }
 void do_savecfg(const char *args) {
@@ -367,8 +367,8 @@ void do_status(const char *args) {
 		if (status_byte & 0x40) {
 			// prologix: " If the RQS bit (bit #6) of the status byte is set then the SRQ signal is asserted (low)
 			// After a serial poll, SRQ line is de-asserted and status byte is set to 0 "
-			output_low(HCTRL2_CP, SRQ);
-		} // else { output_high ??? or assume the transition to device mode already did this}
+			assert_signal(HCTRL2_CP, SRQ);
+		}
 	}
 }
 
@@ -512,18 +512,13 @@ static void device_poll(void) {
 static void device_atn(void) {
 	bool eoi_status;
 	dio_float();
-	output_float(EOI_CP, DAV | EOI);
-	gpio_clear(FLOW_PORT, TE);
+	setControls(DLAS);
 
-	output_low(HCTRL1_CP, NDAC);
-	output_high(HCTRL1_CP, NRFD);
-	// if DAV=1 not valid : return
-	if (gpio_get(HCTRL1_CP, DAV)) {
-		return;
-	}
 	// Get the CMD byte sent by the controller
 	u8 rxb;
-	if (gpib_read_byte(&rxb, &eoi_status)) {
+	enum errcodes rv = gpib_read_byte(&rxb, &eoi_status);
+	setControls(DIDS);
+	if (rv) {
 		//error (timeout ?)
 		return;
 	}
@@ -571,34 +566,29 @@ static void device_atn(void) {
 		gpib_cfg.device_srq = false;
 		status_byte = 0;
 	}
-	output_high(HCTRL1_CP, NDAC);
 }
 
 /** device poll with ATN not asserted (==1) */
 static void device_noatn(void) {
 	if (gpib_cfg.device_listen) {
 		dio_float();
-		output_float(EOI_CP, DAV | EOI);
-		gpio_clear(FLOW_PORT, TE);
-		output_low(HCTRL1_CP, NDAC);
-		output_high(HCTRL1_CP, NRFD);
+		setControls(DLAS);
 
-		// if DAV=1 , not valid : return
-		if (gpio_get(HCTRL1_CP, DAV)) {
-			return;
-		}
 		DEBUG_PRINTF("device mode gpib_read\n");
-		gpib_read(GPIBREAD_EOI, 0, gpib_cfg.eot_enable);
+		u8 rxb;
+		bool eoi_status;
+		gpib_read_byte(&rxb, &eoi_status);
+		setControls(DIDS);
+		DEBUG_PRINTF("devpoll noATN got %u", (unsigned) rxb);
 	} else if (gpib_cfg.device_talk) {
-		output_float(HCTRL1_CP, NDAC | NRFD);
-		gpio_set(FLOW_PORT, TE);
-		output_high(EOI_CP, DAV | EOI);
+		setControls(DTAS);
 		if (gpib_cfg.device_srq) {
 			gpib_write(&status_byte, 1, 0);
-			output_high(HCTRL2_CP, SRQ);
+			unassert_signal(HCTRL2_CP, SRQ);
 			gpib_cfg.device_srq = false;
 			status_byte = 0;
 		}
+		setControls(DIDS);
 	}
 }
 

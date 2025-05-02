@@ -32,6 +32,31 @@ enum transmitModes {
 	TM_SEND
 };
 
+/* not a 1:1 match to the 488 state diagrams
+ */
+enum gpib_states {
+	CINI = 0,  // Controller idle state
+	CIDS,  // Controller idle state
+	CCMS,  // Controller command state
+	CTAS,  // Controller talker active state
+	CLAS,  // Controller listner active state
+	DINI,  // Device initialise state
+	DIDS,  // Device idle state
+	DLAS,  // Device listener active (listening/receiving)
+	DTAS,  // Device talker active (sending) state
+	GPIBSTATE_MAX,  //delimiter
+};
+
+extern const char *gpib_states_s[GPIBSTATE_MAX];    //indexed by enum gpib_states
+
+
+enum operatingModes {
+	OP_IDLE,
+	OP_CTRL,
+	OP_DEVI
+};
+
+
 enum eos_codes {
 	EOS_CRLF = 0,
 	EOS_LF = 1,
@@ -42,6 +67,7 @@ enum eos_codes {
 
 
 enum errcodes gpib_cmd(uint8_t byte);
+enum errcodes gpib_cmd_m(uint8_t *byte, unsigned len);
 enum errcodes gpib_write(const uint8_t *bytes, uint32_t length, bool use_eoi);
 enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status);
 
@@ -53,6 +79,8 @@ enum gpib_readmode {
 };
 enum errcodes gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
 
+/** assumes states are correct */
+void pulse_ifc(void);
 uint32_t gpib_address_target(uint32_t address);
 uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);

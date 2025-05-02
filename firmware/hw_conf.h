@@ -65,7 +65,7 @@
 #define DIO_PORT			 GPIOB
 #define DIO_PORTSHIFT		 8
 #define DIO_PORTMASK		 (0xFF << DIO_PORTSHIFT)
-#define DIO_MODEMASK		 (0xFFFF << (2*DIO_PORTSHIFT))	// MODER fields are 2 bits per gpio !
+#define DIO_MODEMASK		 (0xFFFF << (2*DIO_PORTSHIFT))  // MODER fields are 2 bits per gpio !
 #define DIO_MODEMASK_OUTPUTS (0x5555 << (2*DIO_PORTSHIFT))  //value to set pin dir to Output
 
 /** write DIO, takes care of inversion.

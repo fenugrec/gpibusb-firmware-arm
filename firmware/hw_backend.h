@@ -37,8 +37,6 @@ void reset_dfu(void);
 /** must be called as early as possible */
 void pre_main(void);
 
-void prep_gpib_pins(bool controller_mode);
-
 void restart_wdt(void);
 
 /* why does gcc not have a builtin for this ? */
@@ -88,32 +86,22 @@ void led_poll(void);
  */
 
 enum transmitModes; //in gpib.h
+enum operatingModes;
+enum gpib_states;
+
 void output_setmodes(enum transmitModes mode);
 
-/** set pin output HIGH
- *
- * @param gpioport
- * @param gpios : bitmask, can be multiple pins OR'ed
- */
-void output_high(uint32_t gpioport, uint16_t gpios);
+/** sets transceiver pins etc */
+void setControls(enum gpib_states gs);
 
-/** set pin output HIGH
- *
- * @param gpioport
- * @param gpios : bitmask, can be multiple pins OR'ed
- */
-void output_low(uint32_t gpioport, uint16_t gpios);
+/** set interface mode */
+void setOperatingMode(enum operatingModes mode);
 
-/** set pin output FLOAT (pull-up high)
- *
- * @param gpioport
- * @param gpios : bitmask, can be multiple pins OR'ed
- */
-void output_float(uint32_t gpioport, uint16_t gpios);
 
 
 /** set DIO pins to input */
 void dio_float(void);
+
 /** set DIO pins to output */
 void dio_output(void);
 
@@ -122,7 +110,7 @@ void dio_output(void);
  */
 void assert_signal(uint32_t gpioport, uint16_t gpios);
 
-/** assert (in the GPIB sense) one signal
+/** unassert (in the GPIB sense) one signal
  * assumes port direction already OK
  */
 void unassert_signal(uint32_t gpioport, uint16_t gpios);

@@ -26,6 +26,13 @@
 #include "stypes.h"
 #include "utils.h"
 
+
+
+/** some fwd decls */
+
+static void output_float(uint32_t gpioport, uint16_t gpios);
+
+
 /****** IO, GPIO */
 
 /** enable 5V supply for sn75xx drivers.
@@ -143,74 +150,26 @@ static void output_init(void) {
 	gpio_set_output_options(HCTRL1_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DAV | EOI);
 	gpio_set_output_options(HCTRL2_CP, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, REN | IFC | ATN | SRQ);
 	gpio_set_output_options(DIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, DIO_PORTMASK);
-	gpio_set(FLOW_PORT, PE);
-}
-
-
-void prep_gpib_pins(bool controller_mode) {
-	/* Flow control pins. 75160:
-	 * If talk enable (TE) is high, these ports have the characteristics of passive-pullup
-	 * outputs when pullup enable (PE) is low and of 3-state outputs when PE is high.
-	 *
-	 * so with TE=0, PE doesn't matter
-	 */
-	gpio_clear(FLOW_PORT, TE | PE);
-	if (controller_mode) {
-#ifdef USE_SN75162
-		gpio_set(FLOW_PORT, SC); // TX on REN and IFC
-#endif
-		gpio_clear(FLOW_PORT, DC); // TX on ATN and RX on SRQ
-	} else {
-#ifdef USE_SN75162
-		gpio_clear(FLOW_PORT, SC);
-#endif
-		gpio_set(FLOW_PORT, DC);
-	}
-
 	// Flow port pins will always be outputs
-
+	gpio_clear(FLOW_PORT, TE);
+	gpio_set(FLOW_PORT, PE);
 #ifdef USE_SN75162
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE | PE | DC | SC);
 #else
 	gpio_mode_setup(FLOW_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TE | PE | DC);
 #endif
-
-	dio_float();
-
-	// Set mode and pin state for all GPIB control lines
-	if (controller_mode) {
-		output_float(EOI_CP, EOI | DAV);
-		output_float(HCTRL2_CP, SRQ);
-		gpio_set(HCTRL2_CP, ATN | IFC);
-		gpio_clear(HCTRL1_CP, NRFD | NDAC);
-		gpio_clear(HCTRL2_CP, REN);
-		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP,
-						ATN | IFC | REN);
-		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP,
-						NRFD | NDAC);
-	} else {
-		output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
-		output_float(EOI_CP, EOI | DAV | NRFD | NDAC);
-	}
-
 }
+
 
 // TODO : if these become a bottleneck, they could be changed to
 // manipulate ODR and MODER regs directly.
 
-void output_high(uint32_t gpioport, uint16_t gpios) {
-	gpio_set(gpioport, gpios);
-	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, gpios);
-}
-
-
-void output_low(uint32_t gpioport, uint16_t gpios) {
-	gpio_clear(gpioport, gpios);
-	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, gpios);
-}
-
-
-void output_float(uint32_t gpioport, uint16_t gpios) {
+/** set pin output FLOAT (pull-up high)
+ *
+ * @param gpioport
+ * @param gpios : bitmask, can be multiple pins OR'ed
+ */
+static void output_float(uint32_t gpioport, uint16_t gpios) {
 	gpio_mode_setup(gpioport, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, gpios);
 }
 
@@ -228,7 +187,152 @@ void dio_output(void) {
 	GPIO_MODER(DIO_PORT) = tmp | DIO_MODEMASK_OUTPUTS;
 }
 
+/* set all control signals to hi-Z */
+static void clearAllSignals(void) {
+	output_float(HCTRL1_CP, EOI | DAV | NRFD | NDAC);
+	output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
+}
+
+
+void setOperatingMode(enum operatingModes mode) {
+	switch (mode) {
+	case OP_IDLE:
+		output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
+		break;
+	case OP_CTRL:
+		// Signal IFC, REN and ATN, listen to SRQ
+		gpio_set(HCTRL2_CP, IFC | REN | ATN);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, SRQ);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, IFC | REN | ATN);
+		break;
+	case OP_DEVI:
+		// Signal SRQ, listen to IFC, REN and ATN
+		gpio_set(HCTRL2_CP, SRQ);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, SRQ);
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, IFC | REN | ATN);
+		break;
+	default:
+		assert_basic(0);
+		break;
+	}
+}
+
+
+// XXX temp macro conversion for code copypasta'd from AR488
+// 75160 (DIO) has TE + PE signals
+// 75161 (control) has TE + DC
+// 75162 (control) has TE + DC + SC
+#define SN7516X
+#define SN7516X_DC
+#ifdef USE_75162
+	#define SN7516X_SC
+#endif
+
+/***** Control the GPIB bus - set various GPIB states *****/
+void setControls(enum gpib_states gs) {
+	static enum gpib_states gpibstate = CINI;
+	DEBUG_PRINTF("gpibstate %s => %s\n", gpib_states_s[gpibstate], gpib_states_s[gs]);
+	switch (gs) {
+	case CINI:      // Initialisation
+		setOperatingMode(OP_CTRL);
+		output_setmodes(TM_IDLE);
+		assert_signal(HCTRL2_CP, REN);
+#ifdef SN7516X
+		gpio_clear(FLOW_PORT, TE);
+#ifdef SN7516X_DC
+		gpio_clear(FLOW_PORT, DC);
+#endif
+#ifdef SN7516X_SC
+		gpio_set(FLOW_PORT, SC);
+#endif
+#endif
+		break;
+
+	case CIDS:      // Controller idle state
+		unassert_signal(HCTRL2_CP, ATN);
+		output_setmodes(TM_IDLE);
+#ifdef SN7516X
+		gpio_clear(FLOW_PORT, TE);
+#endif
+		break;
+
+	case CCMS:      // Controller active - send commands
+		output_setmodes(TM_SEND);
+		assert_signal(HCTRL2_CP, ATN);
+#ifdef SN7516X
+		gpio_set(FLOW_PORT, TE);
+#endif
+		break;
+
+
+	case CLAS:      // Controller - read data bus
+		// Set state for receiving data
+		unassert_signal(HCTRL2_CP, ATN);
+		output_setmodes(TM_RECV);
+#ifdef SN7516X
+		gpio_clear(FLOW_PORT, TE);
+#endif
+		break;
+
+
+	case CTAS:      // Controller - write data bus
+		unassert_signal(HCTRL2_CP, ATN);
+		output_setmodes(TM_SEND);
+#ifdef SN7516X
+		gpio_set(FLOW_PORT, TE);
+#endif
+		break;
+
+	case DINI:      // Listner initialisation
+#ifdef SN7516X
+		gpio_set(FLOW_PORT, TE);
+#ifdef SN7516X_DC
+		gpio_set(FLOW_PORT, DC);
+#endif
+#ifdef SN7516X_SC
+		gpio_clear(FLOW_PORT, SC);
+#endif
+#endif
+		clearAllSignals();
+		setOperatingMode(OP_DEVI);      // Set up for device mode
+		// Set data bus to idle state
+		dio_float();
+		break;
+
+	case DIDS:      // Device idle state
+#ifdef SN7516X
+		gpio_set(FLOW_PORT, TE);
+#endif
+		output_setmodes(TM_IDLE);
+		// Set data bus to idle state
+		dio_float();
+		break;
+
+
+	case DLAS:      // Device listner active (actively listening - can handshake)
+#ifdef SN7516X
+		gpio_clear(FLOW_PORT, TE);
+#endif
+		output_setmodes(TM_RECV);
+		break;
+
+
+	case DTAS:      // Device talker active (sending data)
+#ifdef SN7516X
+		gpio_set(FLOW_PORT, TE);
+#endif
+		output_setmodes(TM_SEND);
+		break;
+	default:
+		assert_basic(0);
+	}
+
+	gpibstate = gs;
+}
+
+
 /***** Set the transmission mode *****/
+// XXX can probably be reduced to file scope eventually
 void output_setmodes(enum transmitModes mode) {
 	static enum transmitModes txmode_current = TM_IDLE;
 	if (mode == txmode_current) {
