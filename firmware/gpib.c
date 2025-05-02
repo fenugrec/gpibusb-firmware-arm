@@ -260,7 +260,6 @@ enum errcodes gpib_read_byte(uint8_t *byte, bool *eoi_status) {
 	return E_OK;
 rt_exit:
 	gpib_cfg.device_listen = false;
-	output_setmodes(TM_IDLE);
 	return E_TIMEOUT;
 }
 

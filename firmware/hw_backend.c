@@ -31,6 +31,10 @@
 /** some fwd decls */
 
 static void output_float(uint32_t gpioport, uint16_t gpios);
+static void output_setmodes(enum transmitModes mode);
+/** set interface mode */
+static void setOperatingMode(enum operatingModes mode);
+
 
 
 /****** IO, GPIO */
@@ -194,7 +198,7 @@ static void clearAllSignals(void) {
 }
 
 
-void setOperatingMode(enum operatingModes mode) {
+static void setOperatingMode(enum operatingModes mode) {
 	switch (mode) {
 	case OP_IDLE:
 		output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
@@ -231,6 +235,9 @@ void setOperatingMode(enum operatingModes mode) {
 /***** Control the GPIB bus - set various GPIB states *****/
 void setControls(enum gpib_states gs) {
 	static enum gpib_states gpibstate = CINI;
+	if (gpibstate == gs) {
+		return;
+	}
 	DEBUG_PRINTF("gpibstate %s => %s\n", gpib_states_s[gpibstate], gpib_states_s[gs]);
 	switch (gs) {
 	case CINI:      // Initialisation
@@ -332,8 +339,7 @@ void setControls(enum gpib_states gs) {
 
 
 /***** Set the transmission mode *****/
-// XXX can probably be reduced to file scope eventually
-void output_setmodes(enum transmitModes mode) {
+static void output_setmodes(enum transmitModes mode) {
 	static enum transmitModes txmode_current = TM_IDLE;
 	if (mode == txmode_current) {
 		return;

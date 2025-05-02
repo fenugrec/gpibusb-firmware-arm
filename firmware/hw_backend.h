@@ -89,13 +89,9 @@ enum transmitModes; //in gpib.h
 enum operatingModes;
 enum gpib_states;
 
-void output_setmodes(enum transmitModes mode);
 
 /** sets transceiver pins etc */
 void setControls(enum gpib_states gs);
-
-/** set interface mode */
-void setOperatingMode(enum operatingModes mode);
 
 
 

@@ -453,9 +453,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 
 
 static void listenonly(void) {
-	dio_float();
-	output_setmodes(TM_RECV);
-	gpio_clear(FLOW_PORT, TE);
+	setControls(DLAS);
 
 	assert_signal(HCTRL1_CP, NRFD);
 
