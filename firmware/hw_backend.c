@@ -184,9 +184,9 @@ void prep_gpib_pins(bool controller_mode) {
 		gpio_set(HCTRL2_CP, ATN | IFC);
 		gpio_clear(HCTRL1_CP, NRFD | NDAC);
 		gpio_clear(HCTRL2_CP, REN);
-		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+		gpio_mode_setup(HCTRL2_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP,
 						ATN | IFC | REN);
-		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
+		gpio_mode_setup(HCTRL1_CP, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP,
 						NRFD | NDAC);
 	} else {
 		output_float(HCTRL2_CP, ATN | IFC | SRQ | REN);
@@ -200,13 +200,13 @@ void prep_gpib_pins(bool controller_mode) {
 
 void output_high(uint32_t gpioport, uint16_t gpios) {
 	gpio_set(gpioport, gpios);
-	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpios);
+	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, gpios);
 }
 
 
 void output_low(uint32_t gpioport, uint16_t gpios) {
 	gpio_clear(gpioport, gpios);
-	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, gpios);
+	gpio_mode_setup(gpioport, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, gpios);
 }
 
 
