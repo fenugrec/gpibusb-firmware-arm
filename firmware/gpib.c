@@ -376,13 +376,17 @@ e_timeout:
 	return E_TIMEOUT;
 }
 
+
+
+void gpib_unaddress(void) {
+	uint8_t cmdbuf[] = { CMD_UNT, CMD_UNL };
+	(void) gpib_cmd_m(cmdbuf, sizeof(cmdbuf));
+}
+
 /** Address the specified GPIB address to listen
 *
-* address: GPIB bus address which should be listening
-*
-* Returns 0 if everything went fine, or 1 if there was an error
 */
-uint32_t gpib_address_target(uint32_t address) {
+enum errcodes gpib_address_target(uint32_t address) {
 	u8 cmdbuf[] = {
 		CMD_UNT,
 		CMD_UNL,

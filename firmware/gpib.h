@@ -81,7 +81,11 @@ enum errcodes gpib_read(enum gpib_readmode, uint8_t eos_char, bool eot_enable);
 
 /** assumes states are correct */
 void pulse_ifc(void);
-uint32_t gpib_address_target(uint32_t address);
+
+enum errcodes gpib_address_target(uint32_t address);
+
+// Untalk and Unlisten all
+void gpib_unaddress(void);
 uint32_t gpib_controller_assign(void);
 uint32_t gpib_serial_poll(int address, uint8_t *status_byte);
 
