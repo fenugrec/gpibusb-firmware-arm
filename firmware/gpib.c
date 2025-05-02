@@ -40,7 +40,6 @@
 #include "utils.h"
 
 
-
 const char *gpib_states_s[GPIBSTATE_MAX] = {
 	[CINI] = "CINI",
 	[CIDS] = "CIDS,",

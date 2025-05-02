@@ -50,13 +50,6 @@ enum gpib_states {
 extern const char *gpib_states_s[GPIBSTATE_MAX];    //indexed by enum gpib_states
 
 
-enum operatingModes {
-	OP_IDLE,
-	OP_CTRL,
-	OP_DEVI
-};
-
-
 enum eos_codes {
 	EOS_CRLF = 0,
 	EOS_LF = 1,

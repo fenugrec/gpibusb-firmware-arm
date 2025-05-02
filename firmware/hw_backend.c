@@ -29,6 +29,12 @@
 
 
 /** some fwd decls */
+enum operatingModes {
+	OP_IDLE,
+	OP_CTRL,
+	OP_DEVI
+};
+
 
 static void output_float(uint32_t gpioport, uint16_t gpios);
 static void output_setmodes(enum transmitModes mode);
