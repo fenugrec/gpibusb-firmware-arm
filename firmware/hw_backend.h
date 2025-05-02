@@ -114,7 +114,8 @@ void output_float(uint32_t gpioport, uint16_t gpios);
 
 /** set DIO pins to input */
 void dio_float(void);
-
+/** set DIO pins to output */
+void dio_output(void);
 
 /** assert (in the GPIB sense) one signal
  * assumes port direction already OK

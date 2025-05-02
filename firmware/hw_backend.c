@@ -219,6 +219,14 @@ void dio_float(void) {
 	GPIO_MODER(DIO_PORT) &= ~(u32) DIO_MODEMASK;
 }
 
+/* set DIO pins to output */
+void dio_output(void) {
+	// MODER bits (2 bits per GPIO)=b'01' configures as inputs
+	u32 tmp = GPIO_MODER(DIO_PORT);
+	tmp &= ~(u32) DIO_MODEMASK;
+	GPIO_MODER(DIO_PORT) = tmp | DIO_MODEMASK_OUTPUTS;
+}
+
 /***** Set the transmission mode *****/
 void output_setmodes(enum transmitModes mode) {
 	static enum transmitModes txmode_current = TM_IDLE;

@@ -106,7 +106,7 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool atn
 
 	output_setmodes(TM_SEND);
 	gpio_set(FLOW_PORT, TE); // Enable talking
-	gpio_mode_setup(DIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DIO_PORTMASK);
+	dio_output();
 
 	// wait NRFD high
 
