@@ -164,7 +164,9 @@ static enum errcodes _gpib_write(const uint8_t *bytes, uint32_t length, bool use
 		WRITE_DIO(byte);
 
 		// Assert EOI if on last byte and using EOI
-		if ((i==length-1) && (use_eoi)) {assert_signal(EOI_CP, EOI);}
+		if ((i==length-1) && (use_eoi)) {
+			assert_signal(EOI_CP, EOI);
+		}
 
 		// Wait for NRFD to go high, indicating listeners are ready for data
 		while (!gpio_get(HCTRL1_CP, NRFD)) {

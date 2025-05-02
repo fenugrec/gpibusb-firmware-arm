@@ -96,8 +96,7 @@ static bool srq_state(void) {
 
 void cmd_parser_init(void) {
 	// Handle the EEPROM stuff
-	if (read_eeprom(0x00) == VALID_EEPROM_CODE)
-	{
+	if (read_eeprom(0x00) == VALID_EEPROM_CODE) {
 		gpib_cfg.controller_mode = read_eeprom(0x01);
 		gpib_cfg.partnerAddress = read_eeprom(0x02);
 		gpib_cfg.eot_char = read_eeprom(0x03);
@@ -108,9 +107,7 @@ void cmd_parser_init(void) {
 		gpib_cfg.autoread = read_eeprom(0x07);
 		listen_only = read_eeprom(0x08);
 		save_cfg = read_eeprom(0x09);
-	}
-	else
-	{
+	} else {
 		write_eeprom(0x00, VALID_EEPROM_CODE);
 		write_eeprom(0x01, 1); // mode
 		write_eeprom(0x02, 1); // partnerAddress
@@ -122,8 +119,7 @@ void cmd_parser_init(void) {
 		write_eeprom(0x08, 0); // listen_only
 		write_eeprom(0x09, 1); // save_cfg
 	}
-	if (gpib_cfg.controller_mode)
-	{
+	if (gpib_cfg.controller_mode) {
 		gpib_controller_assign();
 	}
 
@@ -300,7 +296,9 @@ void do_lon(const char *args) {
 	if (*args == 0) {
 		printf("%i\n", listen_only);
 	} else {
-		if (gpib_cfg.controller_mode) { return; }
+		if (gpib_cfg.controller_mode) {
+			return;
+		}
 		listen_only = (bool) atoi(args);
 	}
 }
@@ -424,8 +422,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// Not an internal command, send to bus
 	// Command all talkers and listeners to stop
 	// and tell target to listen.
-	if (gpib_cfg.controller_mode)
-	{
+	if (gpib_cfg.controller_mode) {
 		writeError = writeError || gpib_address_target(gpib_cfg.partnerAddress);
 		// Set the controller into talker mode
 		u8 cmd = gpib_cfg.myAddress + CMD_TAD;
@@ -434,10 +431,8 @@ static void chunk_data(char *rawdata, unsigned len) {
 	// Send out command to the bus
 	DEBUG_PRINTF("gpib_write: %.*s\n", len, buf_pnt);
 
-	if (gpib_cfg.controller_mode || gpib_cfg.device_talk)
-	{
-		if (gpib_cfg.eos_code != EOS_NUL)   // If have an EOS char, need to output
-		{
+	if (gpib_cfg.controller_mode || gpib_cfg.device_talk) {
+		if (gpib_cfg.eos_code != EOS_NUL) {  // If have an EOS char, need to output
 			// termination byte to inst
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 0);
 			if (!writeError) {
@@ -445,9 +440,7 @@ static void chunk_data(char *rawdata, unsigned len) {
 				writeError = gpib_write((u8 *) eos_string, eos_len, gpib_cfg.eoiUse);
 			}
 
-		}
-		else
-		{
+		} else {
 			writeError = writeError || gpib_write((u8 *)buf_pnt, len, 1);
 		}
 	}
